@@ -8,6 +8,8 @@ utils_reboot/time_dict_backup/
 
 # Python
 *.pickle
+*.csv.gz
+*.pdf
 
 # Mac OS files
 *.DS_Store
