@@ -2,7 +2,7 @@
 
 # Copyright (c) 2007–2020 The scikit-learn developers.
 # All rights reserved.
-# 
+#
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -15,8 +15,8 @@
 #   c. Neither the name of the Scikit-learn Developers  nor the names of
 #      its contributors may be used to endorse or promote products
 #      derived from this software without specific prior written
-#      permission. 
-# 
+#      permission.
+#
 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -32,11 +32,13 @@
 
 
 from sklearn.ensemble._iforest import _average_path_length
-from sklearn.utils.validation import  _num_samples
-from sklearn.utils import gen_batches, get_chunk_n_rows
-import numpy as np 
+from sklearn.utils.validation import _num_samples
+from sklearn.utils import gen_batches
+from sklearn_compat.utils._chunking import get_chunk_n_rows
+import numpy as np
 
 # The functions below have been adapted from the sklearn source code
+
 
 def decision_function_single_tree(iforest, tree_idx, X):
     return _score_samples(iforest, tree_idx, X) - iforest.offset_
@@ -44,10 +46,12 @@ def decision_function_single_tree(iforest, tree_idx, X):
 
 def _score_samples(iforest, tree_idx, X):
     if iforest.n_features_in_ != X.shape[1]:
-        raise ValueError("Number of features of the model must "
-                         "match the input. Model n_features is {0} and "
-                         "input n_features is {1}."
-                         "".format(iforest.n_features_, X.shape[1]))
+        raise ValueError(
+            "Number of features of the model must "
+            "match the input. Model n_features is {0} and "
+            "input n_features is {1}."
+            "".format(iforest.n_features_, X.shape[1])
+        )
     return -_compute_chunked_score_samples(iforest, tree_idx, X)
 
 
@@ -57,12 +61,15 @@ def _compute_chunked_score_samples(iforest, tree_idx, X):
         subsample_features = False
     else:
         subsample_features = True
-    chunk_n_rows = get_chunk_n_rows(row_bytes=16 * iforest._max_features,
-                                    max_n_rows=n_samples)
+    chunk_n_rows = get_chunk_n_rows(
+        row_bytes=16 * iforest._max_features, max_n_rows=n_samples
+    )
     slices = gen_batches(n_samples, chunk_n_rows)
     scores = np.zeros(n_samples, order="f")
     for sl in slices:
-        scores[sl] = _compute_score_samples_single_tree(iforest, tree_idx, X[sl], subsample_features)
+        scores[sl] = _compute_score_samples_single_tree(
+            iforest, tree_idx, X[sl], subsample_features
+        )
     return scores
 
 
@@ -75,7 +82,10 @@ def _compute_score_samples_single_tree(iforest, tree_idx, X, subsample_features)
     leaves_index = tree.apply(X_subset)
     node_indicator = tree.decision_path(X_subset)
     n_samples_leaf = tree.tree_.n_node_samples[leaves_index]
-    depths += (np.ravel(node_indicator.sum(axis=1)) + _average_path_length(n_samples_leaf) - 1.0)
+    depths += (
+        np.ravel(node_indicator.sum(axis=1))
+        + _average_path_length(n_samples_leaf)
+        - 1.0
+    )
     scores = 2 ** (-depths / (1 * _average_path_length([iforest.max_samples_])))
     return scores
-

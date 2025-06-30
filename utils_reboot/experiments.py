@@ -1,57 +1,69 @@
-from typing import Type,Union
+from typing import Type, Union
 
 import sys
 import os
+import ipdb
 
 from append_to_path import append_dirname
+
 append_dirname("ExIFFI_Industrial_Test")
 
-realpath = os.path.realpath(__file__) # true path of this script
-realpath = os.path.dirname(realpath) # go up one dir
-realpath = os.path.dirname(realpath) # go up one dir
-sys.path.append(realpath) # appened to sys path
+realpath = os.path.realpath(__file__)  # true path of this script
+realpath = os.path.dirname(realpath)  # go up one dir
+realpath = os.path.dirname(realpath)  # go up one dir
+sys.path.append(realpath)  # appened to sys path
 
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm,trange
+from tqdm import tqdm, trange
 import copy
 
 from ExIFFI_C.model_reboot.EIF_reboot import ExtendedIsolationForest
 from model_reboot.interpretability_module import *
 from utils_reboot.datasets import Dataset
-from utils_reboot.utils import save_element,open_element
+from utils_reboot.utils import save_element, open_element
 import sklearn
 import shap
 from sklearn.ensemble import IsolationForest
 from sklearn.ensemble import RandomForestRegressor
-from ACME.ACME import ACME 
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score, average_precision_score, balanced_accuracy_score
+from ACME.ACME import ACME
+from sklearn.metrics import (
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
+)
 
 import pickle
 import time
 import pandas as pd
 
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 cwd = os.getcwd()
-#import ipdb; ipdb.set_trace()
+# import ipdb; ipdb.set_trace()
 cwd = os.path.dirname(cwd)
 filename = cwd + "/utils_reboot/time_scaling_ind.pickle"
 
-# dict_time = {1:{"fit":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}}, 
+# dict_time = {1:{"fit":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
 #         "predict":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
 #         "importances":{"EXIFFI+":{},"EXIFFI":{},"DIFFI":{},"RandomForest":{}}},
-#         2:{"fit":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}}, 
+#         2:{"fit":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
 #         "predict":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
 #         "importances":{"EXIFFI+":{},"EXIFFI":{},"DIFFI":{},"RandomForest":{}}}}
 
 if not os.path.exists(filename):
+    dict_time = {
+        "fit": {"EIF+": {}, "C_EIF+": {}},
+        "predict": {"EIF+": {}, "C_EIF+": {}},
+        "importances": {"EXIFFI+": {}, "C_EXIFFI+": {}},
+    }
 
-    dict_time = {"fit":{"EIF+":{},"C_EIF+":{}}, 
-            "predict":{"EIF+":{},"C_EIF+":{}},
-            "importances":{"EXIFFI+":{},"C_EXIFFI+":{}}}
-    
     # if the folder exists, create the file
     if os.path.exists(os.path.dirname(filename)):
         with open(filename, "wb") as file:
@@ -61,14 +73,14 @@ if os.path.exists(filename):
     with open(filename, "rb") as file:
         dict_time = pickle.load(file)
 
-    
 
-def compute_global_importances(I: Type[ExtendedIsolationForest],
-                        dataset: Type[Dataset],
-                        p = 0.1,
-                        interpretation="EXIFFI+",
-                        fit_model = True) -> np.array: 
-    
+def compute_global_importances(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    p=0.1,
+    interpretation="EXIFFI+",
+    fit_model=True,
+) -> np.array:
     """
     Compute the global feature importances for an interpration model on a specific dataset.
 
@@ -85,24 +97,32 @@ def compute_global_importances(I: Type[ExtendedIsolationForest],
     """
 
     if fit_model:
-        I.fit(dataset.X_train)        
-    if interpretation=="DIFFI":
-        fi,_=diffi_ib(I,dataset.X_test)
-    elif interpretation=="EXIFFI" or interpretation=='EXIFFI+' or interpretation=='C_EXIFFI+':
-        fi=I.global_importances(dataset.X_test,p)
-    elif interpretation=="RandomForest":
+        I.fit(dataset.X_train)
+    if interpretation == "DIFFI":
+        fi, _ = diffi_ib(I, dataset.X_test)
+    elif (
+        interpretation == "EXIFFI"
+        or interpretation == "EXIFFI+"
+        or interpretation == "C_EXIFFI+"
+    ):
+        fi = I.global_importances(dataset.X_test, p)
+    elif interpretation == "RandomForest":
         rf = RandomForestRegressor()
         rf.fit(dataset.X_test, I.predict(dataset.X_test))
         fi = rf.feature_importances_
+    else:
+        raise ValueError("Interpretation algorithm not found")
     return fi
 
-def compute_local_importances(I: Type[ExtendedIsolationForest],
-                        dataset: Type[Dataset],
-                        p = 0.1,
-                        interpretation="EXIFFI+",
-                        fit_model = True,
-                        return_pred_labels:bool=False) -> np.array: 
-    
+
+def compute_local_importances(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    p=0.1,
+    interpretation="EXIFFI+",
+    fit_model=True,
+    return_pred_labels: bool = False,
+) -> np.array:
     """
     Compute the local feature importances for an interpration model on a specific dataset.
 
@@ -121,42 +141,50 @@ def compute_local_importances(I: Type[ExtendedIsolationForest],
     if fit_model:
         I.fit(dataset.X_train)
 
-    y_pred=I._predict(dataset.X_test,p).astype(int)
-    anomalies=dataset.X_test[np.where(y_pred==1)[0]]
+    y_pred = I._predict(dataset.X_test, p).astype(int)
+    anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
 
-    #import ipdb;ipdb.set_trace()
+    # import ipdb;ipdb.set_trace()
 
-    print('Computing Local Importances...')
-    print('#'*50)
+    print("Computing Local Importances...")
+    print("#" * 50)
 
-    if interpretation=="DIFFI":
-        fi,_=local_diffi_batch(model=I,X=anomalies)
-    elif interpretation=="EXIFFI" or interpretation=='EXIFFI+' or interpretation=='C_EXIFFI+':
-        fi=I.local_importances(anomalies)
+    if interpretation == "DIFFI":
+        fi, _ = local_diffi_batch(model=I, X=anomalies)
+    elif (
+        interpretation == "EXIFFI"
+        or interpretation == "EXIFFI+"
+        or interpretation == "C_EXIFFI+"
+    ):
+        fi = I.local_importances(anomalies)
 
-    print('Local Importances computed')
+    print("Local Importances computed")
 
-    fi=pd.DataFrame(fi,columns=dataset.feature_names)
+    fi = pd.DataFrame(fi, columns=dataset.feature_names)
 
     if return_pred_labels:
         return fi, y_pred
 
     return fi
 
-# Score function for EIF/EIF+ ACME 
-def EIF_score_function(model,data):
+
+# Score function for EIF/EIF+ ACME
+def EIF_score_function(model, data):
     return model.predict(data)
 
-# Score function for IF ACME
-def IF_score_function(model,data):
-    return 0.5 * (- model.decision_function(data) + 1)
 
-def compute_imp_time_ACME(I: Type[ExtendedIsolationForest],
-                                   dataset: Type[Dataset],
-                                   p = 0.1,
-                                   n_quantiles:int=70,
-                                   fit_model = True) -> np.array: 
-    
+# Score function for IF ACME
+def IF_score_function(model, data):
+    return 0.5 * (-model.decision_function(data) + 1)
+
+
+def compute_imp_time_ACME(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    p=0.1,
+    n_quantiles: int = 70,
+    fit_model=True,
+) -> np.array:
     """
     Compute the local feature importances using the ACME interpretation model on a specific dataset.
 
@@ -164,7 +192,7 @@ def compute_imp_time_ACME(I: Type[ExtendedIsolationForest],
         I (Type[ExtendedIsolationForest]): The AD model.
         dataset (Type[Dataset]): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
-        n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70. 
+        n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70.
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
 
     Returns:
@@ -175,38 +203,49 @@ def compute_imp_time_ACME(I: Type[ExtendedIsolationForest],
     if fit_model:
         I.fit(dataset.X_train)
 
-    y_pred=I._predict(dataset.X_test,p).astype(int)
-    anomalies=dataset.X_test[np.where(y_pred==1)[0]]
+    y_pred = I._predict(dataset.X_test, p).astype(int)
+    anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
 
-    print('Computing ACME Local Importances (for a single anomaly)')
-    print('#'*50)
+    print("Computing ACME Local Importances (for a single anomaly)")
+    print("#" * 50)
 
-    data_acme=pd.DataFrame(dataset.X_test,columns=dataset.feature_names)
-    data_acme_anomalies=pd.DataFrame(anomalies,columns=dataset.feature_names)
-    data_acme["Score"]=EIF_score_function(I,dataset.X_test)
-    data_acme_anomalies["Score"]=EIF_score_function(I,anomalies)
+    data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
+    data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
+    data_acme["Score"] = EIF_score_function(I, dataset.X_test)
+    data_acme_anomalies["Score"] = EIF_score_function(I, anomalies)
 
-    acme_exp = ACME(I, "Score", dataset.feature_names, K=n_quantiles, task = "ad", score_function=EIF_score_function)
+    acme_exp = ACME(
+        I,
+        "Score",
+        dataset.feature_names,
+        K=n_quantiles,
+        task="ad",
+        score_function=EIF_score_function,
+    )
     acme_exp = acme_exp.explain(data_acme, True)
 
-    start=time.time()
-    acme_loc = acme_exp.explain_local(data_acme_anomalies.iloc[np.random.randint(0,len(data_acme_anomalies),1)[0]])
+    start = time.time()
+    acme_loc = acme_exp.explain_local(
+        data_acme_anomalies.iloc[np.random.randint(0, len(data_acme_anomalies), 1)[0]]
+    )
     acme_loc.feature_importance(local=True)
-    acme_time = time.time()-start
+    acme_time = time.time() - start
 
-    print('Local Importances computed')
+    print("Local Importances computed")
 
-    #import ipdb;ipdb.set_trace()
+    # import ipdb;ipdb.set_trace()
 
     return acme_time
 
-def compute_local_importances_ACME(I: Type[ExtendedIsolationForest],
-                                   dataset: Type[Dataset],
-                                   model:str = 'EIF+',
-                                   p = 0.1,
-                                   n_quantiles:int=70,
-                                   fit_model = True) -> np.array: 
-    
+
+def compute_local_importances_ACME(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    model: str = "EIF+",
+    p=0.1,
+    n_quantiles: int = 70,
+    fit_model=True,
+) -> np.array:
     """
     Compute the local feature importances using the ACME interpretation model on a specific dataset.
 
@@ -215,7 +254,7 @@ def compute_local_importances_ACME(I: Type[ExtendedIsolationForest],
         dataset (Type[Dataset]): Input dataset.
         model (str): The name of the model to explain with ACME. Defaults to 'EIF+'.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
-        n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70. 
+        n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70.
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
 
     Returns:
@@ -229,49 +268,65 @@ def compute_local_importances_ACME(I: Type[ExtendedIsolationForest],
         else:
             I.fit(dataset.X_train)
 
-    if model == 'IF':
-        y_pred=I.predict(dataset.X_test)
-        #import ipdb; ipdb.set_trace()
-        y_pred=np.vectorize(lambda x: 1 if x == -1 else 0)(y_pred)
-        anomalies=dataset.X_test[np.where(y_pred==1)[0]]
-        score_function=IF_score_function
+    if model == "IF":
+        y_pred = I.predict(dataset.X_test)
+        # import ipdb; ipdb.set_trace()
+        y_pred = np.vectorize(lambda x: 1 if x == -1 else 0)(y_pred)
+        anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
+        score_function = IF_score_function
     else:
-        y_pred=I._predict(dataset.X_test,p).astype(int)
-        anomalies=dataset.X_test[np.where(y_pred==1)[0]]
-        score_function=EIF_score_function
+        y_pred = I._predict(dataset.X_test, p).astype(int)
+        anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
+        score_function = EIF_score_function
 
-    import ipdb; ipdb.set_trace()
+    import ipdb
 
-    data_acme=pd.DataFrame(dataset.X_test,columns=dataset.feature_names)
-    data_acme_anomalies=pd.DataFrame(anomalies,columns=dataset.feature_names)
-    data_acme["Score"]=score_function(I,dataset.X_test)
-    data_acme_anomalies["Score"]=score_function(I,anomalies)
-    acme_exp = ACME(I, "Score", dataset.feature_names, K=n_quantiles, task = "ad", score_function=score_function)
+    ipdb.set_trace()
+
+    data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
+    data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
+    data_acme["Score"] = score_function(I, dataset.X_test)
+    data_acme_anomalies["Score"] = score_function(I, anomalies)
+    acme_exp = ACME(
+        I,
+        "Score",
+        dataset.feature_names,
+        K=n_quantiles,
+        task="ad",
+        score_function=score_function,
+    )
     acme_exp = acme_exp.explain(data_acme, True)
 
-    imp_mat = pd.DataFrame(columns = dataset.feature_names)
+    imp_mat = pd.DataFrame(columns=dataset.feature_names)
 
-    for i in tqdm(data_acme_anomalies.index.tolist(),desc='Computing ACME Local Importances on anomalies'):
-            acme_loc = acme_exp.explain_local(data_acme_anomalies.loc[i])
-            feature_table=acme_loc.feature_importance(local=True,weights={'delta':0.3, 'change':0.3, 'distance':0.2, 'ratio':0.2})
-            local_imp = feature_table['importance'].reindex(dataset.feature_names)
-            local_imp_values = local_imp.values
-            imp_mat.loc[i] = local_imp_values
+    for i in tqdm(
+        data_acme_anomalies.index.tolist(),
+        desc="Computing ACME Local Importances on anomalies",
+    ):
+        acme_loc = acme_exp.explain_local(data_acme_anomalies.loc[i])
+        feature_table = acme_loc.feature_importance(
+            local=True,
+            weights={"delta": 0.3, "change": 0.3, "distance": 0.2, "ratio": 0.2},
+        )
+        local_imp = feature_table["importance"].reindex(dataset.feature_names)
+        local_imp_values = local_imp.values
+        imp_mat.loc[i] = local_imp_values
 
-    print('Local Importances computed')
+    print("Local Importances computed")
 
-    #import ipdb;ipdb.set_trace()
+    # import ipdb;ipdb.set_trace()
 
     return imp_mat
 
 
-def compute_imp_time_kernelSHAP(I: Type[ExtendedIsolationForest],
-                                 dataset: Type[Dataset],
-                                 p: float = 0.1,
-                                 background:float=0.1,
-                                 pre_process:float=False,
-                                 scenario:int=2) -> float: 
-    
+def compute_imp_time_kernelSHAP(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    p: float = 0.1,
+    background: float = 0.1,
+    pre_process: float = False,
+    scenario: int = 2,
+) -> float:
     """
     Compute the time to compute the local feature importances for an anomalous point using the KernelSHAP method.
 
@@ -282,31 +337,31 @@ def compute_imp_time_kernelSHAP(I: Type[ExtendedIsolationForest],
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
         scenario (int): The scenario of the experiment. Defaults to 2.
-    
+
     Returns:
-        The time to compute the local feature importances for a single anomaly 
+        The time to compute the local feature importances for a single anomaly
     """
 
     I.fit(dataset.X_train)
 
-    y_pred=I._predict(dataset.X_test,p).astype(int)
-    anomalies=dataset.X_test[np.where(y_pred==1)[0]]
-    anomaly=anomalies[np.random.randint(0,anomalies.shape[0],1)[0],:]
+    y_pred = I._predict(dataset.X_test, p).astype(int)
+    anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
+    anomaly = anomalies[np.random.randint(0, anomalies.shape[0], 1)[0], :]
 
-    print('Computing KernelSHAP Local Importances (for a single anomaly)')
-    print('#'*50)
+    print("Computing KernelSHAP Local Importances (for a single anomaly)")
+    print("#" * 50)
 
     # Downsample the dataset to the background size
-    dataset.downsample(max_samples=int(background*dataset.X.shape[0]))
+    dataset.downsample(max_samples=int(background * dataset.X.shape[0]))
 
-    dataset.split_dataset(train_size=1-dataset.perc_outliers,contamination=0)
+    dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
 
-    if pre_process and scenario==2:
+    if pre_process and scenario == 2:
         dataset.initialize_test()
         dataset.pre_process()
-    elif scenario==2 and not pre_process:
+    elif scenario == 2 and not pre_process:
         dataset.initialize_test()
-    elif scenario==1 and not pre_process:
+    elif scenario == 1 and not pre_process:
         dataset.initialize_train_test()
 
     def EIF_score_function_shap(data):
@@ -315,19 +370,21 @@ def compute_imp_time_kernelSHAP(I: Type[ExtendedIsolationForest],
     start_time = time.time()
     shap_explainer = shap.KernelExplainer(EIF_score_function_shap, dataset.X_test)
     shap_values = shap_explainer.shap_values(anomaly)
-    shap_time = time.time()-start_time
+    shap_time = time.time() - start_time
 
     return shap_time
 
-def compute_local_importances_kernelSHAP(I: Type[ExtendedIsolationForest],
-                                 dataset: Type[Dataset],
-                                 background:float=0.1,
-                                 pre_process:float=False,
-                                 scenario:int=2,
-                                 n_anomalies:int=100) -> float: 
-    
+
+def compute_local_importances_kernelSHAP(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    background: float = 0.1,
+    pre_process: float = False,
+    scenario: int = 2,
+    n_anomalies: int = 100,
+) -> float:
     """
-    Compute the local importance score for a certain number of anomalies with KernelSHAP method 
+    Compute the local importance score for a certain number of anomalies with KernelSHAP method
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
@@ -336,10 +393,10 @@ def compute_local_importances_kernelSHAP(I: Type[ExtendedIsolationForest],
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
         scenario (int): The scenario of the experiment. Defaults to 2.
-        n_anomalies (int): Number of anomalies on which to compute the importance scores 
-    
+        n_anomalies (int): Number of anomalies on which to compute the importance scores
+
     Returns:
-        The time to compute the local feature importances for a single anomaly 
+        The time to compute the local feature importances for a single anomaly
     """
 
     def EIF_score_function_shap(data):
@@ -351,50 +408,53 @@ def compute_local_importances_kernelSHAP(I: Type[ExtendedIsolationForest],
     # anomalies=dataset.X_test[np.where(y_pred==1)[0]]
     # anomaly=anomalies[np.random.randint(0,anomalies.shape[0],1)[0],:]
 
-    print(f'Computing KernelSHAP importance scores for the {n_anomalies} most anomalous points')
-    print('#'*50)
+    print(
+        f"Computing KernelSHAP importance scores for the {n_anomalies} most anomalous points"
+    )
+    print("#" * 50)
 
     # Downsample the dataset to the background size
-    dataset.downsample(max_samples=int(background*dataset.X.shape[0]))
+    dataset.downsample(max_samples=int(background * dataset.X.shape[0]))
 
-    dataset.split_dataset(train_size=1-dataset.perc_outliers,contamination=0)
+    dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
 
-    if pre_process and scenario==2:
+    if pre_process and scenario == 2:
         dataset.initialize_test()
         dataset.pre_process()
-    elif scenario==2 and not pre_process:
+    elif scenario == 2 and not pre_process:
         dataset.initialize_test()
-    elif scenario==1 and not pre_process:
+    elif scenario == 1 and not pre_process:
         dataset.initialize_train_test()
 
-    scores=EIF_score_function(dataset.X_test)
+    scores = EIF_score_function(dataset.X_test)
     # Find the n_anomalies most anomalous points
-    anomalies_idx=np.argsort(scores)[:n_anomalies]
-    anomalies=dataset.X_test[anomalies_idx]
+    anomalies_idx = np.argsort(scores)[:n_anomalies]
+    anomalies = dataset.X_test[anomalies_idx]
 
-    # Compute the shap_values for all the selected anomalies 
-    imp_mat=np.zeros((n_anomalies,dataset.X_test.shape[1]))
+    # Compute the shap_values for all the selected anomalies
+    imp_mat = np.zeros((n_anomalies, dataset.X_test.shape[1]))
     shap_explainer = shap.KernelExplainer(EIF_score_function_shap, dataset.X_test)
-    for i,anomaly in enumerate(anomalies):
-        imp_mat[i,:] = shap_explainer.shap_values(anomaly)
+    for i, anomaly in enumerate(anomalies):
+        imp_mat[i, :] = shap_explainer.shap_values(anomaly)
 
-        if i%5==0:
-            print("#"*50)
-            print(f'Computed importance score of {i} anomalies ')
-            print(imp_mat[i-5:i,:])
-            print("#"*50)
+        if i % 5 == 0:
+            print("#" * 50)
+            print(f"Computed importance score of {i} anomalies ")
+            print(imp_mat[i - 5 : i, :])
+            print("#" * 50)
 
     return imp_mat
 
 
-def compute_local_imp_time(I: Type[ExtendedIsolationForest],
-                           dataset: Type[Dataset],
-                           anomalies: npt.NDArray,
-                           p: float = 0.1,
-                           n_quantiles: int = 70,
-                           interpretation: str = "EXIFFI+",
-                           n_runs: int = 10) -> float:
-    
+def compute_local_imp_time(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    anomalies: npt.NDArray,
+    p: float = 0.1,
+    n_quantiles: int = 70,
+    interpretation: str = "EXIFFI+",
+    n_runs: int = 10,
+) -> float:
     """
     Compute the time to compute the local feature importances for a number of runs.
 
@@ -405,64 +465,84 @@ def compute_local_imp_time(I: Type[ExtendedIsolationForest],
         n_runs (int): The number of runs. Defaults to 10.
 
     Returns:
-        The average time to compute the local feature importances for single anomalies 
+        The average time to compute the local feature importances for single anomalies
     """
 
     times = []
-    if interpretation=="DIFFI":
-        for i in trange(n_runs,desc='DIFFI Local Importances runs'):
-            anomaly=anomalies[np.random.randint(0,anomalies.shape[0],1)[0],:]
+    if interpretation == "DIFFI":
+        for i in trange(n_runs, desc="DIFFI Local Importances runs"):
+            anomaly = anomalies[np.random.randint(0, anomalies.shape[0], 1)[0], :]
             start_time = time.time()
-            importances,_=local_diffi(I,anomaly)
-            times.append(time.time()-start_time)
-    elif interpretation=="EXIFFI" or interpretation=='EXIFFI+' or interpretation=='C_EXIFFI+':
-        for i in trange(n_runs,desc='EXIFFI Local Importances runs'):
-            anomaly=anomalies[np.random.randint(0,anomalies.shape[0],1)[0],:].reshape(1,-1)
+            importances, _ = local_diffi(I, anomaly)
+            times.append(time.time() - start_time)
+    elif (
+        interpretation == "EXIFFI"
+        or interpretation == "EXIFFI+"
+        or interpretation == "C_EXIFFI+"
+    ):
+        for i in trange(n_runs, desc="EXIFFI Local Importances runs"):
+            anomaly = anomalies[
+                np.random.randint(0, anomalies.shape[0], 1)[0], :
+            ].reshape(1, -1)
             start_time = time.time()
-            importances=I.local_importances(anomaly)
-            times.append(time.time()-start_time)
-    elif interpretation=="ACME":
-        for i in trange(n_runs,desc='ACME Local Importances runs'):
-            importances_time=compute_imp_time_ACME(I,dataset,p=p,n_quantiles=n_quantiles)
+            importances = I.local_importances(anomaly)
+            times.append(time.time() - start_time)
+    elif interpretation == "ACME":
+        for i in trange(n_runs, desc="ACME Local Importances runs"):
+            importances_time = compute_imp_time_ACME(
+                I, dataset, p=p, n_quantiles=n_quantiles
+            )
             times.append(importances_time)
 
     return np.mean(times)
 
-    
-def compute_bars(dataset: Type[Dataset],
-                 importances_file: str,
-                 filetype: str = 'npz',
-                 model: str = 'EIF+',
-                 interpretation: str = 'EXIFFI+'
-                 ) -> pd.DataFrame: 
-    
-    if  isinstance(dataset.feature_names, np.ndarray):
+
+def compute_bars(
+    dataset: Type[Dataset],
+    importances_file: str,
+    filetype: str = "npz",
+    model: str = "EIF+",
+    interpretation: str = "EXIFFI+",
+) -> pd.DataFrame:
+    if isinstance(dataset.feature_names, np.ndarray):
         col_names = dataset.feature_names.astype(str)
     elif isinstance(dataset.feature_names, list):
         col_names = dataset.feature_names
 
     try:
-        if filetype=='npz':
-            importances = open_element(importances_file, filetype='npz')
-        elif filetype=='csv.gz':
-            importances = open_element(importances_file, filetype='csv.gz').values
+        if filetype == "npz":
+            importances = open_element(importances_file, filetype="npz")
+        elif filetype == "csv.gz":
+            importances = open_element(importances_file, filetype="csv.gz").values
     except:
         raise Exception("The file path is not valid")
-    
-    importances_matrix = np.array([np.array(pd.Series(x).sort_values(ascending = False).index).T for x in importances])
-    dim=int(importances.shape[1])
 
-    bars = [[(list(importances_matrix[:,j]).count(i)/len(importances_matrix))*100 for i in range(dim)] for j in range(dim)]
-    bars = pd.DataFrame(bars,columns=col_names)
+    importances_matrix = np.array(
+        [
+            np.array(pd.Series(x).sort_values(ascending=False).index).T
+            for x in importances
+        ]
+    )
+    dim = int(importances.shape[1])
 
-    return bars 
+    bars = [
+        [
+            (list(importances_matrix[:, j]).count(i) / len(importances_matrix)) * 100
+            for i in range(dim)
+        ]
+        for j in range(dim)
+    ]
+    bars = pd.DataFrame(bars, columns=col_names)
+
+    return bars
 
 
-def fit_predict_experiment(I: Type[ExtendedIsolationForest],
-                            dataset: Type[Dataset],
-                            n_runs:int = 40,
-                            model='EIF+') -> tuple[float,float]:
-    
+def fit_predict_experiment(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    n_runs: int = 40,
+    model="EIF+",
+) -> tuple[float, float]:
     """
     Fit and predict the model on the dataset for a number of runs and keep track of the fit and predict times.
 
@@ -478,40 +558,43 @@ def fit_predict_experiment(I: Type[ExtendedIsolationForest],
 
     fit_times = []
     predict_times = []
-    
+
     for i in trange(n_runs):
         start_time = time.time()
         I.fit(dataset.X_train)
         fit_time = time.time() - start_time
-        if i>3:  
+        if i > 3:
             fit_times.append(fit_time)
-            dict_time["fit"][I.name].setdefault(dataset.name, []).append(fit_time) 
-        
+            dict_time["fit"][I.name].setdefault(dataset.name, []).append(fit_time)
+
         start_time = time.time()
-        if model in ['EIF','EIF+','C_EIF+']:
-            _=I._predict(dataset.X_test,p=dataset.perc_outliers)
+        if model in ["EIF", "EIF+", "C_EIF+"]:
+            _ = I._predict(dataset.X_test, p=dataset.perc_outliers)
             predict_time = time.time() - start_time
-        elif model in ['sklearn_IF','DIF','AnomalyAutoencoder']:
-            _=I.predict(dataset.X_test)
+        elif model in ["sklearn_IF", "DIF", "AnomalyAutoencoder"]:
+            _ = I.predict(dataset.X_test)
             predict_time = time.time() - start_time
 
-        if i>3:
+        if i > 3:
             predict_times.append(predict_time)
-            dict_time["predict"][I.name].setdefault(dataset.name, []).append(predict_time)
+            dict_time["predict"][I.name].setdefault(dataset.name, []).append(
+                predict_time
+            )
 
     with open(filename, "wb") as file:
         pickle.dump(dict_time, file)
 
     return np.mean(fit_times), np.mean(predict_times)
-                        
-def experiment_global_importances(I:Type[ExtendedIsolationForest],
-                               dataset:Type[Dataset],
-                               n_runs:int=10, 
-                               p:float=0.1,
-                               model:str="EIF+",
-                               interpretation:str="EXIFFI+"
-                               ) -> tuple[np.array, float]:
-    
+
+
+def experiment_global_importances(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    n_runs: int = 10,
+    p: float = 0.1,
+    model: str = "EIF+",
+    interpretation: str = "EXIFFI+",
+) -> tuple[np.array, float]:
     """
     Compute the global feature importances for an interpration model on a specific dataset for a number of runs.
 
@@ -522,41 +605,41 @@ def experiment_global_importances(I:Type[ExtendedIsolationForest],
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         model (str): The name of the model. Defaults to 'EIF+'.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
-    
+
     Returns:
         The global feature importances vectors for the different runs and the average importances times.
     """
 
-    fi=np.zeros(shape=(n_runs,dataset.X.shape[1]))
-    #imp_times=[]
-    for i in tqdm(trange(n_runs,desc='Global Importances runs')):
-        #start_time = time.time()
-        fi[i,:]=compute_global_importances(I,
-                        dataset,
-                        p = p,
-                        interpretation=interpretation)
-        #gfi_time = time.time() - start_time
+    fi = np.zeros(shape=(n_runs, dataset.X.shape[1]))
+    # imp_times=[]
+    for i in tqdm(trange(n_runs, desc="Global Importances runs")):
+        # start_time = time.time()
+        fi[i, :] = compute_global_importances(
+            I, dataset, p=p, interpretation=interpretation
+        )
+        # gfi_time = time.time() - start_time
         # if i>3:
         #     imp_times.append(gfi_time)
         #     dict_time["importances"][interpretation].setdefault(dataset.name, []).append(gfi_time)
-            #print(f'Added time {str(gfi_time)} to time dict')
-    
+        # print(f'Added time {str(gfi_time)} to time dict')
+
     # with open(filename, "wb") as file:
     #     pickle.dump(dict_time, file)
-    #return fi,np.mean(imp_times)
+    # return fi,np.mean(imp_times)
 
-    fi=pd.DataFrame(fi,columns=dataset.feature_names)
+    fi = pd.DataFrame(fi, columns=dataset.feature_names)
 
-    return fi 
+    return fi
 
-def experiment_local_importances(I:Type[ExtendedIsolationForest],
-                               dataset:Type[Dataset],
-                               n_runs:int=10, 
-                               p:float=0.1,
-                               model:str="EIF+",
-                               interpretation:str="EXIFFI+"
-                               ) -> tuple[np.array, float]:
-    
+
+def experiment_local_importances(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    n_runs: int = 10,
+    p: float = 0.1,
+    model: str = "EIF+",
+    interpretation: str = "EXIFFI+",
+) -> tuple[np.array, float]:
     """
     Compute the local feature importances for an interpration model on a specific dataset for a number of runs.
 
@@ -567,166 +650,178 @@ def experiment_local_importances(I:Type[ExtendedIsolationForest],
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         model (str): The name of the model. Defaults to 'EIF+'.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
-    
+
     Returns:
         The average local feature importances vectors for the different runs and the average importances times.
     """
 
-    cumul_imp=np.zeros(dataset.shape)
-    for i in tqdm(trange(n_runs,desc='Local Importances runs')):
-        fi,labels=compute_local_importances(I,
-                    dataset,
-                    interpretation=interpretation,
-                    p=p,
-                    return_pred_labels=True)
-    
-        anomaly_idx=np.where(labels==1)[0]
-        cumul_imp[anomaly_idx]+=(fi.values)
-    
-    cumul_imp/=n_runs
-    cumul_imp=pd.DataFrame(cumul_imp,columns=dataset.feature_names)
-    labels=cumul_imp.ne(0).any(axis=1)
-    cumul_imp=cumul_imp[labels]
+    cumul_imp = np.zeros(dataset.shape)
+    for i in tqdm(trange(n_runs, desc="Local Importances runs")):
+        fi, labels = compute_local_importances(
+            I, dataset, interpretation=interpretation, p=p, return_pred_labels=True
+        )
 
-    #import ipdb; ipdb.set_trace()
-    
-    return cumul_imp,labels.astype(int)
+        anomaly_idx = np.where(labels == 1)[0]
+        cumul_imp[anomaly_idx] += fi.values
 
-def compute_plt_data(imp_path:str,
-                     filetype:str='npz') -> dict:
+    cumul_imp /= n_runs
+    cumul_imp = pd.DataFrame(cumul_imp, columns=dataset.feature_names)
+    labels = cumul_imp.ne(0).any(axis=1)
+    cumul_imp = cumul_imp[labels]
 
+    # import ipdb; ipdb.set_trace()
+
+    return cumul_imp, labels.astype(int)
+
+
+def compute_plt_data(imp_path: str, filetype: str = "npz") -> dict:
     """
-    Compute statistics on the global feature importances obtained from experiment_global_importances. These will then be used in the score_plot method. 
+    Compute statistics on the global feature importances obtained from experiment_global_importances. These will then be used in the score_plot method.
 
     Args:
         imp_path (str): The path to the importances file.
         filetype (str): The type of the importances file. Defaults to 'npz'.
-    
+
     Returns:
         The dictionary containing the mean importances, the feature order, and the standard deviation of the importances.
     """
 
-    if filetype=="npz":
-        fi = np.load(imp_path)['element']
-    elif filetype=="csv.gz":
-        fi=open_element(imp_path,filetype="csv.gz").values
+    if filetype == "npz":
+        fi = np.load(imp_path)["element"]
+    elif filetype == "csv.gz":
+        fi = open_element(imp_path, filetype="csv.gz").values
 
     # Handle the case in which there are some np.nan in the fi array
     if np.isnan(fi).any():
-        #Substitute the np.nan values with 0  
-        #fi=np.nan_to_num(fi,nan=0)
-        mean_imp = np.nanmean(fi,axis=0)
-        std_imp = np.nanstd(fi,axis=0)
+        # Substitute the np.nan values with 0
+        # fi=np.nan_to_num(fi,nan=0)
+        mean_imp = np.nanmean(fi, axis=0)
+        std_imp = np.nanstd(fi, axis=0)
     else:
-        mean_imp = np.mean(fi,axis=0)
-        std_imp = np.std(fi,axis=0)
+        mean_imp = np.mean(fi, axis=0)
+        std_imp = np.std(fi, axis=0)
 
-    #(score - minscore)/(maxscore-minscore)
-    
+    # (score - minscore)/(maxscore-minscore)
+
     feat_ordered = mean_imp.argsort()
     mean_ordered = mean_imp[feat_ordered]
     std_ordered = std_imp[feat_ordered]
-    normalize_mean_ordered = (mean_ordered - mean_ordered.min()) / (mean_ordered.max() - mean_ordered.min())
+    normalize_mean_ordered = (mean_ordered - mean_ordered.min()) / (
+        mean_ordered.max() - mean_ordered.min()
+    )
 
-    #import ipdb; ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
 
-    plt_data={'Importances': mean_ordered,
-              'Normalized_imp': normalize_mean_ordered,
-              'feat_order': feat_ordered,
-               'std': std_ordered}
+    plt_data = {
+        "Importances": mean_ordered,
+        "Normalized_imp": normalize_mean_ordered,
+        "feat_order": feat_ordered,
+        "std": std_ordered,
+    }
     return plt_data
-    
 
-def feature_selection(I: Type[ExtendedIsolationForest],
-                      dataset: Type[Dataset],
-                      importances_indexes: npt.NDArray,
-                      n_runs: int = 10, 
-                      inverse: bool = True,
-                      random: bool = False,
-                      scenario:int=2
-                      ) -> np.array:
-        
-        """
-        Perform feature selection on the dataset by dropping features in order of importance.
 
-        Args:
-            I (Type[ExtendedIsolationForest]): The AD model.
-            dataset (Type[Dataset]): Input dataset.
-            importances_indexes (npt.NDArray): The indexes of the features in the dataset.
-            n_runs (int): The number of runs. Defaults to 10.
-            inverse (bool): Whether to drop the features in decreasing order of importance. Defaults to True.
-            random (bool): Whether to drop the features in random order. Defaults to False.
-            scenario (int): The scenario of the experiment. Defaults to 2.
-        
-        Returns:
-            The average precision scores for the different runs.
-        """
-
-        dataset_shrinking = copy.deepcopy(dataset)
-        d = len(importances_indexes)
-        precisions = np.zeros(shape=(d,n_runs))
-        for number_of_features_dropped in tqdm(range(len(importances_indexes))):
-            runs = np.zeros(n_runs)
-            for run in range(n_runs):
-                if random:
-                    importances_indexes = np.random.choice(importances_indexes, len(importances_indexes), replace=False)
-                dataset_shrinking.X = dataset.X_test[:,importances_indexes[:d-number_of_features_dropped]] if not inverse else dataset.X_test[:,importances_indexes[number_of_features_dropped:]]
-                dataset_shrinking.y = dataset.y
-                dataset_shrinking.drop_duplicates()
-                
-                if scenario==2:
-                    dataset_shrinking.split_dataset(1-dataset_shrinking.perc_outliers,0)
-                    dataset_shrinking.initialize_test()
-                else:
-                    dataset_shrinking.initialize_train()
-                    dataset_shrinking.initialize_test()
-
-                #import ipdb; ipdb.set_trace()
-
-                try:
-                    if dataset.X.shape[1] == dataset_shrinking.X.shape[1]:
-                        
-                        start_time = time.time()
-                        I.fit(dataset_shrinking.X_train)
-                        fit_time = time.time() - start_time
-                        
-                        if run >3:
-                            dict_time["fit"][I.name].setdefault(dataset.name, []).append(fit_time)
-                        start_time = time.time()
-                        score = I.predict(dataset_shrinking.X_test)
-                        predict_time = time.time() - start_time
-                        
-                        if run >3:                        
-                            dict_time["predict"][I.name].setdefault(dataset.name, []).append(predict_time)
-                    else:
-                        I.fit(dataset_shrinking.X_train)
-                        score = I.predict(dataset_shrinking.X_test)
-                    avg_prec = sklearn.metrics.average_precision_score(dataset_shrinking.y,score)
-                    # import ipdb;
-                    # ipdb.set_trace()
-                    runs[run] = avg_prec
-                except:
-                    runs[run] = np.nan
-
-            precisions[number_of_features_dropped] = runs
-
-        with open(filename, "wb") as file:
-            pickle.dump(dict_time, file)
-        return precisions
-    
-
-def contamination_in_training_precision_evaluation(I: Type[ExtendedIsolationForest],
-                                                   dataset: Type[Dataset],
-                                                   n_runs: int = 10,
-                                                   train_size = 0.8,
-                                                   contamination_values: npt.NDArray = np.linspace(0.0,0.1,10),
-                                                   compute_GFI:bool=False,
-                                                   interpretation:str="EXIFFI+",
-                                                   pre_process:bool=True, # in the synthetic datasets the dataset should not be pre processed
-                                                   ) -> Union[tuple[np.ndarray, np.ndarray], np.ndarray]:
-    
+def feature_selection(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    importances_indexes: npt.NDArray,
+    n_runs: int = 10,
+    inverse: bool = True,
+    random: bool = False,
+    scenario: int = 2,
+) -> np.array:
     """
-    Evaluate the average precision of the model on the dataset for different contamination values in the training set. 
+    Perform feature selection on the dataset by dropping features in order of importance.
+
+    Args:
+        I (Type[ExtendedIsolationForest]): The AD model.
+        dataset (Type[Dataset]): Input dataset.
+        importances_indexes (npt.NDArray): The indexes of the features in the dataset.
+        n_runs (int): The number of runs. Defaults to 10.
+        inverse (bool): Whether to drop the features in decreasing order of importance. Defaults to True.
+        random (bool): Whether to drop the features in random order. Defaults to False.
+        scenario (int): The scenario of the experiment. Defaults to 2.
+
+    Returns:
+        The average precision scores for the different runs.
+    """
+
+    dataset_shrinking = copy.deepcopy(dataset)
+    d = len(importances_indexes)
+    precisions = np.zeros(shape=(d, n_runs))
+    for number_of_features_dropped in tqdm(range(len(importances_indexes))):
+        runs = np.zeros(n_runs)
+        for run in range(n_runs):
+            if random:
+                importances_indexes = np.random.choice(
+                    importances_indexes, len(importances_indexes), replace=False
+                )
+            dataset_shrinking.X = (
+                dataset.X_test[:, importances_indexes[: d - number_of_features_dropped]]
+                if not inverse
+                else dataset.X_test[:, importances_indexes[number_of_features_dropped:]]
+            )
+            dataset_shrinking.y = dataset.y
+            dataset_shrinking.drop_duplicates()
+
+            if scenario == 2:
+                dataset_shrinking.split_dataset(1 - dataset_shrinking.perc_outliers, 0)
+                dataset_shrinking.initialize_test()
+            else:
+                dataset_shrinking.initialize_train()
+                dataset_shrinking.initialize_test()
+
+            # import ipdb; ipdb.set_trace()
+
+            try:
+                if dataset.X.shape[1] == dataset_shrinking.X.shape[1]:
+                    start_time = time.time()
+                    I.fit(dataset_shrinking.X_train)
+                    fit_time = time.time() - start_time
+
+                    if run > 3:
+                        dict_time["fit"][I.name].setdefault(dataset.name, []).append(
+                            fit_time
+                        )
+                    start_time = time.time()
+                    score = I.predict(dataset_shrinking.X_test)
+                    predict_time = time.time() - start_time
+
+                    if run > 3:
+                        dict_time["predict"][I.name].setdefault(
+                            dataset.name, []
+                        ).append(predict_time)
+                else:
+                    I.fit(dataset_shrinking.X_train)
+                    score = I.predict(dataset_shrinking.X_test)
+                avg_prec = sklearn.metrics.average_precision_score(
+                    dataset_shrinking.y, score
+                )
+                # import ipdb;
+                # ipdb.set_trace()
+                runs[run] = avg_prec
+            except:
+                runs[run] = np.nan
+
+        precisions[number_of_features_dropped] = runs
+
+    with open(filename, "wb") as file:
+        pickle.dump(dict_time, file)
+    return precisions
+
+
+def contamination_in_training_precision_evaluation(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    n_runs: int = 10,
+    train_size=0.8,
+    contamination_values: npt.NDArray = np.linspace(0.0, 0.1, 10),
+    compute_GFI: bool = False,
+    interpretation: str = "EXIFFI+",
+    pre_process: bool = True,  # in the synthetic datasets the dataset should not be pre processed
+) -> Union[tuple[np.ndarray, np.ndarray], np.ndarray]:
+    """
+    Evaluate the average precision of the model on the dataset for different contamination values in the training set.
     The precision values will then be used in the `plot_precision_over_contamination` method
 
     Args:
@@ -740,80 +835,100 @@ def contamination_in_training_precision_evaluation(I: Type[ExtendedIsolationFore
         pre_process (bool): Whether to pre process the dataset. Defaults to True.
 
     Returns:
-        The average precision scores and the global feature importances if `compute_GFI` is True, 
-        otherwise just the average precision scores are returned. 
+        The average precision scores and the global feature importances if `compute_GFI` is True,
+        otherwise just the average precision scores are returned.
     """
 
-    precisions = np.zeros(shape=(len(contamination_values),n_runs))
+    precisions = np.zeros(shape=(len(contamination_values), n_runs))
     if compute_GFI:
-        importances = np.zeros(shape=(len(contamination_values),n_runs,len(contamination_values),dataset.X.shape[1]))
-    for i,contamination in tqdm(enumerate(contamination_values)):
+        importances = np.zeros(
+            shape=(
+                len(contamination_values),
+                n_runs,
+                len(contamination_values),
+                dataset.X.shape[1],
+            )
+        )
+    for i, contamination in tqdm(enumerate(contamination_values)):
         for j in range(n_runs):
-            dataset.split_dataset(train_size,contamination)
+            dataset.split_dataset(train_size, contamination)
             dataset.initialize_test()
 
             if pre_process:
                 dataset.pre_process()
-            
+
             start_time = time.time()
             I.fit(dataset.X_train)
             fit_time = time.time() - start_time
-            
-            if j>3:
+
+            if j > 3:
                 try:
-                    dict_time["fit"][I.name].setdefault(dataset.name, []).append(fit_time)
+                    dict_time["fit"][I.name].setdefault(dataset.name, []).append(
+                        fit_time
+                    )
                 except:
-                    print('Model not recognized: creating a new key in the dict_time for the new model')
-                    dict_time["fit"].setdefault(I.name, {}).setdefault(dataset.name, []).append(fit_time)
-            
+                    print(
+                        "Model not recognized: creating a new key in the dict_time for the new model"
+                    )
+                    dict_time["fit"].setdefault(I.name, {}).setdefault(
+                        dataset.name, []
+                    ).append(fit_time)
+
             if compute_GFI:
-                for k,c in enumerate(contamination_values):
+                for k, c in enumerate(contamination_values):
                     start_time = time.time()
-                    importances[i,j,k,:] = compute_global_importances(I,
-                                                                    dataset,
-                                                                    p=c,
-                                                                    interpretation=interpretation,
-                                                                    fit_model=False)
+                    importances[i, j, k, :] = compute_global_importances(
+                        I, dataset, p=c, interpretation=interpretation, fit_model=False
+                    )
                     gfi_time = time.time() - start_time
-                    if k>3: 
-                        dict_time["importances"][interpretation].setdefault(dataset.name, []).append(gfi_time)
-                    
+                    if k > 3:
+                        dict_time["importances"][interpretation].setdefault(
+                            dataset.name, []
+                        ).append(gfi_time)
+
             start_time = time.time()
             score = I.predict(dataset.X_test)
             predict_time = time.time() - start_time
-            if j>3:
+            if j > 3:
                 try:
-                    dict_time["predict"][I.name].setdefault(dataset.name, []).append(predict_time)
+                    dict_time["predict"][I.name].setdefault(dataset.name, []).append(
+                        predict_time
+                    )
                 except:
-                    print('Model not recognized: creating a new key in the dict_time for the new model')
-                    dict_time["predict"].setdefault(I.name, {}).setdefault(dataset.name, []).append(predict_time)
-            
-            avg_prec = sklearn.metrics.average_precision_score(dataset.y_test,score)
-            #import ipdb; ipdb.set_trace()
-            precisions[i,j] = avg_prec
-    
+                    print(
+                        "Model not recognized: creating a new key in the dict_time for the new model"
+                    )
+                    dict_time["predict"].setdefault(I.name, {}).setdefault(
+                        dataset.name, []
+                    ).append(predict_time)
+
+            avg_prec = sklearn.metrics.average_precision_score(dataset.y_test, score)
+            # import ipdb; ipdb.set_trace()
+            precisions[i, j] = avg_prec
+
     with open(filename, "wb") as file:
         pickle.dump(dict_time, file)
     if compute_GFI:
-        return precisions,importances
+        return precisions, importances
     return precisions
 
-def performance(y_pred:np.array,
-                y_true:np.array,
-                score:np.array,
-                I:Type[ExtendedIsolationForest],
-                model_name:str,
-                dataset:Type[Dataset],
-                contamination:float=0.1,
-                train_size:float=0.8,
-                scenario:int=2,
-                n_runs:int=10,
-                filename:str="",
-                path:str=os.getcwd(),
-                save:bool=True,
-                downsample:bool=False
-                ) -> tuple[pd.DataFrame,str]: 
-    
+
+def performance(
+    y_pred: np.array,
+    y_true: np.array,
+    score: np.array,
+    I: Type[ExtendedIsolationForest],
+    model_name: str,
+    dataset: Type[Dataset],
+    contamination: float = 0.1,
+    train_size: float = 0.8,
+    scenario: int = 2,
+    n_runs: int = 10,
+    filename: str = "",
+    path: str = os.getcwd(),
+    save: bool = True,
+    downsample: bool = False,
+) -> tuple[pd.DataFrame, str]:
     """
     Compute the performance metrics of the model on the dataset.
 
@@ -832,61 +947,70 @@ def performance(y_pred:np.array,
         path (str): The path to the experiments folder. Defaults to os.getcwd().
         save (bool): Whether to save the results. Defaults to True.
         downsample (bool): Whether to downsample the dataset. Defaults to False.
-        
+
     Returns:
         The performance metrics and the path to the results.
     """
-    
+
     # In path insert the local path up to the experiments folder:
     # For Davide → /home/davidefrizzo/Desktop/PHD/ExIFFI/experiments
     # For Alessio → /Users/alessio/Documents/ExIFFI
 
-    y_pred=y_pred.astype(int)
-    y_true=y_true.astype(int)
+    y_pred = y_pred.astype(int)
+    y_true = y_true.astype(int)
 
-    if dataset.X.shape[0]>7500 and downsample:
+    if dataset.X.shape[0] > 7500 and downsample:
         dataset.downsample(max_samples=7500)
 
-    precisions=[]
+    precisions = []
     for i in trange(n_runs):
         I.fit(dataset.X_train)
-        if model_name in ['DIF','AnomalyAutoencoder']:
+        if model_name in ["DIF", "AnomalyAutoencoder"]:
             score = I.decision_function(dataset.X_test)
         else:
             score = I.predict(dataset.X_test)
         precisions.append(average_precision_score(y_true, score))
-    
-    df=pd.DataFrame({
-        "Model": model_name,
-        "Dataset": dataset.name,
-        "Contamination": contamination,
-        "Train Size": train_size,
-        "Precision": precision_score(y_true, y_pred),
-        "Recall": recall_score(y_true, y_pred),
-        "f1 score": f1_score(y_true, y_pred),
-        "Accuracy": accuracy_score(y_true, y_pred),
-        "Balanced Accuracy": balanced_accuracy_score(y_true, y_pred),
-        "Average Precision": np.mean(precisions),
-        "ROC AUC Score": roc_auc_score(y_true, y_pred)
-    }, index=[pd.Timestamp.now()])
 
-    path=path + f"/experiments/results/{dataset.name}/experiments/metrics/{model_name}/" + f"scenario_{str(scenario)}/"
+    df = pd.DataFrame(
+        {
+            "Model": model_name,
+            "Dataset": dataset.name,
+            "Contamination": contamination,
+            "Train Size": train_size,
+            "Precision": precision_score(y_true, y_pred),
+            "Recall": recall_score(y_true, y_pred),
+            "f1 score": f1_score(y_true, y_pred),
+            "Accuracy": accuracy_score(y_true, y_pred),
+            "Balanced Accuracy": balanced_accuracy_score(y_true, y_pred),
+            "Average Precision": np.mean(precisions),
+            "ROC AUC Score": roc_auc_score(y_true, y_pred),
+        },
+        index=[pd.Timestamp.now()],
+    )
+
+    path = (
+        path
+        + f"/experiments/results/{dataset.name}/experiments/metrics/{model_name}/"
+        + f"scenario_{str(scenario)}/"
+    )
 
     if not os.path.exists(path):
         os.makedirs(path)
-    
-    filename=f"perf_{dataset.name}_{model_name}_{scenario}"
+
+    filename = f"perf_{dataset.name}_{model_name}_{scenario}"
 
     if save:
         save_element(df, path, filename)
-    
-    return df,path
 
-def ablation_EIF_plus(I:Type[ExtendedIsolationForest], 
-                      dataset:Type[Dataset], 
-                      eta_list:list[float], 
-                      nruns:int=10) -> list[np.array]:
+    return df, path
 
+
+def ablation_EIF_plus(
+    I: Type[ExtendedIsolationForest],
+    dataset: Type[Dataset],
+    eta_list: list[float],
+    nruns: int = 10,
+) -> list[np.array]:
     """
     Compute the average precision scores for different values of the eta parameter in the EIF+ model.
 
@@ -910,8 +1034,3 @@ def ablation_EIF_plus(I:Type[ExtendedIsolationForest],
             precision.append(average_precision_score(dataset.y_test, score))
         precisions.append(precision)
     return precisions
-        
-        
-    
-
-
