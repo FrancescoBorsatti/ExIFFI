@@ -4,9 +4,16 @@
 SCRIPT_PATH="test_global_importancies.py"
 
 # DATASETS="piade_s2_alarms_no_zeros"
-DATASETS="piade_s2"
+# DATASETS="piade_s2"
+# DATASETS="piade_s2_alarms"
+# DATASETS="TEP"
+DATASETS="TEP_ACME"
 
-DATASET_PATH="../../datasets/data/PIADE/"
+# DATASET_PATH="../../datasets/data/PIADE/"
+DATASET_PATH="../../datasets/data/TEP/"
+
+# model_name="EIF+"
+model_name="EIF+_centroid"
 
 # python $SCRIPT_PATH \
 #     --dataset_name $DATASETS \
@@ -23,11 +30,13 @@ DATASET_PATH="../../datasets/data/PIADE/"
 python $SCRIPT_PATH \
     --dataset_name $DATASETS \
     --dataset_path $DATASET_PATH \
-    --model "EIF+" \
+    --model $model_name \
     --interpretation "EXIFFI+" \
     --scenario 2 \
     --n_estimators 300 \
     --contamination 0.15 \
-    --n_runs 5 \
+    --n_runs 40 \
     --pre_process \
-    --scaler_type 4
+    --scaler_type 4 \
+    --compute_gfi \
+    --score_plot
