@@ -66,7 +66,7 @@ parser.add_argument(
     "--interpretation",
     type=str,
     default="EXIFFI",
-    help="Interpretation method to use: [EXIFFI+, C_EXIFFI+]",
+    help="Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+, DIFFI]",
 )
 parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
 parser.add_argument(
@@ -92,14 +92,19 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-assert args.model_name in [
-    "EIF+",
-    "IF",
-    "EIF+_centroid",
-    "EIF+_distrib_split",
-    "EIF+_centroid_split",
-], "Model not recognized. Accepted values: ['EIF+','C_EIF+']"
+assert (
+    args.model_name
+    in [
+        "EIF",
+        "EIF+",
+        "IF",
+        "EIF+_centroid",
+        "EIF+_distrib_split",
+        "EIF+_centroid_split",
+    ]
+), "Model not recognized. Accepted values: ['EIF','EIF+','IF','EIF+_centroid',EIF+_distrib_split','EIF+_centroid_split']"
 assert args.interpretation in [
+    "EXIFFI",
     "EXIFFI+",
     "C_EXIFFI+",
     "DIFFI",
@@ -111,6 +116,8 @@ if args.interpretation == "EXIFFI+":
         "EIF+_distrib_split",
         "EIF+_centroid_split",
     ], "EXIFFI+ can only be used with the EIF+ model"
+if args.interpretation == "EXIFFI":
+    assert args.model_name == "EIF", "EXIFFI can only be used with the EIF model"
 if args.interpretation == "C_EXIFFI+":
     assert (
         args.model_name == "C_EIF+"
@@ -159,7 +166,20 @@ if args.model_name == "IF":
         model = sklearn_IsolationForest(
             n_estimators=args.n_estimators, max_samples=args.max_samples
         )
+elif args.model_name == "EIF":
+    print("#" * 50)
+    print(f"Using model {args.model_name}")
+    print("#" * 50)
+    model = ExtendedIsolationForest(
+        plus=False,
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
+        max_samples=args.max_samples,
+    )
 elif args.model_name == "EIF+":
+    print("#" * 50)
+    print(f"Using model {args.model_name}")
+    print("#" * 50)
     model = ExtendedIsolationForest(
         plus=True,
         n_estimators=args.n_estimators,
@@ -167,6 +187,9 @@ elif args.model_name == "EIF+":
         max_samples=args.max_samples,
     )
 elif args.model_name == "EIF+_centroid":
+    print("#" * 50)
+    print(f"Using model {args.model_name}")
+    print("#" * 50)
     model = ExtendedIsolationForest(
         plus=True,
         n_estimators=args.n_estimators,
@@ -192,6 +215,8 @@ elif args.model_name == "EIF+_centroid_split":
         use_dist_split=True,
     )
 
+ipdb.set_trace()
+
 os.chdir("../")
 cwd = os.getcwd()
 
@@ -211,11 +236,7 @@ results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
 path_plots = generate_path(
     basepath=results_path,
-    folders=[
-        dataset.name,
-        "plots",
-        "score_plots",
-    ],
+    folders=[dataset.name, "plots", "score_plots", "gfi"],
 )
 
 path_experiment_model_interpretation = generate_path(
@@ -283,9 +304,10 @@ if args.score_plot:
     print("#" * 50)
 
     imp_path = get_most_recent_file(imp_mat_path)
+
     score_plot(
-        dataset,
-        imp_path,
+        dataset=dataset,
+        importances_file=imp_path,
         plot_path=path_plots,
         show_plot=False,
         model=args.model_name,
