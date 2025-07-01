@@ -94,7 +94,6 @@ args = parser.parse_args()
 
 assert args.model_name in [
     "EIF+",
-    "C_EIF+",
     "IF",
     "EIF+_centroid",
     "EIF+_distrib_split",
