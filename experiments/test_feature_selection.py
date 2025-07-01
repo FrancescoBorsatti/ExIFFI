@@ -9,9 +9,9 @@ cwd = os.getcwd()
 # os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
 sys.path.append("..")
 from collections import namedtuple
-from append_to_path import append_dirname
 
-append_dirname("ExIFFI_Industrial_Test")
+# from append_to_path import append_dirname
+# append_dirname("ExIFFI_Industrial_Test")
 
 from utils_reboot.experiments import feature_selection
 from utils_reboot.datasets import Dataset
@@ -154,7 +154,6 @@ else:
     dataset.initialize_train_test()
     print("#" * 50)
 
-
 assert args.model_interpretation in [
     "IF",
     "EIF",
@@ -189,31 +188,27 @@ if args.interpretation == "EXIFFI+":
     ), "EXIFFI+ can only be used with the EIF+ model"
 
 if args.model_name == "IF":
-    if args.interpretation == "EXIFFI" or args.interpretation == "EXIFFI+":
-        model = sklearn_IsolationForest(
-            n_estimators=args.n_estimators, max_samples=args.max_samples
-        )
-    elif args.interpretation == "DIFFI" or args.interpretation == "RandomForest":
-        model = sklearn_IsolationForest(
-            n_estimators=args.n_estimators, max_samples=args.max_samples
-        )
+    model = sklearn_IsolationForest(
+        n_estimators=args.n_estimators, max_samples=args.max_samples
+    )
+
 elif args.model_name == "EIF":
     model = ExtendedIsolationForest(
-        0,
+        plus=False,
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
         max_samples=args.max_samples,
     )
 elif args.model_name == "EIF+":
     model = ExtendedIsolationForest(
-        1,
+        plus=True,
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
         max_samples=args.max_samples,
     )
 elif args.model_name == "EIF+centroid":
     model = ExtendedIsolationForest(
-        1,
+        plus=True,
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
         max_samples=args.max_samples,
