@@ -215,8 +215,6 @@ elif args.model_name == "EIF+_centroid_split":
         use_dist_split=True,
     )
 
-ipdb.set_trace()
-
 os.chdir("../")
 cwd = os.getcwd()
 

@@ -26,7 +26,7 @@ python $SCRIPT_PATH \
     --contamination 0.15 \
     --n_runs 40 \
     --pre_process \
-    --scaler_type 4 \
+    --scaler_type 1 \
     --compute_gfi \
     --score_plot
 
