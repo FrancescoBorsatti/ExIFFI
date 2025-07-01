@@ -213,7 +213,8 @@ def score_plot(
     show_plot=True,
     model: str = "EIF+",
     interpretation: str = "EXIFFI",
-    scenario: int = None,
+    scenario: int = 2,
+    lfi_score_plot: bool = False,
 ) -> tuple[plt.axes, plt.axes]:
     """
     Obtain the Global Feature Importance Score Plot starting from the Global Feature Importance vector.
@@ -226,7 +227,8 @@ def score_plot(
         show_plot (bool, optional): A boolean indicating whether the plot should be displayed. Defaults to True.
         model (str, optional): The AD model on which the importances should be computed. Defaults to 'EIF+'.
         interpretation (str, optional): The interpretation model used. Defaults to 'EXIFFI'.
-        scenario (int, optional): The scenario number. Defaults to None.
+        scenario (int): The scenario number. Defaults to 2
+        lfi_score_plot (bool): Weather we are producing a plot with LFI scores or not. Defaults to False
 
     Returns:
         The two axes objects used to create the plot.
@@ -242,20 +244,19 @@ def score_plot(
     t = time.localtime()
     current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
 
-    if scenario is None:
+    if lfi_score_plot:
         name_file = (
             f"{current_time}_LFI_Score_plot_{dataset.name}_{model}_{interpretation}"
         )
-    elif (
-        (model == "EIF+" and interpretation == "EXIFFI+")
-        or (model == "C_EIF+" and interpretation == "C_EXIFFI+")
-        or (model == "EIF" and interpretation == "EXIFFI")
-    ):
-        name_file = (
-            f"{current_time}_GFI_Score_plot_{dataset.name}_{interpretation}_{scenario}"
-        )
     else:
-        name_file = f"{current_time}_GFI_Score_plot_{dataset.name}_{model}_{interpretation}_{scenario}"
+        if (
+            (model == "EIF+" and interpretation == "EXIFFI+")
+            or (model == "C_EIF+" and interpretation == "C_EXIFFI+")
+            or (model == "EIF" and interpretation == "EXIFFI")
+        ):
+            name_file = f"{current_time}_GFI_Score_plot_{dataset.name}_{interpretation}_{scenario}"
+        else:
+            name_file = f"{current_time}_GFI_Score_plot_{dataset.name}_{model}_{interpretation}_{scenario}"
 
     patterns = [
         None,
