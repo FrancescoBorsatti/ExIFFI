@@ -82,6 +82,12 @@ parser.add_argument(
     "--pre_process", action="store_true", help="If set, preprocess the dataset"
 )
 parser.add_argument(
+    "--scaler_type",
+    type=int,
+    default=1,
+    help="Scaler to use: 1 for StandardScaler, 2 for MinMaxScaler",
+)
+parser.add_argument(
     "--split", action="store_true", help="If set, split the dataset when pre procesing"
 )
 parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
@@ -118,6 +124,16 @@ parser.add_argument(
     default=False,
     help="If set, use the overall local importances to perform feature selection (use it for ACME and KernelSHAP)",
 )
+parser.add_argument(
+    "--feature_selection",
+    action="store_true",
+    help="If set, perform the feature selection experiment",
+)
+parser.add_argument(
+    "--plot_feature_selection",
+    action="store_true",
+    help="If set, perform the feature selection experiment",
+)
 
 # Parse the arguments
 args = parser.parse_args()
@@ -147,7 +163,7 @@ if args.pre_process:
     print("#" * 50)
     print("Preprocessing the dataset...")
     print("#" * 50)
-    dataset.pre_process()
+    dataset.pre_process(scaler_type=args.scaler_type)
 else:
     print("#" * 50)
     print("Dataset not preprocessed")
@@ -286,71 +302,74 @@ Precisions = namedtuple(
     "Precisions", ["direct", "inverse", "dataset", "model", "value"]
 )
 
-print("#" * 50)
-print("Direct Feature Selection experiment")
-print("#" * 50)
+if args.feature_selection:
+    print("#" * 50)
+    print("Direct Feature Selection experiment")
+    print("#" * 50)
 
-direct = feature_selection(
-    I=model,
-    dataset=dataset,
-    importances_indexes=feat_order,
-    n_runs=10,
-    inverse=False,
-    random=False,
-    scenario=args.scenario,
-)
+    direct = feature_selection(
+        I=model,
+        dataset=dataset,
+        importances_indexes=feat_order,
+        n_runs=10,
+        inverse=False,
+        random=False,
+        scenario=args.scenario,
+    )
 
-print("#" * 50)
-print("Inverse Feature Selection experiment")
-print("#" * 50)
+    print("#" * 50)
+    print("Inverse Feature Selection experiment")
+    print("#" * 50)
 
-inverse = feature_selection(
-    I=model,
-    dataset=dataset,
-    importances_indexes=feat_order,
-    n_runs=10,
-    inverse=True,
-    random=False,
-    scenario=args.scenario,
-)
-
-value = abs(np.nansum(np.nanmean(direct, axis=1) - np.nanmean(inverse, axis=1)))
-data = Precisions(direct, inverse, dataset.name, model, value)
-save_fs_prec(data, fs_int_path)
-
-# random feature selection
-if args.compute_random:
-    Precisions_random = namedtuple("Precisions_random", ["random", "dataset", "model"])
-    random_fs = feature_selection(
+    inverse = feature_selection(
         I=model,
         dataset=dataset,
         importances_indexes=feat_order,
         n_runs=10,
         inverse=True,
-        random=True,
+        random=False,
         scenario=args.scenario,
     )
-    data_random = Precisions_random(random_fs, dataset.name, model)
-    save_fs_prec_random(data_random, fs_random_path)
 
-# plot feature selection
-fs_prec = get_most_recent_file(fs_int_path)
-fs_prec_random = get_most_recent_file(fs_random_path)
+    value = abs(np.nansum(np.nanmean(direct, axis=1) - np.nanmean(inverse, axis=1)))
+    data = Precisions(direct, inverse, dataset.name, model, value)
+    save_fs_prec(data, fs_int_path)
 
-print("#" * 50)
-print("Producing feature selection plot")
-print("#" * 50)
+    # random feature selection
+    if args.compute_random:
+        Precisions_random = namedtuple(
+            "Precisions_random", ["random", "dataset", "model"]
+        )
+        random_fs = feature_selection(
+            I=model,
+            dataset=dataset,
+            importances_indexes=feat_order,
+            n_runs=10,
+            inverse=True,
+            random=True,
+            scenario=args.scenario,
+        )
+        data_random = Precisions_random(random_fs, dataset.name, model)
+        save_fs_prec_random(data_random, fs_random_path)
 
-plot_feature_selection(
-    precision_file=fs_prec,
-    plot_path=path_plots,
-    precision_file_random=fs_prec_random,
-    model=args.model_interpretation,
-    eval_model=args.model,
-    interpretation=args.interpretation,
-    scenario=args.scenario,
-    plot_image=False,
-    rotation=args.rotation,
-    change_ylim=args.change_ylim,
-    change_box_loc=args.change_box_loc,
-)
+if args.plot_feature_selection:
+    fs_prec = get_most_recent_file(fs_int_path)
+    fs_prec_random = get_most_recent_file(fs_random_path)
+
+    print("#" * 50)
+    print("Producing feature selection plot")
+    print("#" * 50)
+
+    plot_feature_selection(
+        precision_file=fs_prec,
+        plot_path=path_plots,
+        precision_file_random=fs_prec_random,
+        model=args.model_interpretation,
+        eval_model=args.model,
+        interpretation=args.interpretation,
+        scenario=args.scenario,
+        plot_image=False,
+        rotation=args.rotation,
+        change_ylim=args.change_ylim,
+        change_box_loc=args.change_box_loc,
+    )

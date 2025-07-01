@@ -18,5 +18,8 @@ python $SCRIPT_PATH \
     --model_interpretation "EIF+" \
     --interpretation "EXIFFI+" \
     --scenario 2 \
-    --pre_process
+    --pre_process \
+    --scaler_type 4 \
+    --feature_selection \
+    --plot_feature_selection
 
