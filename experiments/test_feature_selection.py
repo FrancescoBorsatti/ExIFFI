@@ -131,6 +131,7 @@ dataset.drop_duplicates()
 
 # Downsample datasets with more than 7500 samples (i.e. diabetes shuttle and moodify)
 if dataset.shape[0] > 7500 and args.downsample:
+    print("Downsampling dataset to 7500 samples")
     dataset.downsample(max_samples=7500)
 
 # If a dataset has lables (all the datasets except piade), the contamination is set to dataset.perc_outliers
