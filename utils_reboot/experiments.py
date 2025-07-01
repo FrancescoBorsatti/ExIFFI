@@ -122,7 +122,7 @@ def compute_local_importances(
     interpretation="EXIFFI+",
     fit_model=True,
     return_pred_labels: bool = False,
-) -> np.array:
+) -> Union[pd.DataFrame, tuple[pd.DataFrame, np.array]]:
     """
     Compute the local feature importances for an interpration model on a specific dataset.
 
@@ -132,6 +132,7 @@ def compute_local_importances(
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
+        return_pred_labels (bool): Weather to return the labels predicted by the model or not. Defaults to False
 
     Returns:
         The local feature importances vector of all the points in the input dataset
@@ -278,10 +279,6 @@ def compute_local_importances_ACME(
         y_pred = I._predict(dataset.X_test, p).astype(int)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
         score_function = EIF_score_function
-
-    import ipdb
-
-    ipdb.set_trace()
 
     data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
     data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
@@ -504,6 +501,19 @@ def compute_bars(
     model: str = "EIF+",
     interpretation: str = "EXIFFI+",
 ) -> pd.DataFrame:
+    """
+    This function computes the bars DataFrame which is needed to produce the Bar Plot. It contains a column for each feature
+    and that contains the percentage of runs in which that feature was placed in each one of the different possible ranking positions
+
+    Args:
+        dataset (Type[Dataset]): input dataset object
+        importances_file (str): path to the GFI/LFI matrix
+        filetype (str): filetype of the importance file
+
+    Returns:
+        bars (pd.DataFrame): dataframe with the percentages
+    """
+
     if isinstance(dataset.feature_names, np.ndarray):
         col_names = dataset.feature_names.astype(str)
     elif isinstance(dataset.feature_names, list):
@@ -637,7 +647,6 @@ def experiment_local_importances(
     dataset: Type[Dataset],
     n_runs: int = 10,
     p: float = 0.1,
-    model: str = "EIF+",
     interpretation: str = "EXIFFI+",
 ) -> tuple[np.array, float]:
     """
@@ -648,7 +657,6 @@ def experiment_local_importances(
         dataset (Type[Dataset]): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
-        model (str): The name of the model. Defaults to 'EIF+'.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
 
     Returns:
@@ -658,7 +666,11 @@ def experiment_local_importances(
     cumul_imp = np.zeros(dataset.shape)
     for i in tqdm(trange(n_runs, desc="Local Importances runs")):
         fi, labels = compute_local_importances(
-            I, dataset, interpretation=interpretation, p=p, return_pred_labels=True
+            I=I,
+            dataset=dataset,
+            interpretation=interpretation,
+            p=p,
+            return_pred_labels=True,
         )
 
         anomaly_idx = np.where(labels == 1)[0]
@@ -668,8 +680,6 @@ def experiment_local_importances(
     cumul_imp = pd.DataFrame(cumul_imp, columns=dataset.feature_names)
     labels = cumul_imp.ne(0).any(axis=1)
     cumul_imp = cumul_imp[labels]
-
-    # import ipdb; ipdb.set_trace()
 
     return cumul_imp, labels.astype(int)
 

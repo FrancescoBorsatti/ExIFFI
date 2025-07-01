@@ -6,15 +6,23 @@ DATASETS="TEP_ACME"
 
 DATASET_PATH="../../datasets/data/TEP/"
 
+model_name="IF"
+interpretation="ACME"
+
 python $SCRIPT_PATH \
         --n_estimators 300 \
         --contamination 0.01 \
-        --model "IF" \
+        --model_name $model_name \
         --dataset_path $DATASET_PATH \
         --dataset_name $DATASETS \
-        --interpretation "ACME" \
+        --interpretation $interpretation \
         --scenario 2 \
-        --n_runs 40 
+        --n_runs 40 \
+        --pre_process \
+        --scaler_type 4 \
+        --compute_lfi \
+        --compute_bars \
+        --score_plot
 
 # To pre_process the data, add the following line:
 # --pre_process \
