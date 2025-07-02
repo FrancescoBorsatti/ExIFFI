@@ -1,25 +1,22 @@
 import sys
-import ast
 import os
+import argparse
 
 cwd = os.getcwd()
-# os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
-# os.chdir('/Users/alessio/Documents/ExIFFI/experiments')
 sys.path.append("..")
-from collections import namedtuple
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-from utils_reboot.experiments import *
-from utils_reboot.datasets import *
-from utils_reboot.plots import *
-from utils_reboot.utils import *
+# from utils_reboot.experiments import *
+from utils_reboot.datasets import Dataset, load_dataset
+from utils_reboot.models import load_model
+from utils_reboot.plots import importance_map
+from utils_reboot.utils import get_feature_indexes, generate_path
 
 
 # from model_reboot.EIF_reboot import ExtendedIsolationForest
-from ExIFFI_C.model_reboot.EIF_reboot import ExtendedIsolationForest, IsolationForest
-import argparse
+from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Test Local Importances")
@@ -54,7 +51,7 @@ parser.add_argument(
     help="Global feature importances parameter: n_runs",
 )
 parser.add_argument(
-    "--model",
+    "--model_name",
     type=str,
     default="EIF+",
     help="Name of the interpretable AD model. Accepted values are: [IF,EIF,EIF+]",
@@ -105,113 +102,61 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-# Access the arguments
-dataset_name = args.dataset_name
-dataset_path = args.dataset_path
-plus = args.plus
-n_estimators = args.n_estimators
-max_depth = args.max_depth
-max_samples = args.max_samples
-contamination = args.contamination
-n_runs = args.n_runs
-model = args.model
-interpretation = args.interpretation
-scenario = args.scenario
-pre_process = args.pre_process
-feature1 = args.feature1
-feature2 = args.feature2
-eta = args.eta
-downsample = args.downsample
-only_positive = args.only_positive
-factor = args.factor
-scaler_type = args.scaler_type
+assert args.model_name in [
+    "IF",
+    "EIF",
+    "EIF+",
+    "EIF+_centroid",
+    "EIF+_distrib_split",
+    "EIF+_centroid_split",
+], "Interpretable AD model not recognized"
 
-dataset = Dataset(
-    dataset_name, path=dataset_path, feature_names_filepath="../../datasets/data/"
-)
-dataset.drop_duplicates()
-
-feats_plot = get_feature_indexes(dataset, feature1, feature2)
-
-# Downsample datasets with more than 7500 samples (i.e. diabetes shuttle and moodify)
-if (dataset.shape[0] > 7500) and downsample:
-    dataset.downsample(max_samples=7500)
-
-if dataset.perc_outliers != 0:
-    contamination = dataset.perc_outliers
-
-if scenario == 2:
-    # dataset.split_dataset(train_size=0.8,contamination=0)
-    dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
-
-# Preprocess the dataset
-if pre_process:
-    print("#" * 50)
-    print("Preprocessing the dataset...")
-    print("#" * 50)
-    dataset.pre_process(scaler_type=scaler_type)
-else:
-    print("#" * 50)
-    print("Dataset not preprocessed")
-    dataset.initialize_train_test()
-    print("#" * 50)
-
-assert model in ["IF", "EIF", "EIF+"], "Interpretable AD model not recognized"
-assert interpretation in [
+assert args.interpretation in [
     "EXIFFI+",
-    "C_EXIFFI+",
     "EXIFFI",
     "DIFFI",
     "RandomForest",
 ], "Interpretation not recognized"
 
-if interpretation == "DIFFI":
-    assert model == "IF", "DIFFI can only be used with the IF model"
+if args.interpretation == "DIFFI":
+    assert args.model_name == "IF", "DIFFI can only be used with the IF model"
 
-if interpretation == "EXIFFI":
-    assert model == "EIF", "EXIFFI can only be used with the EIF model"
+if args.interpretation == "EXIFFI":
+    assert args.model_name == "EIF", "EXIFFI can only be used with the EIF model"
 
-if interpretation == "EXIFFI+":
-    assert model == "EIF+", "EXIFFI+ can only be used with the EIF+ model"
+if args.interpretation == "EXIFFI+":
+    assert args.model_name.startswith(
+        "EIF+"
+    ), "EXIFFI+ can only be used with the EIF+ based models"
 
-if interpretation == "C_EXIFFI+":
-    assert model == "C_EIF+", "C_EXIFFI+ can only be used with the C_EIF+ model"
+dataset = load_dataset(
+    dataset_name=args.dataset_name,
+    dataset_path=args.dataset_path,
+    downsample=args.downsample,
+    scenario=args.scenario,
+    pre_process=args.pre_process,
+    scaler_type=args.scaler_type,
+)
 
-if model == "IF":
-    if interpretation == "EXIFFI":
-        I = IsolationForest(
-            n_estimators=n_estimators, max_depth=max_depth, max_samples=max_samples
-        )
-    elif interpretation == "DIFFI" or interpretation == "RandomForest":
-        I = sklearn_IsolationForest(n_estimators=n_estimators, max_samples=max_samples)
-elif model == "EIF":
-    I = ExtendedIsolationForest(
-        0,
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        max_samples=max_samples,
-        eta=eta,
-    )
-elif model == "EIF+" or model == "C_EIF+":
-    I = ExtendedIsolationForest(
-        1,
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        max_samples=max_samples,
-        eta=eta,
-    )
+model = load_model(
+    model_name=args.model_name,
+    interpretation=args.interpretation,
+    n_estimators=args.n_estimators,
+    max_depth=args.max_depth,
+    max_samples=args.max_samples,
+)
 
 print("#" * 50)
 print("Local Scoremaps Experiment")
 print("#" * 50)
 print(f"Dataset: {dataset.name}")
-print(f"Model: {model}")
-print(f"Estimators: {n_estimators}")
-print(f"Contamination: {contamination}")
-print(f"Eta: {eta}")
-print(f"Interpretation Model: {interpretation}")
-print(f"Scenario: {scenario}")
-print(f"Downsample: {downsample}")
+print(f"Model: {args.model_name}")
+print(f"Estimators: {args.n_estimators}")
+print(f"Contamination: {args.contamination}")
+print(f"Eta: {args.eta}")
+print(f"Interpretation Model: {args.interpretation}")
+print(f"Scenario: {args.scenario}")
+print(f"Downsample: {args.downsample}")
 print(
     f"Features to plot: {dataset.feature_names[feats_plot[0]]}, {dataset.feature_names[feats_plot[1]]}"
 )
@@ -220,41 +165,51 @@ print("#" * 50)
 os.chdir("../")
 cwd = os.getcwd()
 
-path_plots = cwd + "/experiments/results/" + dataset.name + "/plots/local_scoremaps"
-if not os.path.exists(path_plots):
-    os.makedirs(path_plots)
+results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
+
+path_plots = generate_path(
+    basepath=results_path,
+    folders=[
+        dataset.name,
+        "plots",
+        "local_scoremaps",
+        args.model_name,
+        args.interpretation,
+    ],
+)
 
 # ----------------- LOCAL SCOREMAP -----------------#
 # Compute local scoremap
-I.fit(dataset.X_train)
+model.fit(dataset.X_train)
 
 print("Producing Local Scoremap...")
 print("#" * 50)
-if interpretation == "DIFFI":
+if args.interpretation == "DIFFI":
     importance_map(
-        dataset,
-        I,
+        dataset=dataset,
+        model=model,
         feats_plot=feats_plot,
         path_plot=path_plots,
         col_names=dataset.feature_names,
-        interpretation=interpretation,
-        scenario=scenario,
-        contamination=contamination,
+        interpretation=args.interpretation,
+        scenario=args.scenario,
+        contamination=args.contamination,
         isdiffi=True,
     )
 else:
     importance_map(
         dataset=dataset,
-        model=I,
-        factor=factor,
+        model=model,
+        factor=args.factor,
         feats_plot=feats_plot,
         path_plot=path_plots,
         col_names=dataset.feature_names,
-        interpretation=interpretation,
-        scenario=scenario,
-        contamination=contamination,
-        only_positive=only_positive,
+        interpretation=args.interpretation,
+        scenario=args.scenario,
+        contamination=args.contamination,
+        only_positive=args.only_positive,
     )
 
+print("#" * 50)
 print(f"Local Scoremap produced and saved in: {path_plots}")
 print("#" * 50)

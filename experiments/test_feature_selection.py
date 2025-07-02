@@ -14,7 +14,8 @@ from collections import namedtuple
 # append_dirname("ExIFFI_Industrial_Test")
 
 from utils_reboot.experiments import feature_selection
-from utils_reboot.datasets import Dataset
+from utils_reboot.datasets import Dataset, load_dataset
+from utils_reboot.models import load_model
 from utils_reboot.plots import plot_feature_selection
 from utils_reboot.utils import (
     generate_path,
@@ -186,6 +187,8 @@ assert args.model_name in [
     "EIF",
     "EIF+",
     "EIF+_centroid",
+    "EIF+_distrib_split",
+    "EIF+_centroid_split",
 ], "Evaluation Model not recognized"
 assert args.interpretation in [
     "EXIFFI+",
@@ -196,46 +199,22 @@ assert args.interpretation in [
     "ACME",
 ], "Interpretation not recognized"
 
-if args.interpretation == "DIFFI":
-    assert args.model_interpretation == "IF", "DIFFI can only be used with the IF model"
+dataset = load_dataset(
+    dataset_name=args.dataset_name,
+    dataset_path=args.dataset_path,
+    downsample=args.downsample,
+    scenario=args.scenario,
+    pre_process=args.pre_process,
+    scaler_type=args.scaler_type,
+)
 
-if args.interpretation == "EXIFFI":
-    assert (
-        args.model_interpretation == "EIF"
-    ), "EXIFFI can only be used with the EIF model"
-
-if args.interpretation == "EXIFFI+":
-    assert (
-        args.model_interpretation == "EIF+"
-    ), "EXIFFI+ can only be used with the EIF+ model"
-
-if args.model_name == "IF":
-    model = sklearn_IsolationForest(
-        n_estimators=args.n_estimators, max_samples=args.max_samples
-    )
-
-elif args.model_name == "EIF":
-    model = ExtendedIsolationForest(
-        plus=False,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-    )
-elif args.model_name == "EIF+":
-    model = ExtendedIsolationForest(
-        plus=True,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-    )
-elif args.model_name == "EIF+centroid":
-    model = ExtendedIsolationForest(
-        plus=True,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        use_centroid_importance=True,
-    )
+model = load_model(
+    model_name=args.model_name,
+    interpretation=args.interpretation,
+    n_estimators=args.n_estimators,
+    max_depth=args.max_depth,
+    max_samples=args.max_samples,
+)
 
 print("#" * 50)
 print("Feature Selection Experiment")
@@ -252,69 +231,60 @@ cwd = os.getcwd()
 
 results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
-path_plots = generate_path(
-    basepath=results_path,
-    folders=[
-        dataset.name,
-        "plots",
-        "fs_plots",
-        args.model_name,
-        args.model_interpretation,
-        args.interpretation,
-    ],
-)
-
-fs_model_path = generate_path(
-    basepath=results_path,
-    folders=[
-        dataset.name,
-        "experiments",
-        "feature_selection",
-        args.model_name,
-    ],
-)
-
-fs_int_path = generate_path(
-    basepath=fs_model_path,
-    folders=[
-        f"{args.model_interpretation}_{args.interpretation}",
-        f"scenario_{args.scenario}",
-    ],
-)
-
-fs_random_path = generate_path(
-    basepath=fs_model_path,
-    folders=[
-        "random",
-        f"scenario_{args.scenario}",
-    ],
-)
-
-gfi_path = generate_path(
-    basepath=results_path,
-    folders=[
-        dataset.name,
-        "experiments",
-        "global_importances",
-        args.model_name,
-        args.interpretation,
-    ],
-)
-
-# feature selection → direct and inverse feature selection
-most_recent_file = get_most_recent_file(gfi_path)
-matrix = open_element(most_recent_file, filetype="csv.gz")
-
-# All features
-feat_order = np.argsort(matrix.values.mean(axis=0))
-Precisions = namedtuple(
-    "Precisions", ["direct", "inverse", "dataset", "model", "value"]
-)
 
 if args.feature_selection:
     print("#" * 50)
     print("Direct Feature Selection experiment")
     print("#" * 50)
+
+    fs_model_path = generate_path(
+        basepath=results_path,
+        folders=[
+            dataset.name,
+            "experiments",
+            "feature_selection",
+            args.model_name,
+        ],
+    )
+
+    fs_int_path = generate_path(
+        basepath=fs_model_path,
+        folders=[
+            f"{args.model_interpretation}_{args.interpretation}",
+            f"scenario_{args.scenario}",
+        ],
+    )
+
+    fs_random_path = generate_path(
+        basepath=fs_model_path,
+        folders=[
+            "random",
+            f"scenario_{args.scenario}",
+        ],
+    )
+
+    gfi_path = generate_path(
+        basepath=results_path,
+        folders=[
+            dataset.name,
+            "experiments",
+            "global_importances",
+            args.model_name,
+            args.interpretation,
+            "imp_mat",
+            f"scenario_{args.scenario}",
+        ],
+    )
+
+    # feature selection → direct and inverse feature selection
+    most_recent_file = get_most_recent_file(gfi_path)
+    matrix = open_element(most_recent_file, filetype="csv.gz")
+
+    # All features
+    feat_order = np.argsort(matrix.values.mean(axis=0))
+    Precisions = namedtuple(
+        "Precisions", ["direct", "inverse", "dataset", "model", "value"]
+    )
 
     direct = feature_selection(
         I=model,
@@ -367,6 +337,18 @@ if args.feature_selection:
 if args.plot_feature_selection:
     fs_prec = get_most_recent_file(fs_int_path)
     fs_prec_random = get_most_recent_file(fs_random_path)
+
+    path_plots = generate_path(
+        basepath=results_path,
+        folders=[
+            dataset.name,
+            "plots",
+            "fs_plots",
+            args.model_name,
+            args.model_interpretation,
+            args.interpretation,
+        ],
+    )
 
     print("#" * 50)
     print("Producing feature selection plot")
