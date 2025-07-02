@@ -51,6 +51,12 @@ parser.add_argument(
     help="Global feature importances parameter: n_runs",
 )
 parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Starting seed value",
+)
+parser.add_argument(
     "--pre_process", action="store_true", help="If set, preprocess the dataset"
 )
 parser.add_argument(
@@ -234,7 +240,14 @@ results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
 path_plots = generate_path(
     basepath=results_path,
-    folders=[dataset.name, "plots", "score_plots", "gfi"],
+    folders=[
+        dataset.name,
+        "plots",
+        "score_plots",
+        "gfi",
+        args.model_name,
+        args.interpretation,
+    ],
 )
 
 path_experiment_model_interpretation = generate_path(
@@ -261,12 +274,14 @@ bars_path = generate_path(
 if args.compute_gfi:
     print("#" * 50)
     print("Computing global importances")
+    print(f"Starting seed: {args.seed}")
     print("#" * 50)
 
     full_importances = experiment_global_importances(
         I=model,
         dataset=dataset,
         n_runs=args.n_runs,
+        seed=args.seed,
         p=args.contamination,
         interpretation=args.interpretation,
     )

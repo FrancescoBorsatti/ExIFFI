@@ -86,6 +86,12 @@ parser.add_argument(
     help="Number of runs of Local Feature importance computation",
 )
 parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Starting seed for reproducibility",
+)
+parser.add_argument(
     "--downsample",
     type=bool,
     default=False,
@@ -325,6 +331,7 @@ if args.compute_lfi:
             p=args.contamination,
             interpretation=args.interpretation,
             n_runs=args.n_runs,
+            seed=args.seed,
         )
 
         save_element(element=labels, directory_path=labels_path, filetype="npz")
