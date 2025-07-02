@@ -18,6 +18,7 @@ python $SCRIPT_PATH \
     --model_interpretation "EIF+" \
     --interpretation "EXIFFI+" \
     --scenario 2 \
+    --seed 0 \
     --pre_process \
     --scaler_type 4 \
     --feature_selection \

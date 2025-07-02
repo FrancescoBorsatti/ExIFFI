@@ -22,6 +22,7 @@ python $SCRIPT_PATH \
     --model_name $model_name \
     --interpretation $interpretation \
     --scenario 2 \
+    --seed 0 \
     --n_estimators 300 \
     --contamination 0.15 \
     --n_runs 40 \

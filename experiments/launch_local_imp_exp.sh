@@ -17,6 +17,7 @@ python $SCRIPT_PATH \
         --dataset_name $DATASETS \
         --interpretation $interpretation \
         --scenario 2 \
+        --seed 0 \
         --n_runs 40 \
         --pre_process \
         --scaler_type 4 \
