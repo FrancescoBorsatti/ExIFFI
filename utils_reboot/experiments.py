@@ -4,9 +4,8 @@ import sys
 import os
 import ipdb
 
-from append_to_path import append_dirname
-
-append_dirname("ExIFFI_Industrial_Test")
+# from append_to_path import append_dirname
+# append_dirname("ExIFFI_Industrial_Test")
 
 realpath = os.path.realpath(__file__)  # true path of this script
 realpath = os.path.dirname(realpath)  # go up one dir
