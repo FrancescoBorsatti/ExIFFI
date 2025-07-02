@@ -12,8 +12,8 @@ DATASETS="TEP_ACME"
 # DATASET_PATH="../../datasets/data/PIADE/"
 DATASET_PATH="../../datasets/data/TEP/"
 
-# model_name="EIF+"
-model_name="EIF+_centroid"
+model_name="EIF+"
+# model_name="EIF+_centroid"
 interpretation="EXIFFI+"
 
 python $SCRIPT_PATH \
@@ -26,7 +26,7 @@ python $SCRIPT_PATH \
     --contamination 0.15 \
     --n_runs 40 \
     --pre_process \
-    --scaler_type 1 \
+    --scaler_type 4 \
     --compute_gfi \
     --score_plot
 
