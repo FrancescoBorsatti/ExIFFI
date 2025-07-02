@@ -1,10 +1,12 @@
 from __future__ import annotations
+import sys
 import os
 import json
+import ipdb
 
 # import ipdb; ipdb.set_trace()
-# import sys;sys.path.append("..")
-# from utils_reboot.utils import open_element
+
+sys.path.append("..")
 
 from typing import Type, Optional, List
 import numpy.typing as npt
@@ -29,6 +31,11 @@ from sklearn.preprocessing import (
     MaxAbsScaler,
     RobustScaler,
 )
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 @dataclass
@@ -149,18 +156,20 @@ class Dataset:
         S = pd.DataFrame(S).drop_duplicates().to_numpy()
         self.X, self.y = S[:, :-1], S[:, -1]
 
-    def downsample(self, max_samples: int = 2500) -> None:
+    def downsample(self, max_samples: int = 2500, seed: int = 0) -> None:
         """
         Downsample the dataset to a maximum number of samples keeping the proportion of outliers.
 
         Args:
-            max_samples: The maximum number of samples to keep in the dataset.
+            max_samples (int): The maximum number of samples to keep in the dataset.
+            seed (int): seed to set for reproducibility
 
         Returns:
             The dataset is modified in place.
         """
         if len(self.X) > max_samples:
             print("downsampled to ", max_samples)
+            set_seed(seed=seed)
             sss = SSS(n_splits=1, test_size=1 - max_samples / len(self.X))
             index = list(sss.split(self.X, self.y))[0][0]
             self.X, self.y = self.X[index, :], self.y[index]
@@ -355,3 +364,59 @@ class Dataset:
             self.feature_names = data_feature_names[self.name]
         else:
             self.feature_names = None
+
+
+def load_dataset(
+    dataset_name: str = "TEP_ACME",
+    dataset_path: str = os.getcwd(),
+    downsample: bool = False,
+    downsample_size: int = 7500,
+    scenario: int = 2,
+    pre_process: bool = False,
+    scaler_type: int = 1,
+) -> Type[Dataset]:
+    """
+    Function to load a dataset
+
+    Args:
+
+        dataset_name (str): dataset name, by default TEP_ACME
+        dataset_path (str): path to the dataset file, by default current working directory
+        downsample (bool): weather to downsample the dataset or not, by default False
+        downsample_size (int): size of the downsampled dataset, by default 7500
+        scenario (int): training scenario, by default 2
+        pre_process (bool): weather to pre process the dataset or not
+        scaler_type (int): type of scaler to use to scale the data, by default 1
+    """
+
+    dataset = Dataset(
+        name=dataset_name,
+        path=dataset_path,
+        feature_names_filepath="../../datasets/data/",
+    )
+    dataset.drop_duplicates()
+
+    # Downsample datasets with more than 7500 samples
+    if dataset.shape[0] > downsample_size and downsample:
+        dataset.downsample(max_samples=downsample_size)
+
+    # If a dataset has lables (all the datasets except piade), the contamination is set to dataset.perc_outliers
+    if dataset.perc_outliers != 0:
+        contamination = dataset.perc_outliers
+
+    if scenario == 2:
+        dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
+
+    # Preprocess the dataset
+    if pre_process:
+        print("#" * 50)
+        print("Preprocessing the dataset...")
+        print("#" * 50)
+        dataset.pre_process(scaler_type=scaler_type)
+    else:
+        print("#" * 50)
+        print("Dataset not preprocessed")
+        dataset.initialize_train_test()
+        print("#" * 50)
+
+    return dataset
