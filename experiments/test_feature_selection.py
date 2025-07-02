@@ -258,6 +258,9 @@ path_plots = generate_path(
         dataset.name,
         "plots",
         "fs_plots",
+        args.model_name,
+        args.model_interpretation,
+        args.interpretation,
     ],
 )
 

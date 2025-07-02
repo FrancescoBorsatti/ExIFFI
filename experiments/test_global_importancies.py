@@ -240,7 +240,14 @@ results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
 path_plots = generate_path(
     basepath=results_path,
-    folders=[dataset.name, "plots", "score_plots", "gfi"],
+    folders=[
+        dataset.name,
+        "plots",
+        "score_plots",
+        "gfi",
+        args.model_name,
+        args.interpretation,
+    ],
 )
 
 path_experiment_model_interpretation = generate_path(

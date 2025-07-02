@@ -14,7 +14,7 @@ python $SCRIPT_PATH \
     --dataset_path $DATASET_PATH \
     --n_estimators 300 \
     --contamination 0.01 \
-    --model "EIF+" \
+    --model_name "EIF+" \
     --model_interpretation "EIF+" \
     --interpretation "EXIFFI+" \
     --scenario 2 \
