@@ -1,4 +1,5 @@
 import time
+import random
 from typing import Type, Union, Optional, List
 import numpy.typing as npt
 import pickle
@@ -232,12 +233,12 @@ def get_feature_indexes(dataset: Type[Dataset], f1: str, f2: str) -> tuple[int, 
 
     try:
         idx1 = feature_names.index(f1)
-    except:
-        print("Feature name not valid")
+    except ValueError:
+        raise ValueError("Feature name not valid")
     try:
         idx2 = feature_names.index(f2)
-    except:
-        print("Feature name not valid")
+    except ValueError:
+        raise ValueError("Feature name not valid")
 
     return idx1, idx2
 
@@ -519,4 +520,3 @@ def select_pre_process_scenario(dataset: Type[Dataset]) -> int:
     print(f"X_test shape: {dataset.X_test.shape}")
 
     return scenario
-

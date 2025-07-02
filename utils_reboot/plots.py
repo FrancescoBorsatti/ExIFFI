@@ -5,6 +5,11 @@ import time
 from typing import Type, Optional, List
 
 import numpy as np
+
+import matplotlib
+
+matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoLocator, ScalarFormatter
 import seaborn as sns
@@ -210,7 +215,7 @@ def score_plot(
     importances_file: str,
     plot_path: str = os.getcwd(),
     save_image=True,
-    show_plot=True,
+    show_plot=False,
     model: str = "EIF+",
     interpretation: str = "EXIFFI",
     scenario: int = 2,
