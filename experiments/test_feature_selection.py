@@ -61,6 +61,12 @@ parser.add_argument(
     help="Global feature importances parameter: n_runs",
 )
 parser.add_argument(
+    "--seed",
+    type=int,
+    default=0,
+    help="Starting seed for reproducibility",
+)
+parser.add_argument(
     "--model_name",
     type=str,
     default="EIF+",
@@ -311,7 +317,8 @@ if args.feature_selection:
         I=model,
         dataset=dataset,
         importances_indexes=feat_order,
-        n_runs=10,
+        n_runs=args.n_runs,
+        seed=args.seed,
         inverse=False,
         random=False,
         scenario=args.scenario,
@@ -325,7 +332,8 @@ if args.feature_selection:
         I=model,
         dataset=dataset,
         importances_indexes=feat_order,
-        n_runs=10,
+        n_runs=args.n_runs,
+        seed=args.seed,
         inverse=True,
         random=False,
         scenario=args.scenario,
@@ -344,7 +352,8 @@ if args.feature_selection:
             I=model,
             dataset=dataset,
             importances_indexes=feat_order,
-            n_runs=10,
+            n_runs=args.n_runs,
+            seed=args.seed,
             inverse=True,
             random=True,
             scenario=args.scenario,

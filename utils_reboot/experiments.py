@@ -3,6 +3,7 @@ from typing import Type, Union
 import sys
 import os
 import ipdb
+import random
 
 from append_to_path import append_dirname
 
@@ -597,14 +598,19 @@ def fit_predict_experiment(
     return np.mean(fit_times), np.mean(predict_times)
 
 
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+
+
 def experiment_global_importances(
     I: Type[ExtendedIsolationForest],
     dataset: Type[Dataset],
     n_runs: int = 10,
+    seed: int = 0,
     p: float = 0.1,
-    model: str = "EIF+",
     interpretation: str = "EXIFFI+",
-) -> tuple[np.array, float]:
+) -> pd.DataFrame:
     """
     Compute the global feature importances for an interpration model on a specific dataset for a number of runs.
 
@@ -612,30 +618,20 @@ def experiment_global_importances(
         I (Type[ExtendedIsolationForest]): The AD model.
         dataset (Type[Dataset]): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
+        seed (int): Starting value for the seed, at each new run it will be incremented by 1. In this way we can get reproducible results
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
-        model (str): The name of the model. Defaults to 'EIF+'.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
 
     Returns:
-        The global feature importances vectors for the different runs and the average importances times.
+        fi (pd.DataFrame): A dataframe containing the GFI scores across the different runs
     """
 
     fi = np.zeros(shape=(n_runs, dataset.X.shape[1]))
-    # imp_times=[]
     for i in tqdm(trange(n_runs, desc="Global Importances runs")):
-        # start_time = time.time()
+        set_seed(seed=seed + i)
         fi[i, :] = compute_global_importances(
             I, dataset, p=p, interpretation=interpretation
         )
-        # gfi_time = time.time() - start_time
-        # if i>3:
-        #     imp_times.append(gfi_time)
-        #     dict_time["importances"][interpretation].setdefault(dataset.name, []).append(gfi_time)
-        # print(f'Added time {str(gfi_time)} to time dict')
-
-    # with open(filename, "wb") as file:
-    #     pickle.dump(dict_time, file)
-    # return fi,np.mean(imp_times)
 
     fi = pd.DataFrame(fi, columns=dataset.feature_names)
 
@@ -646,9 +642,10 @@ def experiment_local_importances(
     I: Type[ExtendedIsolationForest],
     dataset: Type[Dataset],
     n_runs: int = 10,
+    seed: int = 0,
     p: float = 0.1,
     interpretation: str = "EXIFFI+",
-) -> tuple[np.array, float]:
+) -> tuple[pd.DataFrame, np.array]:
     """
     Compute the local feature importances for an interpration model on a specific dataset for a number of runs.
 
@@ -656,6 +653,7 @@ def experiment_local_importances(
         I (Type[ExtendedIsolationForest]): The AD model.
         dataset (Type[Dataset]): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
+        seed (int): Starting value for the seed, at each new run it will be incremented by 1. In this way we can get reproducible results
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
 
@@ -665,6 +663,7 @@ def experiment_local_importances(
 
     cumul_imp = np.zeros(dataset.shape)
     for i in tqdm(trange(n_runs, desc="Local Importances runs")):
+        set_seed(seed=seed + i)
         fi, labels = compute_local_importances(
             I=I,
             dataset=dataset,
@@ -736,6 +735,7 @@ def feature_selection(
     dataset: Type[Dataset],
     importances_indexes: npt.NDArray,
     n_runs: int = 10,
+    seed: int = 0,
     inverse: bool = True,
     random: bool = False,
     scenario: int = 2,
@@ -748,6 +748,7 @@ def feature_selection(
         dataset (Type[Dataset]): Input dataset.
         importances_indexes (npt.NDArray): The indexes of the features in the dataset.
         n_runs (int): The number of runs. Defaults to 10.
+        seed (int): Starting seed for reproducibility
         inverse (bool): Whether to drop the features in decreasing order of importance. Defaults to True.
         random (bool): Whether to drop the features in random order. Defaults to False.
         scenario (int): The scenario of the experiment. Defaults to 2.
@@ -762,6 +763,7 @@ def feature_selection(
     for number_of_features_dropped in tqdm(range(len(importances_indexes))):
         runs = np.zeros(n_runs)
         for run in range(n_runs):
+            set_seed(seed=seed + run)
             if random:
                 importances_indexes = np.random.choice(
                     importances_indexes, len(importances_indexes), replace=False
