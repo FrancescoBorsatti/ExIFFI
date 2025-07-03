@@ -12,7 +12,7 @@ sys.path.append("..")
 from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.models import load_model
 from utils_reboot.plots import importance_map
-from utils_reboot.utils import get_feature_indexes, generate_path
+from utils_reboot.utils import get_feature_indexes, generate_path, check_arguments
 
 
 # from model_reboot.EIF_reboot import ExtendedIsolationForest
@@ -49,6 +49,12 @@ parser.add_argument(
     type=int,
     default=10,
     help="Global feature importances parameter: n_runs",
+)
+parser.add_argument(
+    "--file_pos",
+    type=int,
+    default=0,
+    help="File position for get_most_recent_file",
 )
 parser.add_argument(
     "--model_name",
@@ -102,32 +108,7 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-assert args.model_name in [
-    "IF",
-    "EIF",
-    "EIF+",
-    "EIF+_centroid",
-    "EIF+_distrib_split",
-    "EIF+_centroid_split",
-], "Interpretable AD model not recognized"
-
-assert args.interpretation in [
-    "EXIFFI+",
-    "EXIFFI",
-    "DIFFI",
-    "RandomForest",
-], "Interpretation not recognized"
-
-if args.interpretation == "DIFFI":
-    assert args.model_name == "IF", "DIFFI can only be used with the IF model"
-
-if args.interpretation == "EXIFFI":
-    assert args.model_name == "EIF", "EXIFFI can only be used with the EIF model"
-
-if args.interpretation == "EXIFFI+":
-    assert args.model_name.startswith(
-        "EIF+"
-    ), "EXIFFI+ can only be used with the EIF+ based models"
+check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
 dataset = load_dataset(
     dataset_name=args.dataset_name,

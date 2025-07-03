@@ -20,10 +20,11 @@ scenario=2
 n_estimators=300
 n_runs=40
 contamination=0.15
+file_pos=0
 
 # model_names=("EIF" "EIF+_distrib_split" "EIF+_centroid_split")
-model_names=("EIF+_distrib_split" "EIF+_centroid_split")
-# model_names=("EIF")
+# model_names=("EIF+_distrib_split" "EIF+_centroid_split")
+model_names=("EIF+")
 
 for model_name in ${model_names[@]}; do
 
@@ -53,7 +54,8 @@ for model_name in ${model_names[@]}; do
       --n_runs $n_runs \
       --pre_process \
       --scaler_type 4 \
-      --score_plot
+      --score_plot \
+      --file_pos $file_pos
 
 done
 

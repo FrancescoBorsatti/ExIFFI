@@ -10,7 +10,12 @@ sys.path.append("..")
 # append_dirname("ExIFFI_Industrial_Test")
 
 from utils_reboot.experiments import experiment_global_importances, compute_bars
-from utils_reboot.utils import save_element, get_most_recent_file, generate_path
+from utils_reboot.utils import (
+    save_element,
+    get_most_recent_file,
+    generate_path,
+    check_arguments,
+)
 from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.plots import score_plot
 from utils_reboot.models import load_model
@@ -58,6 +63,12 @@ parser.add_argument(
     help="Starting seed value",
 )
 parser.add_argument(
+    "--file_pos",
+    type=int,
+    default=0,
+    help="File position for get_most_recent_file",
+)
+parser.add_argument(
     "--pre_process", action="store_true", help="If set, preprocess the dataset"
 )
 parser.add_argument(
@@ -99,37 +110,7 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-assert (
-    args.model_name
-    in [
-        "EIF",
-        "EIF+",
-        "IF",
-        "EIF+_centroid",
-        "EIF+_distrib_split",
-        "EIF+_centroid_split",
-    ]
-), "Model not recognized. Accepted values: ['EIF','EIF+','IF','EIF+_centroid',EIF+_distrib_split','EIF+_centroid_split']"
-assert args.interpretation in [
-    "EXIFFI",
-    "EXIFFI+",
-    "C_EXIFFI+",
-    "DIFFI",
-], "Interpretation not recognized"
-if args.interpretation == "EXIFFI+":
-    assert args.model_name in [
-        "EIF+",
-        "EIF+_centroid",
-        "EIF+_distrib_split",
-        "EIF+_centroid_split",
-    ], "EXIFFI+ can only be used with the EIF+ model"
-if args.interpretation == "EXIFFI":
-    assert args.model_name == "EIF", "EXIFFI can only be used with the EIF model"
-if args.interpretation == "C_EXIFFI+":
-    assert (
-        args.model_name == "C_EIF+"
-    ), "C_EXIFFI+ can only be used with the C_EIF+ model"
-"EIF+_centroid_split"
+check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
 dataset = load_dataset(
     dataset_name=args.dataset_name,
@@ -212,7 +193,7 @@ if args.compute_bars:
         folders=["bars", f"scenario_{args.scenario}"],
     )
 
-    imp_path = get_most_recent_file(imp_mat_path)
+    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
     bars = compute_bars(
         dataset=dataset,
         importances_file=imp_path,
@@ -245,7 +226,8 @@ if args.score_plot:
         ],
     )
 
-    imp_path = get_most_recent_file(imp_mat_path)
+    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
+    ipdb.set_trace()
 
     score_plot(
         dataset=dataset,

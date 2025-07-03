@@ -3,35 +3,61 @@
 SCRIPT_PATH="test_metrics.py"
 
 # List of datasets
-DATASETS="piade_s2"
+# DATASETS="piade_s2"
+DATASETS="TEP_ACME"
 
-# Path to the datasets 
-DATASET_PATH="../../datasets/data/PIADE/"
+# Path to the datasets
+# DATASET_PATH="../../datasets/data/PIADE/"
+DATASET_PATH="../../datasets/data/TEP/"
 
-# For TEP 
+# For TEP
 
+model_name="EIF+_centroid"
+interpretation="EXIFFI+"
+n_estimators=300
+scenario=2
+n_runs=10
+n_runs_imp=5
+background=0.25
+seed=0
+file_pos=0
+
+echo "################################################"
+echo "Performance metrics experiment"
+echo "################################################"
+
+python $SCRIPT_PATH \
+    --dataset_name $DATASETS \
+    --dataset_path $DATASET_PATH \
+    --model $model_name \
+    --interpretation $interpretation \
+    --n_estimators $n_estimators \
+    --scenario $scenario \
+    --pre_process \
+    --compute_GFI \
+    --compute_perf \
+    --n_runs $n_runs \
+    --n_runs_imp $n_runs_imp \
+    --background $background \
+    --seed $seed \
+    --file_pos $file_pos
+
+echo "################################################"
+echo "Getting results of metrics experiment"
+echo "################################################"
+
+./launch_get_metrics.sh $model_name $interpretation $n_estimators $scenario $file_pos
+
+# For PIADE
+#
 # python $SCRIPT_PATH \
 #     --dataset_name $DATASETS \
 #     --dataset_path $DATASET_PATH \
 #     --model "EIF+" \
 #     --interpretation "KernelSHAP" \
 #     --n_estimators 300 \
+#     --contamination 0.01 \
 #     --scenario 2 \
-#     --pre_process 1 \
-#     --compute_GFI 1 \
+#     --compute_GFI \
 #     --n_runs_imp 5 \
-#     --background 0.25 
-
-# For PIADE
-
-python $SCRIPT_PATH \
-    --dataset_name $DATASETS \
-    --dataset_path $DATASET_PATH \
-    --model "EIF+" \
-    --interpretation "KernelSHAP" \
-    --n_estimators 300 \
-    --contamination 0.01 \
-    --scenario 2 \
-    --compute_GFI 1 \
-    --n_runs_imp 5 \
-    --background 0.5
+#     --background 0.5

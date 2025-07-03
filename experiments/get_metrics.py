@@ -1,119 +1,203 @@
 import os
 import sys
-sys.path.append('../')
-cwd=os.getcwd()
-from append_to_path import append_dirname
-append_dirname("ExIFFI_Industrial_Test")
+import ipdb
 import pickle
-from utils_reboot.utils import *
-from utils_reboot.datasets import *
 import argparse
-from ExIFFI_C.model_reboot.EIF_reboot import ExtendedIsolationForest,IsolationForest
-from sklearn.metrics import precision_score, recall_score, average_precision_score, roc_auc_score
+from typing import Type, Union
+import numpy as np
+import pandas as pd
+
+sys.path.append("..")
+cwd = os.getcwd()
+
+# from append_to_path import append_dirname
+# append_dirname("ExIFFI_Industrial_Test")
+
+from utils_reboot.utils import (
+    get_most_recent_file,
+    open_element,
+    check_arguments,
+    generate_path,
+    initialize_perf_dict,
+)
+from utils_reboot.models import load_model
+from utils_reboot.datasets import Dataset, load_dataset
+
+from ExIFFI_Core.exiffi_core.model import (
+    ExtendedIsolationForest,
+    IsolationForest,
+)
+from sklearn.metrics import (
+    precision_score,
+    recall_score,
+    average_precision_score,
+    roc_auc_score,
+)
 
 
 # Create the argument parser
-parser = argparse.ArgumentParser(description='Test Performance Metrics')
+parser = argparse.ArgumentParser(description="Get Performance Metrics")
 
 # Add the arguments
-parser.add_argument('--dataset_name', type=str, default='wine', help='Name of the dataset')
-parser.add_argument('--dataset_path', type=str, default='../data/real/', help='Path to the dataset')
-parser.add_argument('--n_estimators', type=int, default=200, help='EIF parameter: n_estimators')
-parser.add_argument('--max_depth', type=str, default='auto', help='EIF parameter: max_depth')
-parser.add_argument('--max_samples', type=str, default='auto', help='EIF parameter: max_samples')
-parser.add_argument('--contamination', type=float, default=0.1, help='Global feature importances parameter: contamination')
-parser.add_argument('--model', type=str, default="EIF", help='Model to use: IF, EIF, EIF+')
-parser.add_argument('--interpretation', type=str, default="EXIFFI", help='Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+]')
+parser.add_argument(
+    "--dataset_name", type=str, default="wine", help="Name of the dataset"
+)
+parser.add_argument(
+    "--dataset_path", type=str, default="../data/real/", help="Path to the dataset"
+)
+parser.add_argument(
+    "--n_estimators", type=int, default=200, help="EIF parameter: n_estimators"
+)
+parser.add_argument(
+    "--max_depth", type=str, default="auto", help="EIF parameter: max_depth"
+)
+parser.add_argument(
+    "--max_samples", type=str, default="auto", help="EIF parameter: max_samples"
+)
+parser.add_argument(
+    "--contamination",
+    type=float,
+    default=0.1,
+    help="Global feature importances parameter: contamination",
+)
+parser.add_argument(
+    "--model_name", type=str, default="EIF", help="Model to use: IF, EIF, EIF+"
+)
+parser.add_argument(
+    "--interpretation",
+    type=str,
+    default="EXIFFI",
+    help="Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+]",
+)
 parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
-parser.add_argument('--pre_process',action='store_true', help='If set, preprocess the dataset')
-parser.add_argument('--downsample',type=bool,default=False, help='If set, downsample the dataset if it has more than 7500 samples')
-parser.add_argument('--return_perf', action='store_true', help='If set return the model performances results')
+parser.add_argument(
+    "--pre_process", action="store_true", help="If set, preprocess the dataset"
+)
+parser.add_argument(
+    "--scaler_type",
+    type=int,
+    default=1,
+    help="Type of scaler to for data pre processing, by default 1",
+)
+parser.add_argument(
+    "--file_pos",
+    type=int,
+    default=0,
+    help="File position for get_most_recent_file",
+)
+parser.add_argument(
+    "--downsample",
+    type=bool,
+    default=False,
+    help="If set, downsample the dataset if it has more than 7500 samples",
+)
+parser.add_argument(
+    "--return_perf",
+    action="store_true",
+    help="If set return the model performances results",
+)
 
-def get_precision_file(dataset,model,scenario):    
-    path=os.path.join(cwd+"/results/",dataset.name,'experiments','metrics',model,f'scenario_{str(scenario)}')
-    file_path=get_most_recent_file(path)
-    results=open_element(file_path)
+
+def get_precision_file(
+    dataset: Type[Dataset],
+    model_name: str = "EIF",
+    scenario: int = 2,
+) -> pd.DataFrame:
+    """
+    Function to retrieve the metrics dataframe obtained in the last experiment
+
+    Args:
+        dataset (Dataset): dataset object
+        model_name (str): name of the model
+        scenario (int): training scenario
+    """
+    path = os.path.join(
+        cwd + "/results/",
+        dataset.name,
+        "experiments",
+        "metrics",
+        model_name,
+        f"scenario_{str(scenario)}",
+    )
+    path = generate_path(
+        basepath=cwd,
+        folders=[
+            "experiments",
+            "results",
+            dataset.name,
+            "experiments",
+            "metrics",
+            model_name,
+            f"scenario_{args.scenario}",
+        ],
+    )
+    file_path = get_most_recent_file(path, file_pos=args.file_pos)
+    results = open_element(file_path)
     return results
+
 
 # Parse the arguments
 args = parser.parse_args()
 
-# Access the arguments
-dataset_name = args.dataset_name
-dataset_path = args.dataset_path
-n_estimators = args.n_estimators
-max_depth = args.max_depth
-max_samples = args.max_samples
-contamination = args.contamination
-model = args.model
-interpretation = args.interpretation
-scenario = args.scenario
-pre_process = args.pre_process
-downsample = args.downsample
-return_perf = args.return_perf
+check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
-dataset = Dataset(dataset_name, path = dataset_path)
-dataset.drop_duplicates()
+dataset = load_dataset(
+    dataset_name=args.dataset_name,
+    dataset_path=args.dataset_path,
+    downsample=args.downsample,
+    scenario=args.scenario,
+    pre_process=args.pre_process,
+    scaler_type=args.scaler_type,
+)
+
+model = load_model(
+    model_name=args.model_name,
+    interpretation=args.interpretation,
+    n_estimators=args.n_estimators,
+    max_depth=args.max_depth,
+    max_samples=args.max_samples,
+)
 
 
-print('#'*50)
-print('Performance Metrics Experiment')
-print('#'*50)
-print(f'Dataset: {dataset.name}')
-print(f'Model: {model}')
-print(f'Interpretation: {interpretation}')
-print(f'Scenario: {scenario}')
-print('#'*50)
+print("#" * 50)
+print("Performance Metrics Experiment")
+print("#" * 50)
+print(f"Dataset: {dataset.name}")
+print(f"Model: {args.model_name}")
+print(f"Interpretation: {args.interpretation}")
+print(f"Scenario: {args.scenario}")
+print("#" * 50)
 
-# Downsample datasets with more than 7500 samples (i.e. diabetes shuttle and moodify)
-if (dataset.shape[0]>7500) and downsample:
-    dataset.downsample(max_samples=7500)
+os.chdir("../")
+cwd = os.getcwd()
 
-if dataset.perc_outliers != 0:
-    contamination = dataset.perc_outliers
+experiment_path = generate_path(basepath=cwd, folders=["experiments"])
 
-if scenario==2:
-    dataset.split_dataset(train_size=1-dataset.perc_outliers,contamination=0)
+if args.return_perf:
+    print("#" * 50)
+    print(
+        f"Performance values for {dataset.name} {args.model_name} scenario {str(args.scenario)}"
+    )
+    metrics_df = get_precision_file(dataset, args.model_name, args.scenario).T
+    print(metrics_df.to_markdown())
+    print("#" * 50)
 
-# Preprocess the dataset
-if pre_process:
-    print("#"*50)
-    print("\n\nPreprocessing the dataset...")
-    print("#"*50)
-    dataset.pre_process()
-else:
-    print("#"*50)
-    print("\n\nDataset not preprocessed")
-    dataset.initialize_train_test()
-    print("#"*50)
+dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_dict(
+    basepath=experiment_path
+)
 
-#import ipdb; ipdb.set_trace()
+print("#" * 50)
+print(
+    f'Fit time for {args.model_name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time["fit"][args.model_name][dataset.name]),3)}'
+)
+print(
+    f'Predict time for {args.model_name} {dataset.name} args.scenario {str(args.scenario)}: {np.round(np.mean(dict_time["predict"][args.model_name][dataset.name]),3)}'
+)
 
-if model == "EIF+":
-    I = ExtendedIsolationForest(1, n_estimators=n_estimators, max_depth=max_depth, max_samples=max_samples)
-elif model == "EIF":
-    I = ExtendedIsolationForest(0, n_estimators=n_estimators, max_depth=max_depth, max_samples=max_samples)
-elif (model == "IF"):
-    I = IsolationForest(n_estimators=n_estimators, max_depth=max_depth, max_samples=max_samples)
+if f"{args.model_name}_{args.interpretation}" in dict_time_imp["importances"]:
+    print(
+        f'Importances time for {args.model_name} {dataset.name} scenario {str(args.scenario)} for a single anomaly: {np.round(dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name][-1],3)}'
+    )
 
-if return_perf:
-    print("#"*50)
-    print(f'Performance values for {dataset.name} {model} scenario {str(scenario)}')
-    print(get_precision_file(dataset,model,scenario).T)
-    print("#"*50)
+print("#" * 50)
 
-os.chdir('../')
-cwd=os.getcwd()
-
-filename = cwd + "/utils_reboot/EIF+_vs_ACME-AD.pickle"
-with open(filename, "rb") as file:
-    dict_time = pickle.load(file)
-
-print('#'*50)
-print(f'Fit time for {model} {dataset.name} scenario {str(scenario)}: {np.round(np.mean(dict_time["fit"][model][dataset.name]),3)}')
-print(f'Predict time for {model} {dataset.name} scenario {str(scenario)}: {np.round(np.mean(dict_time["predict"][model][dataset.name]),3)}')
-
-if interpretation in dict_time["importances"]:
-    print(f'Importances time for {model} {dataset.name} scenario {str(scenario)} for a single anomaly: {np.round(dict_time["importances"][interpretation][dataset.name][-1],3)}')
-
-print('#'*50)

@@ -11,6 +11,8 @@ model_names=("EIF+_centroid")
 n_estimators=300
 contamination=0.15
 scenario=2
+seed=0
+file_pos=0
 
 for model_name in ${model_names[@]}; do
 
@@ -40,6 +42,8 @@ for model_name in ${model_names[@]}; do
       --seed 0 \
       --pre_process \
       --scaler_type 4 \
+      --seed $seed \
+      --file_pos $file_pos \
       --feature_selection \
       --plot_feature_selection
 
