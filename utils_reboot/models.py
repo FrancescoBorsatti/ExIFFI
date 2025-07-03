@@ -7,6 +7,19 @@ from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationFore
 from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
 
 
+class sklearn_IF(sklearn_IsolationForest):
+    def __init__(
+        self,
+        n_estimators: int = 100,
+        max_samples: Union[str, int] = "auto",
+    ) -> None:
+        super().__init__(
+            n_estimators=n_estimators,
+            max_samples=max_samples,
+        )
+        self.name = "sklearn_IF"
+
+
 def load_model(
     model_name: str = "EIF",
     interpretation: str = "EXIFFI",
@@ -27,17 +40,17 @@ def load_model(
     Returns:
         model (Union[ExtendedIsolationForest, IsolationForest, sklearn_IsolationForest]): AD model
     """
-    if model_name == "IF":
+    if model_name in ["IF", "sklearn_IF"]:
         if interpretation == "EXIFFI":
+            print("Creating IsolationForest model")
             model = IsolationForest(
                 n_estimators=n_estimators,
                 max_depth=max_depth,
                 max_samples=max_samples,
             )
         elif interpretation == "DIFFI" or interpretation == "RandomForest":
-            model = sklearn_IsolationForest(
-                n_estimators=n_estimators, max_samples=max_samples
-            )
+            print("Creating sklearn_IsolationForest model")
+            model = sklearn_IF(n_estimators=n_estimators, max_samples=max_samples)
     elif model_name == "EIF":
         print("#" * 50)
         print(f"Using model {model_name}")
