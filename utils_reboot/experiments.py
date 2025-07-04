@@ -10,7 +10,6 @@ import random
 
 realpath = os.path.realpath(__file__)  # true path of this script
 realpath = os.path.dirname(realpath)  # go up one dir
-realpath = os.path.dirname(realpath)  # go up one dir
 sys.path.append(realpath)  # appened to sys path
 
 import numpy as np
@@ -18,7 +17,7 @@ import numpy.typing as npt
 from tqdm import tqdm, trange
 import copy
 
-from ExIFFI_C.model_reboot.EIF_reboot import ExtendedIsolationForest
+from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
 from model_reboot.interpretability_module import *
 from utils_reboot.datasets import Dataset
 from utils_reboot.utils import save_element, open_element
