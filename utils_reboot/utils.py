@@ -1,4 +1,5 @@
 import time
+import random
 from typing import Type, Union, Optional, List
 import numpy.typing as npt
 import pickle
@@ -232,12 +233,12 @@ def get_feature_indexes(dataset: Type[Dataset], f1: str, f2: str) -> tuple[int, 
 
     try:
         idx1 = feature_names.index(f1)
-    except:
-        print("Feature name not valid")
+    except ValueError:
+        raise ValueError("Feature name not valid")
     try:
         idx2 = feature_names.index(f2)
-    except:
-        print("Feature name not valid")
+    except ValueError:
+        raise ValueError("Feature name not valid")
 
     return idx1, idx2
 
@@ -313,12 +314,13 @@ def generate_path(basepath: str = os.getcwd(), folders: List[str] = []) -> str:
     return path[:-1]
 
 
-def get_most_recent_file(directory_path: str) -> str:
+def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
     """
     Function to get the most recent file (i.e. last modified file) in a directory path.
 
     Args:
         directory_path: Directory path where the files are stored
+        file_pos (int): position of the file to retrieve, by default is 0 (most recent file), file_pos=1 will retrieve the second most recent file and so on
 
     Returns:
         Path to the most recent file in the directory path
@@ -330,7 +332,7 @@ def get_most_recent_file(directory_path: str) -> str:
         key=lambda x: os.path.getmtime(os.path.join(directory_path, x)),
         reverse=True,
     )
-    return os.path.join(directory_path, files[0])
+    return os.path.join(directory_path, files[file_pos])
 
 
 def open_element(
@@ -369,6 +371,9 @@ def open_element(
             element = np.load(file_path, allow_pickle=True)["element"]
     elif filetype == "csv.gz":
         element = pd.read_csv(file_path)
+    else:
+        raise ValueError("Filetype not recognized")
+
     return element
 
 
@@ -520,3 +525,132 @@ def select_pre_process_scenario(dataset: Type[Dataset]) -> int:
 
     return scenario
 
+
+def check_arguments(
+    model_name: str = "EIF",
+    interpretation: str = "EXIFFI",
+) -> None:
+    """
+    Thiss functions performs some assertions in order to stop immediately the code execution is the model name or the interpretation passed as command line argument are not correct.
+
+    Args:
+        model_name (str): model name
+        interpretation (str): interpretation name
+
+    Returns:
+        None: The function does not return any value but raises AssertionError
+    """
+
+    model_error = """
+        Model not recognized. Accepted values:
+            EIF → Extended Isolation Forest
+            EIF+ → Extended Isolation Forest Plus
+            IF → Isolation Forest
+            EIF+_centroid → EIF+ centroid importance
+            EIF+_distrib_split → EIF+ distribution aware splitting
+            EIF+_centroid_split → combination of EIF+_centroid and EIF+_distrib_split
+    """
+
+    interpretation_error = """
+    Interpretation method not recognized. Accepted values:
+        EXIFFI → Extended Isolation Forest Feature Importance
+        EXIFFI+ → EXIFFI based on EIF+
+        DIFFI → Depth Based Isolation Forest Feature Importance
+        ACME → AcME-AD
+        KernelSHAP → Kernel SHAP
+    """
+
+    assert model_name in [
+        "EIF",
+        "EIF+",
+        "IF",
+        "EIF+_centroid",
+        "EIF+_distrib_split",
+        "EIF+_centroid_split",
+    ], model_error
+
+    assert interpretation in [
+        "EXIFFI",
+        "EXIFFI+",
+        "DIFFI",
+        "ACME",
+        "KernelSHAP",
+    ], interpretation_error
+
+    if interpretation == "EXIFFI+":
+        assert model_name in [
+            "EIF+",
+            "EIF+_centroid",
+            "EIF+_distrib_split",
+            "EIF+_centroid_split",
+        ], "EXIFFI+ can only be used with the EIF+ model"
+    if interpretation == "EXIFFI":
+        assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
+    if interpretation == "DIFFI":
+        assert model_name in [
+            "IF",
+            "sklearn_IF",
+        ], "DIFFI can only be used with IF based models"
+
+
+def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
+    """
+    This function initialized the performance dictionaries and creates them as
+    empty dictionaries in case they are not initalized, otherwise it loads them.
+
+    Args:
+        basepath (str): starting path to define the path to the performance dictionaries
+
+    Returns:
+        dict_time, dict_imp_time, dict_time_path, dict_time_imp_path: The two loaded dictionaries and their paths
+    """
+
+    perf_dict_dirpath = generate_path(
+        basepath=basepath, folders=["utils_reboot", "perf_dicts"]
+    )
+
+    dict_time_path = os.path.join(perf_dict_dirpath, "dict_time.pickle")
+    dict_time_imp_path = os.path.join(perf_dict_dirpath, "dict_time_imp.pickle")
+
+    if not os.path.exists(dict_time_path):
+        dict_time = {
+            "fit": {
+                "EIF+": {},
+                "EIF": {},
+                "EIF+_centroid": {},
+                "EIF+_distrib_split": {},
+                "EIF+_centroid_split": {},
+            },
+            "predict": {
+                "EIF+": {},
+                "EIF": {},
+                "EIF+_centroid": {},
+                "EIF+_distrib_split": {},
+                "EIF+_centroid_split": {},
+            },
+        }
+        with open(dict_time_path, "wb") as file:
+            pickle.dump(dict_time, file)
+
+    with open(dict_time_path, "rb") as file:
+        dict_time = pickle.load(file)
+
+    if not os.path.exists(dict_time_imp_path):
+        dict_time_imp = {
+            "importances": {
+                "EIF+_ACME": {},
+                "EIF+_KernelSHAP": {},
+                "EIF_EXIFFI": {},
+                "EIF+_EXIFFI+": {},
+                "EIF+_centroid_EXIFFI+": {},
+                "EIF+_distrib_split_EXIFFI+": {},
+                "EIF+_centroid_split_EXIFFI+": {},
+            },
+        }
+        with open(dict_time_imp_path, "wb") as file:
+            pickle.dump(dict_time_imp, file)
+
+    with open(dict_time_imp_path, "rb") as file:
+        dict_time_imp = pickle.load(file)
+
+    return dict_time, dict_time_imp, dict_time_path, dict_time_imp_path

@@ -19,8 +19,10 @@ from utils_reboot.utils import (
     generate_path,
     save_element,
     get_most_recent_file,
+    check_arguments,
 )
-from utils_reboot.datasets import Dataset
+from utils_reboot.datasets import load_dataset
+from utils_reboot.models import load_model
 from utils_reboot.plots import score_plot
 
 
@@ -92,6 +94,12 @@ parser.add_argument(
     help="Starting seed for reproducibility",
 )
 parser.add_argument(
+    "--file_pos",
+    type=int,
+    default=0,
+    help="File position for get_most_recent_file",
+)
+parser.add_argument(
     "--downsample",
     type=bool,
     default=False,
@@ -132,104 +140,24 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-assert args.model_name in [
-    "EIF+",
-    "C_EIF+",
-    "EIF",
-    "IF",
-], "Model not recognized. Accepted values: ['EIF','EIF+','C_EIF+']"
-assert args.interpretation in [
-    "EXIFFI",
-    "EXIFFI+",
-    "ACME",
-    "KernelSHAP",
-], "Interpretation not recognized"
-if args.interpretation == "EXIFFI+":
-    assert args.model_name == "EIF+", "EXIFFI+ can only be used with the EIF+ model"
-if args.interpretation == "EXIFFI":
-    assert args.model_name == "EIF", "EXIFFI can only be used with the EIF model"
-if args.interpretation == "C_EXIFFI+":
-    assert (
-        args.model_name == "C_EIF+"
-    ), "C_EXIFFI+ can only be used with the C_EIF+ model"
+check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
-# Load dataset
-dataset = Dataset(
-    args.dataset_name,
-    path=args.dataset_path,
-    feature_names_filepath="../../datasets/data/",
+dataset = load_dataset(
+    dataset_name=args.dataset_name,
+    dataset_path=args.dataset_path,
+    downsample=args.downsample,
+    scenario=args.scenario,
+    pre_process=args.pre_process,
+    scaler_type=args.scaler_type,
 )
-dataset.drop_duplicates()
 
-# Downsample datasets with more than 7500 samples (i.e. diabetes shuttle and moodify)
-if (dataset.shape[0] > 7500) and args.downsample:
-    dataset.downsample(max_samples=7500)
-
-# If a dataset has lables (all the datasets except piade), the contamination is set to dataset.perc_outliers
-if dataset.perc_outliers != 0:
-    contamination = dataset.perc_outliers
-
-# Split the dataset (scenario 2) for TEP dataset
-if args.scenario == 2:
-    dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
-
-# Preprocess the dataset
-if args.pre_process:
-    print("#" * 50)
-    print("Preprocessing the dataset...")
-    print("#" * 50)
-    dataset.pre_process(scaler_type=args.scaler_type)
-else:
-    print("#" * 50)
-    print("Dataset not preprocessed")
-    dataset.initialize_train_test()
-    print("#" * 50)
-
-if args.model_name == "IF":
-    if args.interpretation == "EXIFFI":
-        model = IsolationForest(
-            n_estimators=args.n_estimators,
-            max_depth=args.max_depth,
-            max_samples=args.max_samples,
-        )
-    elif args.interpretation == "DIFFI" or args.interpretation == "RandomForest":
-        model = sklearn_IsolationForest(
-            n_estimators=args.n_estimators, max_samples=args.max_samples
-        )
-    # Use the IsolationForest model used in the AcME-AD paper
-    elif args.interpretation == "ACME":
-        model = sklearn_IsolationForest(
-            n_estimators=200,
-            max_samples="auto",
-            contamination=args.contamination,
-            random_state=0,
-            n_jobs=-1,
-        )
-elif args.model_name == "EIF+":
-    model = ExtendedIsolationForest(
-        1,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        eta=args.eta,
-    )
-elif args.model_name == "EIF":
-    model = ExtendedIsolationForest(
-        0,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        eta=args.eta,
-    )
-# For the moment EIF+ and C_EIF+ are the same model, modify here when we have the C implementation of ExtendedIsolationForest
-elif args.model_name == "C_EIF+":
-    model = ExtendedIsolationForest(
-        1,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        eta=args.eta,
-    )
+model = load_model(
+    model_name=args.model_name,
+    interpretation=args.interpretation,
+    n_estimators=args.n_estimators,
+    max_depth=args.max_depth,
+    max_samples=args.max_samples,
+)
 
 os.chdir("../")
 cwd = os.getcwd()
@@ -347,7 +275,7 @@ if args.compute_bars:
     print("Computing bars")
     print("#" * 50)
 
-    imp_path = get_most_recent_file(imp_mat_path)
+    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
     bars = compute_bars(
         dataset=dataset,
         importances_file=imp_path,
@@ -362,7 +290,7 @@ if args.score_plot:
     print("Producing score plot")
     print("#" * 50)
 
-    imp_path = get_most_recent_file(imp_mat_path)
+    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
 
     score_plot(
         dataset=dataset,

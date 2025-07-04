@@ -8,6 +8,8 @@ DATASET_PATH="../../datasets/data/TEP/"
 
 model_name="IF"
 interpretation="ACME"
+seed=0
+file_pos=0
 
 python $SCRIPT_PATH \
         --n_estimators 300 \
@@ -21,6 +23,8 @@ python $SCRIPT_PATH \
         --n_runs 40 \
         --pre_process \
         --scaler_type 4 \
+        --seed $seed \
+        --file_pos $file_pos \
         --compute_lfi \
         --compute_bars \
         --score_plot

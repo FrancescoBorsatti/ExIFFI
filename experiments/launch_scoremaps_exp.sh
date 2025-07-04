@@ -2,42 +2,53 @@
 
 SCRIPT_PATH="test_local_scoremaps.py"
 
-DATASETS="piade_s2_alarms_no_zeros"
+# PIADE
+# DATASETS="piade_s2_alarms_no_zeros"
+# DATASET_PATH="../../datasets/data/PIADE/"
 
-DATASET_PATH="../../datasets/data/PIADE/"
+# TEP
+DATASETS="TEP_ACME"
+DATASET_PATH="../../datasets/data/TEP/"
 
-# For TEP
+n_estimators=300
+contamination=0.15
+scenario=2
+f1="xmeas_11"
+f2="xmeas_13"
 
-    # python $SCRIPT_PATH \
-    #     --dataset_name $DATASETS \
-    #     --dataset_path $DATASET_PATH \
-    #     --n_estimators 300 \
-    #     --contamination 0.1 \
-    #     --model "EIF+" \
-    #     --interpretation "EXIFFI+" \
-    #     --scenario 2 \
-    #     --feature1 "xmeas_11" \
-    #     --feature2 "xmeas_41" \
-    #     --downsample 1 \
-    #     --pre_process 1 \
+# model_names=("EIF+" "EIF+_distrib_split" "EIF+_centroid_split")
+# model_names=("EIF+_distrib_split" "EIF+_centroid_split")
+model_names=("EIF+_centroid")
 
-    # To pre process the data, add the following line, use for TEP   
-    #--pre_process 1
+for model_name in ${model_names[@]}; do
 
-# For PIADE
+  echo "#############################################"
+  echo "Producing local scoremap for model ${model_name}"
+  echo "#############################################"
 
-    python $SCRIPT_PATH \
-        --dataset_name $DATASETS \
-        --dataset_path $DATASET_PATH \
-        --n_estimators 300 \
-        --contamination 0.15 \
-        --model "EIF+" \
-        --interpretation "EXIFFI+" \
-        --scenario 2 \
-        --feature1 "%scheduled_downtime" \
-        --feature2 "%idle" \
-        --downsample 1 \
-        --factor 3 \
-        --pre_process 1 \
-        --scaler_type 4
+  if [ $model_name = "EIF" ]; then
+    interpretation="EXIFFI"
+  else
+    interpretation="EXIFFI+"
+  fi
+
+  echo "#############################################"
+  echo "Using ${interpretation} interpretation algorithm"
+  echo "#############################################"
+
+  python $SCRIPT_PATH \
+      --dataset_name $DATASETS \
+      --dataset_path $DATASET_PATH \
+      --n_estimators $n_estimators \
+      --contamination $contamination \
+      --model $model_name \
+      --interpretation $interpretation \
+      --scenario $scenario \
+      --feature1 $f1 \
+      --feature2 $f2 \
+      --downsample 1 \
+      --pre_process 1 \
+      --scaler_type 4
+
+done
 

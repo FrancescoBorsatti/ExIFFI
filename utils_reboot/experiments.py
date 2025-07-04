@@ -322,6 +322,7 @@ def compute_imp_time_kernelSHAP(
     background: float = 0.1,
     pre_process: float = False,
     scenario: int = 2,
+    seed: int = 0,
 ) -> float:
     """
     Compute the time to compute the local feature importances for an anomalous point using the KernelSHAP method.
@@ -333,11 +334,13 @@ def compute_imp_time_kernelSHAP(
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
         scenario (int): The scenario of the experiment. Defaults to 2.
+        seed (int): set seed for reproducibility
 
     Returns:
         The time to compute the local feature importances for a single anomaly
     """
 
+    set_seed(seed=seed)
     I.fit(dataset.X_train)
 
     y_pred = I._predict(dataset.X_test, p).astype(int)
@@ -450,6 +453,7 @@ def compute_local_imp_time(
     n_quantiles: int = 70,
     interpretation: str = "EXIFFI+",
     n_runs: int = 10,
+    seed: int = 0,
 ) -> float:
     """
     Compute the time to compute the local feature importances for a number of runs.
@@ -459,6 +463,7 @@ def compute_local_imp_time(
         anomalies (npt.NDArray): The anomalies in the dataset.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
         n_runs (int): The number of runs. Defaults to 10.
+        seed (int): seed for reproducibility
 
     Returns:
         The average time to compute the local feature importances for single anomalies
@@ -471,11 +476,7 @@ def compute_local_imp_time(
             start_time = time.time()
             importances, _ = local_diffi(I, anomaly)
             times.append(time.time() - start_time)
-    elif (
-        interpretation == "EXIFFI"
-        or interpretation == "EXIFFI+"
-        or interpretation == "C_EXIFFI+"
-    ):
+    elif interpretation in ["EXIFFI", "EXIFFI+"]:
         for i in trange(n_runs, desc="EXIFFI Local Importances runs"):
             anomaly = anomalies[
                 np.random.randint(0, anomalies.shape[0], 1)[0], :
@@ -485,6 +486,7 @@ def compute_local_imp_time(
             times.append(time.time() - start_time)
     elif interpretation == "ACME":
         for i in trange(n_runs, desc="ACME Local Importances runs"):
+            set_seed(seed=seed + i)
             importances_time = compute_imp_time_ACME(
                 I, dataset, p=p, n_quantiles=n_quantiles
             )
@@ -934,11 +936,12 @@ def performance(
     train_size: float = 0.8,
     scenario: int = 2,
     n_runs: int = 10,
+    seed: int = 0,
     filename: str = "",
-    path: str = os.getcwd(),
+    metrics_path: str = os.getcwd(),
     save: bool = True,
     downsample: bool = False,
-) -> tuple[pd.DataFrame, str]:
+) -> pd.DataFrame:
     """
     Compute the performance metrics of the model on the dataset.
 
@@ -953,6 +956,7 @@ def performance(
         train_size (float): The size of the training set. Defaults to 0.8.
         scenario (int): The scenario of the experiment. Defaults to 2.
         n_runs (int): The number of runs. Defaults to 10.
+        seed (int): starting seed value for reproducibility
         filename (str): The filename. Defaults to "".
         path (str): The path to the experiments folder. Defaults to os.getcwd().
         save (bool): Whether to save the results. Defaults to True.
@@ -974,11 +978,9 @@ def performance(
 
     precisions = []
     for i in trange(n_runs):
+        set_seed(seed=seed + i)
         I.fit(dataset.X_train)
-        if model_name in ["DIF", "AnomalyAutoencoder"]:
-            score = I.decision_function(dataset.X_test)
-        else:
-            score = I.predict(dataset.X_test)
+        score = I.predict(dataset.X_test)
         precisions.append(average_precision_score(y_true, score))
 
     df = pd.DataFrame(
@@ -998,21 +1000,15 @@ def performance(
         index=[pd.Timestamp.now()],
     )
 
-    path = (
-        path
-        + f"/experiments/results/{dataset.name}/experiments/metrics/{model_name}/"
-        + f"scenario_{str(scenario)}/"
-    )
-
-    if not os.path.exists(path):
-        os.makedirs(path)
-
     filename = f"perf_{dataset.name}_{model_name}_{scenario}"
 
     if save:
-        save_element(df, path, filename)
+        save_element(df, metrics_path, filename)
+        print("#" * 50)
+        print(f"Metrics dataframe save in {metrics_path}")
+        print("#" * 50)
 
-    return df, path
+    return df
 
 
 def ablation_EIF_plus(

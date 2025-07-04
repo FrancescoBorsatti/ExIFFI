@@ -10,9 +10,15 @@ sys.path.append("..")
 # append_dirname("ExIFFI_Industrial_Test")
 
 from utils_reboot.experiments import experiment_global_importances, compute_bars
-from utils_reboot.utils import save_element, get_most_recent_file, generate_path
-from utils_reboot.datasets import Dataset
+from utils_reboot.utils import (
+    save_element,
+    get_most_recent_file,
+    generate_path,
+    check_arguments,
+)
+from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.plots import score_plot
+from utils_reboot.models import load_model
 
 from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
 from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
@@ -57,6 +63,12 @@ parser.add_argument(
     help="Starting seed value",
 )
 parser.add_argument(
+    "--file_pos",
+    type=int,
+    default=0,
+    help="File position for get_most_recent_file",
+)
+parser.add_argument(
     "--pre_process", action="store_true", help="If set, preprocess the dataset"
 )
 parser.add_argument(
@@ -98,128 +110,24 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-assert (
-    args.model_name
-    in [
-        "EIF",
-        "EIF+",
-        "IF",
-        "EIF+_centroid",
-        "EIF+_distrib_split",
-        "EIF+_centroid_split",
-    ]
-), "Model not recognized. Accepted values: ['EIF','EIF+','IF','EIF+_centroid',EIF+_distrib_split','EIF+_centroid_split']"
-assert args.interpretation in [
-    "EXIFFI",
-    "EXIFFI+",
-    "C_EXIFFI+",
-    "DIFFI",
-], "Interpretation not recognized"
-if args.interpretation == "EXIFFI+":
-    assert args.model_name in [
-        "EIF+",
-        "EIF+_centroid",
-        "EIF+_distrib_split",
-        "EIF+_centroid_split",
-    ], "EXIFFI+ can only be used with the EIF+ model"
-if args.interpretation == "EXIFFI":
-    assert args.model_name == "EIF", "EXIFFI can only be used with the EIF model"
-if args.interpretation == "C_EXIFFI+":
-    assert (
-        args.model_name == "C_EIF+"
-    ), "C_EXIFFI+ can only be used with the C_EIF+ model"
-"EIF+_centroid_split"
+check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
-dataset = Dataset(
-    args.dataset_name,
-    path=args.dataset_path,
-    feature_names_filepath="../../datasets/data/",
+dataset = load_dataset(
+    dataset_name=args.dataset_name,
+    dataset_path=args.dataset_path,
+    downsample=args.downsample,
+    scenario=args.scenario,
+    pre_process=args.pre_process,
+    scaler_type=args.scaler_type,
 )
-dataset.drop_duplicates()
 
-# Downsample datasets with more than 7500 samples
-if dataset.shape[0] > 7500 and args.downsample:
-    dataset.downsample(max_samples=7500)
-
-# If a dataset has lables (all the datasets except piade), the contamination is set to dataset.perc_outliers
-if dataset.perc_outliers != 0:
-    contamination = dataset.perc_outliers
-
-if args.scenario == 2:
-    dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
-
-# Preprocess the dataset
-if args.pre_process:
-    print("#" * 50)
-    print("Preprocessing the dataset...")
-    print("#" * 50)
-    dataset.pre_process(scaler_type=args.scaler_type)
-else:
-    print("#" * 50)
-    print("Dataset not preprocessed")
-    dataset.initialize_train_test()
-    print("#" * 50)
-
-
-if args.model_name == "IF":
-    if args.interpretation == "EXIFFI":
-        model = IsolationForest(
-            n_estimators=args.n_estimators,
-            max_depth=args.max_depth,
-            max_samples=args.max_samples,
-        )
-    elif args.interpretation == "DIFFI" or args.interpretation == "RandomForest":
-        model = sklearn_IsolationForest(
-            n_estimators=args.n_estimators, max_samples=args.max_samples
-        )
-elif args.model_name == "EIF":
-    print("#" * 50)
-    print(f"Using model {args.model_name}")
-    print("#" * 50)
-    model = ExtendedIsolationForest(
-        plus=False,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-    )
-elif args.model_name == "EIF+":
-    print("#" * 50)
-    print(f"Using model {args.model_name}")
-    print("#" * 50)
-    model = ExtendedIsolationForest(
-        plus=True,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-    )
-elif args.model_name == "EIF+_centroid":
-    print("#" * 50)
-    print(f"Using model {args.model_name}")
-    print("#" * 50)
-    model = ExtendedIsolationForest(
-        plus=True,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        use_centroid_importance=True,
-    )
-elif args.model_name == "EIF+_distrib_split":
-    model = ExtendedIsolationForest(
-        plus=True,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        use_dist_split=True,
-    )
-elif args.model_name == "EIF+_centroid_split":
-    model = ExtendedIsolationForest(
-        plus=True,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
-        use_centroid_importance=True,
-        use_dist_split=True,
-    )
+model = load_model(
+    model_name=args.model_name,
+    interpretation=args.interpretation,
+    n_estimators=args.n_estimators,
+    max_depth=args.max_depth,
+    max_samples=args.max_samples,
+)
 
 os.chdir("../")
 cwd = os.getcwd()
@@ -238,18 +146,6 @@ print("#" * 50)
 
 results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
-path_plots = generate_path(
-    basepath=results_path,
-    folders=[
-        dataset.name,
-        "plots",
-        "score_plots",
-        "gfi",
-        args.model_name,
-        args.interpretation,
-    ],
-)
-
 path_experiment_model_interpretation = generate_path(
     basepath=results_path,
     folders=[
@@ -266,10 +162,6 @@ imp_mat_path = generate_path(
     folders=["imp_mat", f"scenario_{args.scenario}"],
 )
 
-bars_path = generate_path(
-    basepath=path_experiment_model_interpretation,
-    folders=["bars", f"scenario_{args.scenario}"],
-)
 
 if args.compute_gfi:
     print("#" * 50)
@@ -295,7 +187,13 @@ if args.compute_bars:
     print("#" * 50)
     print("Computing bars")
     print("#" * 50)
-    imp_path = get_most_recent_file(imp_mat_path)
+
+    bars_path = generate_path(
+        basepath=path_experiment_model_interpretation,
+        folders=["bars", f"scenario_{args.scenario}"],
+    )
+
+    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
     bars = compute_bars(
         dataset=dataset,
         importances_file=imp_path,
@@ -316,7 +214,20 @@ if args.score_plot:
     print("Producing score plot")
     print("#" * 50)
 
-    imp_path = get_most_recent_file(imp_mat_path)
+    path_plots = generate_path(
+        basepath=results_path,
+        folders=[
+            dataset.name,
+            "plots",
+            "score_plots",
+            "gfi",
+            args.model_name,
+            args.interpretation,
+        ],
+    )
+
+    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
+    ipdb.set_trace()
 
     score_plot(
         dataset=dataset,
