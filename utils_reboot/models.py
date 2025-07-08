@@ -3,7 +3,7 @@ import sys
 from typing import Union
 
 sys.path.append("..")
-from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
+from exiffi_core.model import ExtendedIsolationForest, IsolationForest
 from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
 
 
@@ -41,16 +41,17 @@ def load_model(
         model (Union[ExtendedIsolationForest, IsolationForest, sklearn_IsolationForest]): AD model
     """
     if model_name in ["IF", "sklearn_IF"]:
-        if interpretation == "EXIFFI":
+        if interpretation in ["DIFFI", "RandomForest"]:
+            print("Creating sklearn_IsolationForest model")
+            model = sklearn_IF(n_estimators=n_estimators, max_samples=max_samples)
+        else:
             print("Creating IsolationForest model")
             model = IsolationForest(
                 n_estimators=n_estimators,
                 max_depth=max_depth,
                 max_samples=max_samples,
             )
-        elif interpretation == "DIFFI" or interpretation == "RandomForest":
-            print("Creating sklearn_IsolationForest model")
-            model = sklearn_IF(n_estimators=n_estimators, max_samples=max_samples)
+
     elif model_name == "EIF":
         print("#" * 50)
         print(f"Using model {model_name}")

@@ -17,7 +17,7 @@ import numpy.typing as npt
 from tqdm import tqdm, trange
 import copy
 
-from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
+from exiffi_core.model import ExtendedIsolationForest, IsolationForest
 from model_reboot.interpretability_module import *
 from utils_reboot.datasets import Dataset
 from utils_reboot.utils import save_element, open_element
@@ -71,6 +71,33 @@ if not os.path.exists(filename):
 if os.path.exists(filename):
     with open(filename, "rb") as file:
         dict_time = pickle.load(file)
+
+
+def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) -> float:
+    """
+    Set the contamination factor to use for the model predictions
+    and importance computation. In case the dataset has labels we use its
+    inherent contamination factor, otherwise we use the value passed through the
+    command line
+
+    Args:
+        dataset (Type[Dataset]): dataset object
+        cli_contamination (float): contamination factor passed through the command line, by default 0.1
+
+    Returns:
+        contamination (float): contamination factor
+    """
+
+    if dataset.perc_outliers != 0:
+        contamination = dataset.perc_outliers
+    else:
+        contamination = cli_contamination
+
+    print("#" * 50)
+    print(f"Contamination factor set to: {contamination}")
+    print("#" * 50)
+
+    return contamination
 
 
 def compute_global_importances(
@@ -966,10 +993,6 @@ def performance(
         The performance metrics and the path to the results.
     """
 
-    # In path insert the local path up to the experiments folder:
-    # For Davide → /home/davidefrizzo/Desktop/PHD/ExIFFI/experiments
-    # For Alessio → /Users/alessio/Documents/ExIFFI
-
     y_pred = y_pred.astype(int)
     y_true = y_true.astype(int)
 
@@ -977,11 +1000,21 @@ def performance(
         dataset.downsample(max_samples=7500)
 
     precisions = []
-    for i in trange(n_runs):
+    for i in trange(n_runs, desc="Average Precision runs"):
         set_seed(seed=seed + i)
         I.fit(dataset.X_train)
+        # score = (
+        #     I.predict(dataset.X_test)
+        #     if I.name != "sklearn_IF"
+        #     else I.decision_function(dataset.X_test)
+        # )
         score = I.predict(dataset.X_test)
-        precisions.append(average_precision_score(y_true, score))
+        avg_prec = (
+            average_precision_score(y_true, score)
+            if I.name != "sklearn_IF"
+            else average_precision_score(y_true, y_pred)
+        )
+        precisions.append(avg_prec)
 
     df = pd.DataFrame(
         {

@@ -400,10 +400,6 @@ def load_dataset(
     if dataset.shape[0] > downsample_size and downsample:
         dataset.downsample(max_samples=downsample_size)
 
-    # If a dataset has lables (all the datasets except piade), the contamination is set to dataset.perc_outliers
-    if dataset.perc_outliers != 0:
-        contamination = dataset.perc_outliers
-
     if scenario == 2:
         dataset.split_dataset(train_size=1 - dataset.perc_outliers, contamination=0)
 

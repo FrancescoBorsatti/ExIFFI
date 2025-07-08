@@ -8,23 +8,14 @@ import pandas as pd
 import os
 import json
 from collections import namedtuple
-from append_to_path import append_dirname
 
-append_dirname("ExIFFI_Industrial_Test")
-from ExIFFI_original.utils_reboot.datasets import Dataset
+# from append_to_path import append_dirname
+# append_dirname("ExIFFI_Industrial_Test")
+
+from utils_reboot.datasets import Dataset
 from sklearn.ensemble import IsolationForest
 # from pyod.models.dif import DIF as oldDIF
 # from pyod.models.auto_encoder import AutoEncoder as oldAutoEncoder
-
-from sklearn.metrics import (
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
-    accuracy_score,
-    average_precision_score,
-    balanced_accuracy_score,
-)
 
 Precisions = namedtuple(
     "Precisions", ["direct", "inverse", "dataset", "model", "value"]
@@ -605,9 +596,7 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
         dict_time, dict_imp_time, dict_time_path, dict_time_imp_path: The two loaded dictionaries and their paths
     """
 
-    perf_dict_dirpath = generate_path(
-        basepath=basepath, folders=["utils_reboot", "perf_dicts"]
-    )
+    perf_dict_dirpath = generate_path(basepath=basepath, folders=["perf_dicts"])
 
     dict_time_path = os.path.join(perf_dict_dirpath, "dict_time.pickle")
     dict_time_imp_path = os.path.join(perf_dict_dirpath, "dict_time_imp.pickle")
