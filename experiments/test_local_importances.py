@@ -1,35 +1,32 @@
-import sys
 import os
+import sys
+
 import ipdb
 
 cwd = os.getcwd()
 sys.path.append("..")
+import argparse
 from collections import namedtuple
+
+from utils_reboot.datasets import load_dataset  # noqa: E402
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
-
-from utils_reboot.experiments import (
+from utils_reboot.experiments import (  # noqa: E402
+    compute_bars,
     compute_local_importances_ACME,
     compute_local_importances_kernelSHAP,
     experiment_local_importances,
-    compute_bars,
+    set_contamination,
 )
-from utils_reboot.utils import (
-    generate_path,
-    save_element,
-    get_most_recent_file,
+from utils_reboot.models import load_model  # noqa: E402
+from utils_reboot.plots import score_plot  # noqa: E402
+from utils_reboot.utils import (  # noqa: E402
     check_arguments,
+    generate_path,
+    get_most_recent_file,
+    save_element,
 )
-from utils_reboot.datasets import load_dataset
-from utils_reboot.models import load_model
-from utils_reboot.plots import score_plot
-
-
-from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
-from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
-from ACME.ACME import ACME
-import argparse
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Test Local Importances")
@@ -224,12 +221,16 @@ if args.compute_lfi:
     print("Computing local importances")
     print("#" * 50)
 
+    contamination = set_contamination(
+        dataset=dataset, cli_contamination=args.contamination
+    )
+
     if args.interpretation == "ACME":
         imp_mat = compute_local_importances_ACME(
             I=model,
             dataset=dataset,
             model=args.model_name,
-            p=args.contamination,
+            p=contamination,
             n_quantiles=args.n_quantiles,
         )
 
@@ -256,7 +257,7 @@ if args.compute_lfi:
         imp_mat, labels = experiment_local_importances(
             I=model,
             dataset=dataset,
-            p=args.contamination,
+            p=contamination,
             interpretation=args.interpretation,
             n_runs=args.n_runs,
             seed=args.seed,

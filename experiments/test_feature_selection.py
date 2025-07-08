@@ -1,6 +1,7 @@
 # initialize feature_selection paths
-import sys
 import os
+import sys
+
 import ipdb
 import numpy as np
 import pandas as pd
@@ -8,27 +9,24 @@ import pandas as pd
 cwd = os.getcwd()
 # os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
 sys.path.append("..")
-from collections import namedtuple
+import argparse  # noqa: E402
+from collections import namedtuple  # noqa: E402
+
+from utils_reboot.datasets import load_dataset  # noqa: E402
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
-
-from utils_reboot.experiments import feature_selection
-from utils_reboot.datasets import Dataset, load_dataset
-from utils_reboot.models import load_model
-from utils_reboot.plots import plot_feature_selection
-from utils_reboot.utils import (
+from utils_reboot.experiments import feature_selection  # noqa: E402
+from utils_reboot.models import load_model  # noqa: E402
+from utils_reboot.plots import plot_feature_selection  # noqa: E402
+from utils_reboot.utils import (  # noqa: E402
+    check_arguments,
     generate_path,
     get_most_recent_file,
     open_element,
     save_fs_prec,
     save_fs_prec_random,
-    check_arguments,
 )
-
-from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
-from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
-import argparse
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Test Feature Selection")
@@ -170,8 +168,6 @@ model = load_model(
     max_depth=args.max_depth,
     max_samples=args.max_samples,
 )
-
-ipdb.set_trace()
 
 print("#" * 50)
 print("Feature Selection Experiment")

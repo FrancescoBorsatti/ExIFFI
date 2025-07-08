@@ -15,6 +15,49 @@ interpretation="${2:-'EXIFFI'}"
 n_estimators=${3:-300}
 scenario=${4:-2}
 file_pos=${5:-0}
+mode="${6:-'metrics'}"
+
+# For TEP
+
+if [ $mode = "metrics" ]; then
+
+  echo "#############################################"
+  echo "Mode: $mode"
+  echo "#############################################"
+
+  python $SCRIPT_PATH \
+          --dataset_name $DATASETS \
+          --dataset_path $DATASET_PATH \
+          --model $model_name \
+          --interpretation $interpretation \
+          --n_estimators $n_estimators \
+          --scenario $scenario \
+          --pre_process \
+          --return_perf \
+          --file_pos $file_pos
+
+elif [ $mode = "times" ]; then
+
+  echo "#############################################"
+  echo "Mode: $mode"
+  echo "#############################################"
+
+  python $SCRIPT_PATH \
+          --dataset_name $DATASETS \
+          --dataset_path $DATASET_PATH \
+          --model $model_name \
+          --interpretation $interpretation \
+          --n_estimators $n_estimators \
+          --scenario $scenario \
+          --pre_process \
+          --file_pos $file_pos
+else
+
+  echo "Incorrect mode passed, available modes: ['metrics', 'times']"
+
+fi
+
+
 
 # For PIADE
 
@@ -28,15 +71,3 @@ file_pos=${5:-0}
 #         --scenario 2
 #
 
-# For TEP
-
-python $SCRIPT_PATH \
-        --dataset_name $DATASETS \
-        --dataset_path $DATASET_PATH \
-        --model $model_name \
-        --interpretation $interpretation \
-        --n_estimators $n_estimators \
-        --scenario $scenario \
-        --pre_process \
-        --return_perf \
-        --file_pos $file_pos

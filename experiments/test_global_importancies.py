@@ -1,5 +1,6 @@
-import sys
+import argparse
 import os
+import sys
 import ipdb
 
 cwd = os.getcwd()
@@ -9,21 +10,20 @@ sys.path.append("..")
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-from utils_reboot.experiments import experiment_global_importances, compute_bars
-from utils_reboot.utils import (
-    save_element,
-    get_most_recent_file,
-    generate_path,
-    check_arguments,
+from utils_reboot.datasets import load_dataset  # noqa: E402
+from utils_reboot.experiments import (
+    compute_bars,
+    experiment_global_importances,
+    set_contamination,
 )
-from utils_reboot.datasets import Dataset, load_dataset
-from utils_reboot.plots import score_plot
 from utils_reboot.models import load_model
-
-from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
-from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
-import argparse
-
+from utils_reboot.plots import score_plot
+from utils_reboot.utils import (
+    check_arguments,
+    generate_path,
+    get_most_recent_file,
+    save_element,
+)
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Test Global Importances")
@@ -138,7 +138,6 @@ print("#" * 50)
 print(f"Dataset: {dataset.name}")
 print(f"Model: {args.model_name}")
 print(f"Estimators: {args.n_estimators}")
-print(f"Contamination: {args.contamination}")
 print(f"Interpretation Model: {args.interpretation}")
 print(f"Scenario: {args.scenario}")
 print(f"Scaler: {args.scaler_type}")
@@ -169,12 +168,16 @@ if args.compute_gfi:
     print(f"Starting seed: {args.seed}")
     print("#" * 50)
 
+    contamination = set_contamination(
+        dataset=dataset, cli_contamination=args.contamination
+    )
+
     full_importances = experiment_global_importances(
         I=model,
         dataset=dataset,
         n_runs=args.n_runs,
         seed=args.seed,
-        p=args.contamination,
+        p=contamination,
         interpretation=args.interpretation,
     )
     save_element(
@@ -227,7 +230,6 @@ if args.score_plot:
     )
 
     imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
-    ipdb.set_trace()
 
     score_plot(
         dataset=dataset,

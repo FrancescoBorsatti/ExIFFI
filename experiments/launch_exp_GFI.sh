@@ -24,7 +24,7 @@ file_pos=0
 
 # model_names=("EIF" "EIF+_distrib_split" "EIF+_centroid_split")
 # model_names=("EIF+_distrib_split" "EIF+_centroid_split")
-model_names=("EIF+")
+model_names=("EIF+_centroid")
 
 for model_name in ${model_names[@]}; do
 
@@ -50,10 +50,10 @@ for model_name in ${model_names[@]}; do
       --scenario $scenario \
       --seed 0 \
       --n_estimators $n_estimators \
-      --contamination $contamination \
       --n_runs $n_runs \
       --pre_process \
       --scaler_type 4 \
+      --compute_gfi \
       --score_plot \
       --file_pos $file_pos
 

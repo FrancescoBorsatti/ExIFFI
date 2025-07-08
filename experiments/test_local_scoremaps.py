@@ -13,6 +13,7 @@ from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.models import load_model
 from utils_reboot.plots import importance_map
 from utils_reboot.utils import get_feature_indexes, generate_path, check_arguments
+from utils_reboot.experiments import set_contamination
 
 
 # from model_reboot.EIF_reboot import ExtendedIsolationForest
@@ -165,6 +166,9 @@ model.fit(dataset.X_train)
 
 print("Producing Local Scoremap...")
 print("#" * 50)
+
+contamination = set_contamination(dataset=dataset, cli_contamination=args.contamination)
+
 if args.interpretation == "DIFFI":
     importance_map(
         dataset=dataset,
@@ -174,7 +178,7 @@ if args.interpretation == "DIFFI":
         col_names=dataset.feature_names,
         interpretation=args.interpretation,
         scenario=args.scenario,
-        contamination=args.contamination,
+        contamination=contamination,
         isdiffi=True,
     )
 else:
@@ -187,7 +191,7 @@ else:
         col_names=dataset.feature_names,
         interpretation=args.interpretation,
         scenario=args.scenario,
-        contamination=args.contamination,
+        contamination=contamination,
         only_positive=args.only_positive,
     )
 

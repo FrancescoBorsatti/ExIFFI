@@ -12,8 +12,10 @@ DATASET_PATH="../../datasets/data/TEP/"
 
 # For TEP
 
-model_name="EIF+_centroid"
-interpretation="EXIFFI+"
+# model_name="EIF+"
+# interpretation="ACME"
+model_names=("EIF+" "EIF+" "EIF")
+interpretations=("ACME" "EXIFFI+" "EXIFFI")
 n_estimators=300
 scenario=2
 n_runs=10
@@ -21,32 +23,46 @@ n_runs_imp=5
 background=0.25
 seed=0
 file_pos=0
+mode="metrics"
 
-echo "################################################"
-echo "Performance metrics experiment"
-echo "################################################"
+n_models=${#model_names[@]}
 
-python $SCRIPT_PATH \
-    --dataset_name $DATASETS \
-    --dataset_path $DATASET_PATH \
-    --model $model_name \
-    --interpretation $interpretation \
-    --n_estimators $n_estimators \
-    --scenario $scenario \
-    --pre_process \
-    --compute_GFI \
-    --compute_perf \
-    --n_runs $n_runs \
-    --n_runs_imp $n_runs_imp \
-    --background $background \
-    --seed $seed \
-    --file_pos $file_pos
+for (( i=0; i<n_models; i++ )); do
 
-echo "################################################"
-echo "Getting results of metrics experiment"
-echo "################################################"
+  echo "#####################################################################################################"
+  echo "Performance metrics experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
+  echo "#####################################################################################################"
 
-./launch_get_metrics.sh $model_name $interpretation $n_estimators $scenario $file_pos
+  python $SCRIPT_PATH \
+      --dataset_name $DATASETS \
+      --dataset_path $DATASET_PATH \
+      --model ${model_names[$i]} \
+      --interpretation ${interpretations[$i]} \
+      --n_estimators $n_estimators \
+      --scenario $scenario \
+      --pre_process \
+      --compute_GFI \
+      --compute_perf \
+      --clear_dict \
+      --n_runs $n_runs \
+      --n_runs_imp $n_runs_imp \
+      --background $background \
+      --seed $seed \
+      --file_pos $file_pos
+
+  echo "#####################################################################################################"
+  echo "Getting results of metrics experiment"
+  echo "#####################################################################################################"
+
+  ./launch_get_metrics.sh \
+      ${model_names[$i]} \
+      ${interpretations[$i]} \
+      $n_estimators \
+      $scenario \
+      $file_pos \
+      $mode
+
+done
 
 # For PIADE
 #

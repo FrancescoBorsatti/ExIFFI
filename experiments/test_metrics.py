@@ -1,9 +1,10 @@
-import sys
-import os
-import ipdb
 import argparse
+import os
 import pickle
+import sys
 import time
+import numpy as np
+import ipdb
 
 cwd = os.getcwd()
 # os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
@@ -12,29 +13,30 @@ sys.path.append("..")
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-from utils_reboot.experiments import (
-    compute_imp_time_kernelSHAP,
-    compute_local_imp_time,
-    performance,
-)
-from utils_reboot.datasets import Dataset, load_dataset
-from utils_reboot.models import load_model
-from utils_reboot.plots import *
-from utils_reboot.utils import (
-    open_element,
-    generate_path,
-    get_most_recent_file,
-    check_arguments,
-    initialize_perf_dict,
-)
+import warnings
 
-from ExIFFI_Core.exiffi_core.model import (
+from exiffi_core.model import (  # noqa: E402
     ExtendedIsolationForest,
     IsolationForest,
 )
-from model_reboot.interpretability_module import *
 
-import warnings
+from model_reboot.interpretability_module import *  # noqa: E402
+from utils_reboot.datasets import load_dataset  # noqa: E402
+from utils_reboot.experiments import (  # noqa: E402
+    compute_imp_time_kernelSHAP,
+    compute_local_imp_time,
+    performance,
+    set_contamination,
+)
+from utils_reboot.models import load_model  # noqa: E402
+from utils_reboot.plots import *  # noqa: E402, F403
+from utils_reboot.utils import (  # noqa: E402
+    check_arguments,
+    generate_path,
+    get_most_recent_file,
+    initialize_perf_dict,
+    open_element,
+)
 
 # modelgnore all warnings
 warnings.filterwarnings("ignore")
@@ -106,36 +108,46 @@ parser.add_argument(
 parser.add_argument(
     "--model_name",
     type=str,
-    default="EmodelF",
-    help="Model to use: modelF, EmodelF, EmodelF+",
+    default="EIF",
+    help="Model to use: IF, EIF, EIF+",
 )
 parser.add_argument(
     "--interpretation",
     type=str,
-    default="EXmodelFFmodel",
-    help="modelnterpretation method to use: [EXmodelFFmodel, EXmodelFFmodel+, C_EXmodelFFmodel+]",
+    default="EXIFFI",
+    help="Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+]",
 )
 parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
 parser.add_argument(
     "--downsample",
     type=bool,
     default=False,
-    help="modelf set, downsample the dataset if it has more than 7500 samples",
+    help="If set, downsample the dataset if it has more than 7500 samples",
 )
 parser.add_argument(
     "--compute_GFI",
     action="store_true",
-    help="modelf set compute the Feature modelmportances",
+    help="If set compute the Feature Importances",
 )
 parser.add_argument(
     "--compute_perf",
     action="store_true",
-    help="modelf set compute the model performances",
+    help="If set compute the I performances",
+)
+parser.add_argument(
+    "--clear_dict",
+    action="store_true",
+    help="If set, clear the perf_dict entries for the current model",
+)
+parser.add_argument(
+    "--save_clear_dict_and_quit",
+    action="store_true",
+    help="If set, save the cleared dictionary and quit the execution",
 )
 parser.add_argument(
     "--print_perf",
     action="store_true",
-    help="modelf set compute the model performances",
+    help="If set, compute the model performances",
 )
 parser.add_argument(
     "--n_quantiles",
@@ -176,7 +188,6 @@ print("#" * 50)
 print(f"Dataset: {dataset.name}")
 print(f"Model: {args.model_name}")
 print(f"Estimators: {args.n_estimators}")
-print(f"Contamination: {args.contamination}")
 print(f"Interpretation Model: {args.interpretation}")
 print(f"Scenario: {args.scenario}")
 print(f"Scaler: {args.scaler_type}")
@@ -189,13 +200,36 @@ dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_d
     basepath=experiment_path
 )
 
-# Fit the model
+if args.clear_dict:
+    print("#" * 50)
+    print(f"Clearing dictionary entries for {model.name}")
+
+    try:
+        del dict_time["fit"][model.name]
+        del dict_time["predict"][model.name]
+        del dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"]
+    except KeyError:
+        print("#" * 50)
+        print(f"Performance dictionary entries already empty for {dataset.name}")
+        print("#" * 50)
+
+if args.save_clear_dict_and_quit:
+    with open(dict_time_path, "wb") as file:
+        pickle.dump(dict_time, file)
+
+    with open(dict_time_imp_path, "wb") as file:
+        pickle.dump(dict_time_imp, file)
+
+    quit()
+
 print("#" * 50)
-print("Fitting the model")
+print("Fit predict experiment")
 print("#" * 50)
+
 start_time = time.time()
 model.fit(dataset.X_train)
 fit_time = time.time() - start_time
+
 try:
     dict_time["fit"][model.name].setdefault(dataset.name, []).append(fit_time)
 except:
@@ -204,16 +238,28 @@ except:
         fit_time
     )
 
+contamination = set_contamination(dataset=dataset, cli_contamination=args.contamination)
+
 start_time = time.time()
 
 if model.name not in ["sklearn_IF"]:
     score = model.predict(dataset.X_test)
-    y_pred = model._predict(dataset.X_test, p=args.contamination)
+    y_pred = model._predict(dataset.X_test, p=contamination)
 else:
+    score = model.decision_function(dataset.X_test)
+    # score_samples = model.score_samples(dataset.X_test)
     y_pred = model.predict(dataset.X_test)
+    y_pred_new = []
+    for x in y_pred:
+        if x == -1:
+            y_pred_new.append(1)
+        else:
+            y_pred_new.append(0)
+    y_pred = np.array(y_pred_new)
 
 anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
 predict_time = time.time() - start_time
+
 try:
     dict_time["predict"][model.name].setdefault(dataset.name, []).append(predict_time)
 except:
@@ -227,12 +273,13 @@ if args.compute_GFI:
         importances_time = compute_imp_time_kernelSHAP(
             I=model,
             dataset=dataset,
-            p=args.contamination,
+            p=contamination,
             background=args.background,
             pre_process=args.pre_process,
             scenario=args.scenario,
             seed=args.seed,
         )
+
         try:
             dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][
                 dataset.name
@@ -253,7 +300,7 @@ if args.compute_GFI:
             I=model,
             dataset=dataset,
             anomalies=anomalies,
-            p=args.contamination,
+            p=contamination,
             n_quantiles=args.n_quantiles,
             interpretation=args.interpretation,
             n_runs=args.n_runs_imp,
@@ -283,7 +330,7 @@ metrics_path = generate_path(
         args.dataset_name,
         "experiments",
         "metrics",
-        args.model_name,
+        model.name,
         f"scenario_{args.scenario}",
     ],
 )

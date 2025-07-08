@@ -13,21 +13,21 @@ cwd = os.getcwd()
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-from utils_reboot.utils import (
+from utils_reboot.utils import (  # noqa: E402
     get_most_recent_file,
     open_element,
     check_arguments,
     generate_path,
     initialize_perf_dict,
 )
-from utils_reboot.models import load_model
-from utils_reboot.datasets import Dataset, load_dataset
+from utils_reboot.models import load_model  # noqa: E402
+from utils_reboot.datasets import Dataset, load_dataset  # noqa: E402
 
-from ExIFFI_Core.exiffi_core.model import (
+from exiffi_core.model import (  # noqa: E402
     ExtendedIsolationForest,
     IsolationForest,
 )
-from sklearn.metrics import (
+from sklearn.metrics import (  # noqa: E402
     precision_score,
     recall_score,
     average_precision_score,
@@ -133,6 +133,9 @@ def get_precision_file(
     )
     file_path = get_most_recent_file(path, file_pos=args.file_pos)
     results = open_element(file_path)
+    print("#" * 50)
+    print(f"Performance metrics table loaded from: {file_path}")
+    print("#" * 50)
     return results
 
 
@@ -178,7 +181,7 @@ if args.return_perf:
     print(
         f"Performance values for {dataset.name} {args.model_name} scenario {str(args.scenario)}"
     )
-    metrics_df = get_precision_file(dataset, args.model_name, args.scenario).T
+    metrics_df = get_precision_file(dataset, model.name, args.scenario).T
     print(metrics_df.to_markdown())
     print("#" * 50)
 
@@ -186,18 +189,19 @@ dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_d
     basepath=experiment_path
 )
 
-print("#" * 50)
-print(
-    f'Fit time for {args.model_name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time["fit"][args.model_name][dataset.name]),3)}'
-)
-print(
-    f'Predict time for {args.model_name} {dataset.name} args.scenario {str(args.scenario)}: {np.round(np.mean(dict_time["predict"][args.model_name][dataset.name]),3)}'
-)
+if model.name in dict_time["fit"]:
+    print("#" * 50)
+    print(
+        f"Fit time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['fit'][model.name][dataset.name]),3)}"
+    )
+if model.name in dict_time["predict"]:
+    print(
+        f"Predict time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['predict'][model.name][dataset.name]),3)}"
+    )
 
 if f"{args.model_name}_{args.interpretation}" in dict_time_imp["importances"]:
     print(
-        f'Importances time for {args.model_name} {dataset.name} scenario {str(args.scenario)} for a single anomaly: {np.round(dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name][-1],3)}'
+        f'Importances time for {model.name} {dataset.name} scenario {str(args.scenario)} for a single anomaly: {np.round(dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name][-1],3)}'
     )
 
 print("#" * 50)
-
