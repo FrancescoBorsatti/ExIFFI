@@ -5,6 +5,7 @@ import sys
 import time
 import numpy as np
 import ipdb
+from tqdm import tqdm, trange
 
 cwd = os.getcwd()
 # os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
@@ -226,47 +227,56 @@ print("#" * 50)
 print("Fit predict experiment")
 print("#" * 50)
 
-start_time = time.time()
-model.fit(dataset.X_train)
-fit_time = time.time() - start_time
+for i in trange(args.n_runs, desc="Fit Predict experiment runs"):
+    start_time = time.time()
+    model.fit(dataset.X_train)
+    fit_time = time.time() - start_time
 
-try:
-    dict_time["fit"][model.name].setdefault(dataset.name, []).append(fit_time)
-except:
-    print("Model not recognized: creating a new key in the dict_time for the new model")
-    dict_time["fit"].setdefault(model.name, {}).setdefault(dataset.name, []).append(
-        fit_time
+    try:
+        dict_time["fit"][model.name].setdefault(dataset.name, []).append(fit_time)
+    except:
+        print(
+            "Model not recognized: creating a new key in the dict_time for the new model"
+        )
+        dict_time["fit"].setdefault(model.name, {}).setdefault(dataset.name, []).append(
+            fit_time
+        )
+
+    contamination = set_contamination(
+        dataset=dataset, cli_contamination=args.contamination
     )
 
-contamination = set_contamination(dataset=dataset, cli_contamination=args.contamination)
+    start_time = time.time()
 
-start_time = time.time()
+    if model.name not in ["sklearn_IF"]:
+        score = model.predict(dataset.X_test)
+        y_pred = model._predict(dataset.X_test, p=contamination)
+    else:
+        score = model.decision_function(dataset.X_test)
+        # score_samples = model.score_samples(dataset.X_test)
+        y_pred = model.predict(dataset.X_test)
+        y_pred_new = []
+        for x in y_pred:
+            if x == -1:
+                y_pred_new.append(1)
+            else:
+                y_pred_new.append(0)
+        y_pred = np.array(y_pred_new)
 
-if model.name not in ["sklearn_IF"]:
-    score = model.predict(dataset.X_test)
-    y_pred = model._predict(dataset.X_test, p=contamination)
-else:
-    score = model.decision_function(dataset.X_test)
-    # score_samples = model.score_samples(dataset.X_test)
-    y_pred = model.predict(dataset.X_test)
-    y_pred_new = []
-    for x in y_pred:
-        if x == -1:
-            y_pred_new.append(1)
-        else:
-            y_pred_new.append(0)
-    y_pred = np.array(y_pred_new)
+    anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
+    predict_time = time.time() - start_time
 
-anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-predict_time = time.time() - start_time
-
-try:
-    dict_time["predict"][model.name].setdefault(dataset.name, []).append(predict_time)
-except:
-    print("Model not recognized: creating a new key in the dict_time for the new model")
-    dict_time["predict"].setdefault(model.name, {}).setdefault(dataset.name, []).append(
-        predict_time
-    )
+    try:
+        dict_time["predict"][model.name].setdefault(dataset.name, []).append(
+            predict_time
+        )
+    except:
+        print(
+            "Model not recognized: creating a new key in the dict_time for the new model"
+        )
+        dict_time["predict"].setdefault(model.name, {}).setdefault(
+            dataset.name, []
+        ).append(predict_time)
 
 if args.compute_GFI:
     if args.interpretation == "KernelSHAP":

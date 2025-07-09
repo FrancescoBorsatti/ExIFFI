@@ -192,11 +192,11 @@ dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_d
 if model.name in dict_time["fit"]:
     print("#" * 50)
     print(
-        f"Fit time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['fit'][model.name][dataset.name]),3)}"
+        f"Fit time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['fit'][model.name][dataset.name]),3)} +- {np.round(np.std(dict_time['fit'][model.name][dataset.name]),3)}"
     )
 if model.name in dict_time["predict"]:
     print(
-        f"Predict time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['predict'][model.name][dataset.name]),3)}"
+        f"Predict time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['predict'][model.name][dataset.name]),3)} +- {np.round(np.std(dict_time['predict'][model.name][dataset.name]),3)}"
     )
 
 if f"{args.model_name}_{args.interpretation}" in dict_time_imp["importances"]:

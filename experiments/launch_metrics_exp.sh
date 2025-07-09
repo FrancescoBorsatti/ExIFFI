@@ -12,14 +12,15 @@ DATASET_PATH="../../datasets/data/TEP/"
 
 # For TEP
 
-# model_name="EIF+"
-# interpretation="ACME"
-model_names=("EIF+" "EIF+" "EIF")
-interpretations=("ACME" "EXIFFI+" "EXIFFI")
+model_names=("EIF+")
+interpretations=("ACME")
+# model_names=("EIF+")
+# interpretations=("EXIFFI+")
+
 n_estimators=300
 scenario=2
 n_runs=10
-n_runs_imp=5
+n_runs_imp=10
 background=0.25
 seed=0
 file_pos=0
@@ -42,7 +43,6 @@ for (( i=0; i<n_models; i++ )); do
       --scenario $scenario \
       --pre_process \
       --compute_GFI \
-      --compute_perf \
       --clear_dict \
       --n_runs $n_runs \
       --n_runs_imp $n_runs_imp \
