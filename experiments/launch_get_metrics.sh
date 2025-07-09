@@ -2,20 +2,14 @@
 
 SCRIPT_PATH="get_metrics.py"
 
-# List of datasets
-# DATASETS="piade_s2"
-DATASETS="TEP_ACME"
-
-# Path to the datasets
-# DATASET_PATH="../../datasets/data/PIADE/"
-DATASET_PATH="../../datasets/data/TEP/"
-
-model_name="${1:-'EIF'}"
-interpretation="${2:-'EXIFFI'}"
-n_estimators=${3:-300}
-scenario=${4:-2}
-file_pos=${5:-0}
-mode="${6:-'metrics'}"
+dataset_name="${1:-'TEP_ACME'}"
+dataset_path="${2:-'../../datasets/data/TEP_ACME/'}"
+model_name="${3:-'EIF'}"
+interpretation="${4:-'EXIFFI'}"
+n_estimators=${5:-300}
+scenario=${6:-2}
+file_pos=${7:-0}
+mode="${8:-'metrics'}"
 
 # For TEP
 
@@ -26,8 +20,8 @@ if [ $mode = "metrics" ]; then
   echo "#############################################"
 
   python $SCRIPT_PATH \
-          --dataset_name $DATASETS \
-          --dataset_path $DATASET_PATH \
+          --dataset_name $dataset_name \
+          --dataset_path $dataset_path \
           --model $model_name \
           --interpretation $interpretation \
           --n_estimators $n_estimators \
@@ -43,8 +37,8 @@ elif [ $mode = "times" ]; then
   echo "#############################################"
 
   python $SCRIPT_PATH \
-          --dataset_name $DATASETS \
-          --dataset_path $DATASET_PATH \
+          --dataset_name $dataset_name \
+          --dataset_path $dataset_path \
           --model $model_name \
           --interpretation $interpretation \
           --n_estimators $n_estimators \

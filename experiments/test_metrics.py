@@ -252,16 +252,8 @@ for i in trange(args.n_runs, desc="Fit Predict experiment runs"):
         score = model.predict(dataset.X_test)
         y_pred = model._predict(dataset.X_test, p=contamination)
     else:
-        score = model.decision_function(dataset.X_test)
-        # score_samples = model.score_samples(dataset.X_test)
-        y_pred = model.predict(dataset.X_test)
-        y_pred_new = []
-        for x in y_pred:
-            if x == -1:
-                y_pred_new.append(1)
-            else:
-                y_pred_new.append(0)
-        y_pred = np.array(y_pred_new)
+        score = model.predict_score(dataset.X_test)
+        y_pred = model.predict_labels(dataset.X_test)
 
     anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
     predict_time = time.time() - start_time
