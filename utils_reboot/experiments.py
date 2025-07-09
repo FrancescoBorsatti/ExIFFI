@@ -20,7 +20,7 @@ import copy
 from exiffi_core.model import ExtendedIsolationForest, IsolationForest
 from model_reboot.interpretability_module import *
 from utils_reboot.datasets import Dataset
-from utils_reboot.utils import save_element, open_element
+from utils_reboot.utils import save_element, open_element, initialize_perf_dict
 import sklearn
 import shap
 from sklearn.ensemble import IsolationForest
@@ -47,30 +47,10 @@ warnings.filterwarnings("ignore")
 cwd = os.getcwd()
 # import ipdb; ipdb.set_trace()
 cwd = os.path.dirname(cwd)
-filename = cwd + "/utils_reboot/time_scaling_ind.pickle"
-
-# dict_time = {1:{"fit":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
-#         "predict":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
-#         "importances":{"EXIFFI+":{},"EXIFFI":{},"DIFFI":{},"RandomForest":{}}},
-#         2:{"fit":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
-#         "predict":{"EIF+":{},"IF":{},"DIF":{},"EIF":{},"sklearn_IF":{}},
-#         "importances":{"EXIFFI+":{},"EXIFFI":{},"DIFFI":{},"RandomForest":{}}}}
-
-if not os.path.exists(filename):
-    dict_time = {
-        "fit": {"EIF+": {}, "C_EIF+": {}},
-        "predict": {"EIF+": {}, "C_EIF+": {}},
-        "importances": {"EXIFFI+": {}, "C_EXIFFI+": {}},
-    }
-
-    # if the folder exists, create the file
-    if os.path.exists(os.path.dirname(filename)):
-        with open(filename, "wb") as file:
-            pickle.dump(dict_time, file)
-
-if os.path.exists(filename):
-    with open(filename, "rb") as file:
-        dict_time = pickle.load(file)
+experiment_path = os.path.join(cwd, "experiments")
+dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_dict(
+    basepath=experiment_path
+)
 
 
 def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) -> float:
