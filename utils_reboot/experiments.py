@@ -983,17 +983,12 @@ def performance(
     for i in trange(n_runs, desc="Average Precision runs"):
         set_seed(seed=seed + i)
         I.fit(dataset.X_train)
-        # score = (
-        #     I.predict(dataset.X_test)
-        #     if I.name != "sklearn_IF"
-        #     else I.decision_function(dataset.X_test)
-        # )
-        score = I.predict(dataset.X_test)
-        avg_prec = (
-            average_precision_score(y_true, score)
+        score = (
+            I.predict(dataset.X_test)
             if I.name != "sklearn_IF"
-            else average_precision_score(y_true, y_pred)
+            else I.predict_score(dataset.X_test)
         )
+        avg_prec = average_precision_score(y_true, score)
         precisions.append(avg_prec)
 
     df = pd.DataFrame(
