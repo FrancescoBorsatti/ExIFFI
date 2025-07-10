@@ -25,8 +25,6 @@ from utils_reboot.utils import (
     save_element,
 )
 
-ipdb.set_trace()
-
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Test Global Importances")
 
