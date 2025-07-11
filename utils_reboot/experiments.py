@@ -175,13 +175,13 @@ def compute_local_importances(
     return fi
 
 
-# Score function for EIF/EIF+ ACME
+# Score function for IF/EIF/EIF+ ACME
 def EIF_score_function(model, data):
     return model.predict(data)
 
 
-# Score function for IF ACME
-def IF_score_function(model, data):
+# Score function for sklearn_IF ACME
+def sklearn_IF_score_function(model, data):
     return 0.5 * (-model.decision_function(data) + 1)
 
 
@@ -270,17 +270,16 @@ def compute_local_importances_ACME(
     """
 
     if fit_model:
-        if model == "IF":
+        if model == "sklearn_IF":
             I.fit(dataset.X_test)
         else:
             I.fit(dataset.X_train)
 
-    if model == "IF":
+    if model == "sklearn_IF":
         y_pred = I.predict(dataset.X_test)
-        # import ipdb; ipdb.set_trace()
         y_pred = np.vectorize(lambda x: 1 if x == -1 else 0)(y_pred)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-        score_function = IF_score_function
+        score_function = sklearn_IF_score_function
     else:
         y_pred = I._predict(dataset.X_test, p).astype(int)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
