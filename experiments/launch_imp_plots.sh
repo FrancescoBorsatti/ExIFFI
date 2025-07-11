@@ -3,10 +3,8 @@
 dataset_name="${1:-'TEP_ACME'}"
 local_scoremaps=${2:-0}
 
-# model_names=("IF" "EIF" "EIF+")
-# interpretations=("ACME" "ACME" "ACME")
-model_names=("IF")
-interpretations=("ACME")
+model_names=("EIF" "EIF+")
+interpretations=("ACME" "ACME")
 
 n_estimators=300
 scenario=2
