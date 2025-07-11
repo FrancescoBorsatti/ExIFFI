@@ -129,6 +129,11 @@ parser.add_argument(
     help="If set, compute the bars for the Bar Plot",
 )
 parser.add_argument(
+    "--save_labels",
+    action="store_true",
+    help="If set, save the labels",
+)
+parser.add_argument(
     "--score_plot",
     action="store_true",
     help="If set, produce the score plot",
@@ -176,7 +181,14 @@ results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
 path_plots = generate_path(
     basepath=results_path,
-    folders=[dataset.name, "plots", "score_plots", "lfi"],
+    folders=[
+        dataset.name,
+        "plots",
+        "score_plots",
+        "lfi",
+        args.model_name,
+        args.interpretation,
+    ],
 )
 
 path_experiment_model_interpretation = generate_path(
@@ -187,8 +199,6 @@ path_experiment_model_interpretation = generate_path(
         "local_importances",
         args.model_name,
         args.interpretation,
-        f"eta_{args.eta}",
-        f"trees_{args.n_estimators}_pre_process",
     ],
 )
 
@@ -263,7 +273,8 @@ if args.compute_lfi:
             seed=args.seed,
         )
 
-        save_element(element=labels, directory_path=labels_path, filetype="npz")
+        if args.save_labels:
+            save_element(element=labels, directory_path=labels_path, filetype="npz")
 
         save_element(
             element=imp_mat,

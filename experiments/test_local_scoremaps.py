@@ -1,6 +1,7 @@
 import sys
 import os
 import argparse
+import ipdb
 
 cwd = os.getcwd()
 sys.path.append("..")
@@ -17,7 +18,7 @@ from utils_reboot.experiments import set_contamination
 
 
 # from model_reboot.EIF_reboot import ExtendedIsolationForest
-from ExIFFI_Core.exiffi_core.model import ExtendedIsolationForest, IsolationForest
+from exiffi_core.model import ExtendedIsolationForest, IsolationForest
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Test Local Importances")
@@ -127,6 +128,8 @@ model = load_model(
     max_depth=args.max_depth,
     max_samples=args.max_samples,
 )
+
+feats_plot = get_feature_indexes(dataset=dataset, f1=args.feature1, f2=args.feature2)
 
 print("#" * 50)
 print("Local Scoremaps Experiment")

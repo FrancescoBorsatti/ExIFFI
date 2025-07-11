@@ -2,45 +2,41 @@
 
 SCRIPT_PATH="test_local_scoremaps.py"
 
-# PIADE
-# DATASETS="piade_s2_alarms_no_zeros"
-# DATASET_PATH="../../datasets/data/PIADE/"
+dataset_name="${1:-'TEP_ACME'}"
+model_name="$2"
+interpretation="$3"
 
-# TEP
-DATASETS="TEP_ACME"
-DATASET_PATH="../../datasets/data/TEP/"
+if [ $dataset_name = "TEP_ACME" ]; then
+  dataset_path="../../datasets/data/TEP/"
+  f1="xmeas_11"
+  f2="xmeas_22"
+elif [ $dataset_name = "piade_s2" ]; then
+  dataset_path="../../datasets/data/PIADE/"
+  f1="%scheduled_downtime"
+  f2="A_010"
+elif [ $dataset_name = "CoffeData" ]; then
+  dataset_path="../../datasets/data/CoffeData/"
+  f1="Coffe1"
+  f2="Coffe2"
+else
+  echo "Dataset name $dataset_name not supported. Supported names: ['TEP_ACME', 'piade_s2', 'CoffeData']"
+  exit 1
+fi
 
-n_estimators=300
+n_estimators=${4:-300}
+scenario=${5:-2}
 contamination=0.15
-scenario=2
-f1="xmeas_11"
-f2="xmeas_13"
 
-# model_names=("EIF+" "EIF+_distrib_split" "EIF+_centroid_split")
-# model_names=("EIF+_distrib_split" "EIF+_centroid_split")
-model_names=("EIF+_centroid")
+echo "#############################################"
+echo "Producing local scoremap for model ${model_name} and interpretation ${interpretation}"
+echo "#############################################"
 
-for model_name in ${model_names[@]}; do
-
-  echo "#############################################"
-  echo "Producing local scoremap for model ${model_name}"
-  echo "#############################################"
-
-  if [ $model_name = "EIF" ]; then
-    interpretation="EXIFFI"
-  else
-    interpretation="EXIFFI+"
-  fi
-
-  echo "#############################################"
-  echo "Using ${interpretation} interpretation algorithm"
-  echo "#############################################"
+if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "CoffeData" ]]; then
 
   python $SCRIPT_PATH \
-      --dataset_name $DATASETS \
-      --dataset_path $DATASET_PATH \
+      --dataset_name $dataset_name \
+      --dataset_path $dataset_path \
       --n_estimators $n_estimators \
-      --contamination $contamination \
       --model $model_name \
       --interpretation $interpretation \
       --scenario $scenario \
@@ -50,5 +46,26 @@ for model_name in ${model_names[@]}; do
       --pre_process 1 \
       --scaler_type 4
 
-done
+elif [[ "$dataset_name" = "piade_s2" ]]; then
+
+  python $SCRIPT_PATH \
+      --dataset_name $dataset_name \
+      --dataset_path $dataset_path \
+      --n_estimators $n_estimators \
+      --contamination $contamination \
+      --model $model_name \
+      --interpretation $interpretation \
+      --scenario $scenario \
+      --feature1 $f1 \
+      --feature2 $f2 \
+      --downsample 1 \
+      --pre_process 1 \
+      --scaler_type 1
+
+else
+
+  echo "Dataset $dataset_name not supported"
+
+fi
+
 

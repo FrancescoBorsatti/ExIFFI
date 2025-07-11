@@ -3,7 +3,7 @@
 SCRIPT_PATH="get_metrics.py"
 
 dataset_name="${1:-'TEP_ACME'}"
-dataset_path="${2:-'../../datasets/data/TEP_ACME/'}"
+dataset_path="${2:-'../../datasets/data/TEP/'}"
 model_name="${3:-'EIF'}"
 interpretation="${4:-'EXIFFI'}"
 n_estimators=${5:-300}

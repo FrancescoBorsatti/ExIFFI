@@ -4,9 +4,11 @@
 SCRIPT_PATH="test_global_importancies.py"
 
 dataset_name="${1:-'TEP_ACME'}"
+model_name="$2"
+interpretation="$3"
 
 if [ $dataset_name = "TEP_ACME" ]; then
-  dataset_path="../../datasets/data/TEP_ACME/"
+  dataset_path="../../datasets/data/TEP/"
 elif [ $dataset_name = "piade_s2" ]; then
   dataset_path="../../datasets/data/PIADE/"
 elif [ $dataset_name = "CoffeData" ]; then
@@ -16,89 +18,57 @@ else
   exit 1
 fi
 
-# model_names=("EIF" "EIF+_distrib_split" "EIF+_centroid_split")
-# model_names=("EIF+_distrib_split" "EIF+_centroid_split")
-# model_names=("EIF+_centroid")
-
-scenario=2
-n_estimators=300
-n_runs=40
+n_estimators=${4:-300}
+scenario=${5:-2}
+n_runs=${6:-40}
+file_pos=${7:-0}
 contamination=0.15
-file_pos=0
 
-for model_name in ${model_names[@]}; do
+echo "#############################################"
+echo "GFI experiment for model $model_name and interpretation $interpretation"
+echo "#############################################"
 
-  echo "#############################################"
-  echo "GFI experiment for model ${model_name}"
-  echo "#############################################"
+if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "CoffeData" ]]; then
 
-  if [ $model_name = "EIF" ]; then
-    interpretation="EXIFFI"
-  elif [ $model_name = "IF" ]; then
-    interpretation="DIFFI"
-  else
-    interpretation="EXIFFI+"
-  fi
+  python $SCRIPT_PATH \
+      --dataset_name $dataset_name \
+      --dataset_path $dataset_path \
+      --model_name $model_name \
+      --interpretation $interpretation \
+      --scenario $scenario \
+      --seed 0 \
+      --n_estimators $n_estimators \
+      --n_runs $n_runs \
+      --pre_process \
+      --scaler_type 4 \
+      --compute_gfi \
+      --score_plot \
+      --file_pos $file_pos
 
-  echo "#############################################"
-  echo "Using ${interpretation} interpretation algorithm"
-  echo "#############################################"
+elif [[ "$dataset_name" = "piade_s2" ]]; then
 
-  if [ $dataset_name = "TEP_ACME" ]; then
+  #WARN: Use scaler_type=1 for PIADE?
 
-    python $SCRIPT_PATH \
-        --dataset_name $dataset_name \
-        --dataset_path $dataset_path \
-        --model_name $model_name \
-        --interpretation $interpretation \
-        --scenario $scenario \
-        --seed 0 \
-        --n_estimators $n_estimators \
-        --n_runs $n_runs \
-        --pre_process \
-        --scaler_type 4 \
-        --compute_gfi \
-        --score_plot \
-        --file_pos $file_pos
+  python $SCRIPT_PATH \
+      --dataset_name $dataset_name \
+      --dataset_path $dataset_path \
+      --model_name $model_name \
+      --interpretation $interpretation \
+      --scenario $scenario \
+      --seed 0 \
+      --contamination $contamination \
+      --n_estimators $n_estimators \
+      --n_runs $n_runs \
+      --pre_process \
+      --scaler_type 1 \
+      --compute_gfi \
+      --score_plot \
+      --file_pos $file_pos
 
-  elif [ $dataset_name = "piade_s2"]; then
+else
 
-    python $SCRIPT_PATH \
-        --dataset_name $dataset_name \
-        --dataset_path $dataset_path \
-        --model_name $model_name \
-        --interpretation $interpretation \
-        --scenario $scenario \
-        --seed 0 \
-        --contamination $contamination \
-        --n_estimators $n_estimators \
-        --n_runs $n_runs \
-        --pre_process \
-        --scaler_type 4 \
-        --compute_gfi \
-        --score_plot \
-        --file_pos $file_pos
+  echo "Wrong dataset name"
+  exit 1
 
-  else
-
-    echo "Wrong dataset name"
-    exit 1
-
-  fi
-
-done
-
-# For PIADE
-
-# python $SCRIPT_PATH \
-#     --dataset_name $DATASETS \
-#     --dataset_path $DATASET_PATH \
-#     --model "EIF+" \
-#     --interpretation "EXIFFI+" \
-#     --scenario 2 \
-#     --n_estimators 300 \
-#     --contamination 0.15 \
-#     --n_runs 40 \
-#     --pre_process \
-#     --scaler_type 1
+fi
 
