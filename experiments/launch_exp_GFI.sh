@@ -4,19 +4,11 @@
 SCRIPT_PATH="test_global_importancies.py"
 
 dataset_name="${1:-'TEP_ACME'}"
+
+source "./dataset_config.sh"
+
 model_name="$2"
 interpretation="$3"
-
-if [ $dataset_name = "TEP_ACME" ]; then
-  dataset_path="../../datasets/data/TEP/"
-elif [ $dataset_name = "piade_s2" ]; then
-  dataset_path="../../datasets/data/PIADE/"
-elif [ $dataset_name = "CoffeData" ]; then
-  dataset_path="../../datasets/data/CoffeData/"
-else
-  echo "Dataset name $dataset_name not supported. Supported names: ['TEP_ACME', 'piade_s2', 'CoffeData']"
-  exit 1
-fi
 
 n_estimators=${4:-300}
 scenario=${5:-2}
@@ -28,7 +20,7 @@ echo "#############################################"
 echo "GFI experiment for model $model_name and interpretation $interpretation"
 echo "#############################################"
 
-if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "CoffeData" ]]; then
+if [[ "$dataset_name" = "$tep_name" || "$dataset_name" = "$coffe_name" ]]; then
 
   python $SCRIPT_PATH \
       --dataset_name $dataset_name \
@@ -45,7 +37,7 @@ if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "CoffeData" ]]; then
       --score_plot \
       --file_pos $file_pos
 
-elif [[ "$dataset_name" = "piade_s2" ]]; then
+elif [[ "$dataset_name" = "$piade_name" ]]; then
 
   #WARN: Use scaler_type=1 for PIADE?
 

@@ -4,18 +4,7 @@ SCRIPT_PATH="test_feature_selection.py"
 
 dataset_name="${1:-'TEP_ACME'}"
 
-if [ $dataset_name = "TEP_ACME" ]; then
-  dataset_path="../../datasets/data/TEP/"
-elif [ $dataset_name = "piade_s2" ]; then
-  dataset_path="../../datasets/data/PIADE/"
-elif [ $dataset_name = "CoffeData" ]; then
-  dataset_path="../../datasets/data/CoffeData/"
-elif [[ $dataset_name = "wine" || $dataset_name = "glass" ]]; then
-  dataset_path="../../datasets/data/real/"
-else
-  echo "Dataset name $dataset_name not supported. Supported names: ['TEP_ACME', 'piade_s2', 'CoffeData']"
-  exit 1
-fi
+source "./dataset_config.sh"
 
 model_names=("EIF")
 interpretations=("ACME")
@@ -35,7 +24,7 @@ for (( i=0; i<n_models; i++ )); do
   echo "Feature selection experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
   echo "#############################################"
 
-  if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "wine" || "$dataset_name" = "glass" ]]; then
+  if [[ "$dataset_name" = "$tep_name" || "$dataset_name" = "wine" || "$dataset_name" = "glass" || "$dataset_name" = "$coffe_name" ]]; then
 
     python $SCRIPT_PATH \
         --dataset_name $dataset_name \
@@ -56,7 +45,7 @@ for (( i=0; i<n_models; i++ )); do
         --plot_feature_selection \
         --rotation
 
-  elif [[ "$dataset_name" = "piade_s2" ]]; then
+  elif [[ "$dataset_name" = "$piade_name" ]]; then
 
     echo "#############################################"
     echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"

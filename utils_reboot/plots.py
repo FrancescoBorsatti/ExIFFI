@@ -355,7 +355,7 @@ def score_plot(
     )
 
     # xlim=np.min(imp_vals)-0.05*np.min(imp_vals)
-    xlim = np.min(imp_vals)
+    xlim = np.nanmin(imp_vals)
 
     ax1.grid(alpha=0.7)
     ax2 = ax1.twinx()
@@ -728,7 +728,10 @@ def importance_map(
     # Check if dataset.y_test has all zeros
     if np.all(dataset.y_test == 0):
         model.fit(dataset.X_train)
-        labels = model._predict(dataset.X_test, contamination)
+        if model.name == "sklearn_IF":
+            labels = model.predict_labels(dataset.X_test)
+        else:
+            labels = model._predict(dataset.X_test, contamination)
     else:
         labels = np.copy(dataset.y_test)
 
