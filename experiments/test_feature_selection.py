@@ -221,7 +221,7 @@ if args.feature_selection:
         folders=[
             dataset.name,
             "experiments",
-            "global_importances",
+            "global_importances" if args.interpretation in ["EXIFFI+","EXIFFI","DIFFI"] else 'local_importances',
             args.model_name,
             args.interpretation,
             "imp_mat",

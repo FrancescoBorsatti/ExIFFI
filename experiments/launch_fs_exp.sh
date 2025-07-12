@@ -2,49 +2,72 @@
 
 SCRIPT_PATH="test_feature_selection.py"
 
-DATASETS="TEP_ACME"
+dataset_name="${1:-'TEP_ACME'}"
 
-# Path to the datasets
-DATASET_PATH="../../datasets/data/TEP/"
+if [ $dataset_name = "TEP_ACME" ]; then
+  dataset_path="../../datasets/data/TEP/"
+elif [ $dataset_name = "piade_s2" ]; then
+  dataset_path="../../datasets/data/PIADE/"
+elif [ $dataset_name = "CoffeData" ]; then
+  dataset_path="../../datasets/data/CoffeData/"
+else
+  echo "Dataset name $dataset_name not supported. Supported names: ['TEP_ACME', 'piade_s2', 'CoffeData']"
+  exit 1
+fi
 
-model_names=("EIF+_centroid")
+model_names=("IF")
+interpretations=("ACME")
 n_estimators=300
+n_runs=10
 contamination=0.15
 scenario=2
 seed=0
 file_pos=0
+model_interpretation="EIF+"
 
-for model_name in ${model_names[@]}; do
+n_models=${#model_names[@]}
+
+for (( i=0; i<n_models; i++ )); do
 
   echo "#############################################"
-  echo "GFI experiment for model ${model_name}"
+  echo "Feature selection experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
   echo "#############################################"
 
-  if [ $model_name = "EIF" ]; then
-    interpretation="EXIFFI"
+  if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "CoffeData" ]]; then
+
+    python $SCRIPT_PATH \
+        --dataset_name $dataset_name \
+        --dataset_path $dataset_path \
+        --model_interpretation $model_interpretation \
+        --model_name ${model_names[$i]} \
+        --interpretation ${interpretations[$i]} \
+        --n_estimators $n_estimators \
+        --n_runs $n_runs \
+        --scenario $scenario \
+        --seed $seed \
+        --pre_process \
+        --scaler_type 4 \
+        --seed $seed \
+        --file_pos $file_pos \
+        --feature_selection \
+        --compute_random \
+        --plot_feature_selection \
+        --rotation
+
+  elif [[ "$dataset_name" = "piade_s2" ]]; then
+
+    echo "#############################################"
+    echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
+    echo "#############################################"
+    exit 1
+
   else
-    interpretation="EXIFFI+"
+
+    echo "#############################################"
+    echo "Dataset $dataset_name not supported"
+    echo "#############################################"
+    exit 1
+
   fi
 
-  echo "#############################################"
-  echo "Using ${interpretation} interpretation algorithm"
-  echo "#############################################"
-
-  python $SCRIPT_PATH \
-      --dataset_name $DATASETS \
-      --dataset_path $DATASET_PATH \
-      --n_estimators $n_estimators \
-      --contamination $contamination \
-      --model_name $model_name \
-      --model_interpretation "EIF+" \
-      --interpretation $interpretation \
-      --scenario $scenario \
-      --seed 0 \
-      --pre_process \
-      --scaler_type 4 \
-      --seed $seed \
-      --file_pos $file_pos \
-      --feature_selection \
-      --plot_feature_selection
-
-    done
+done
