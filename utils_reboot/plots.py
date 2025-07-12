@@ -471,8 +471,6 @@ def plot_feature_selection(
         precision_random = open_element(precision_file_random)
         median_random = [np.percentile(x, 50) for x in precision_random.random]
 
-    ipdb.set_trace()
-
     plt.plot(median_random, label="random", c=colors[3], alpha=0.5, marker="o")
 
     plt.plot(

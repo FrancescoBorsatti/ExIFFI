@@ -240,7 +240,7 @@ if args.feature_selection:
     # All features
     feat_order = np.argsort(matrix.values.mean(axis=0))
     Precisions = namedtuple(
-        "Precisions", ["direct", "inverse", "dataset", "model", "value"]
+        "Precisions", ["direct", "inverse", "dataset", "model_name", "value"]
     )
 
     direct = feature_selection(
@@ -270,13 +270,13 @@ if args.feature_selection:
     )
 
     value = abs(np.nansum(np.nanmean(direct, axis=1) - np.nanmean(inverse, axis=1)))
-    data = Precisions(direct, inverse, dataset.name, model, value)
+    data = Precisions(direct, inverse, dataset.name, model.name, value)
     save_fs_prec(data, fs_int_path)
 
     # random feature selection
     if args.compute_random:
         Precisions_random = namedtuple(
-            "Precisions_random", ["random", "dataset", "model"]
+            "Precisions_random", ["random", "dataset", "model_name"]
         )
         random_fs = feature_selection(
             I=model,
@@ -288,7 +288,7 @@ if args.feature_selection:
             random=True,
             scenario=args.scenario,
         )
-        data_random = Precisions_random(random_fs, dataset.name, model)
+        data_random = Precisions_random(random_fs, dataset.name, model.name)
         save_fs_prec_random(data_random, fs_random_path)
 
 if args.plot_feature_selection:

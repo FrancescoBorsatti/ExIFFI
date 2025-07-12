@@ -598,7 +598,7 @@ def fit_predict_experiment(
                 predict_time
             )
 
-    with open(filename, "wb") as file:
+    with open(dict_time_path, "wb") as file:
         pickle.dump(dict_time, file)
 
     return np.mean(fit_times), np.mean(predict_times)
@@ -823,7 +823,7 @@ def feature_selection(
 
         precisions[number_of_features_dropped] = runs
 
-    with open(filename, "wb") as file:
+    with open(dict_time_path, "wb") as file:
         pickle.dump(dict_time, file)
     return precisions
 
@@ -900,7 +900,7 @@ def contamination_in_training_precision_evaluation(
                     )
                     gfi_time = time.time() - start_time
                     if k > 3:
-                        dict_time["importances"][interpretation].setdefault(
+                        dict_time_imp["importances"][interpretation].setdefault(
                             dataset.name, []
                         ).append(gfi_time)
 
@@ -924,9 +924,11 @@ def contamination_in_training_precision_evaluation(
             # import ipdb; ipdb.set_trace()
             precisions[i, j] = avg_prec
 
-    with open(filename, "wb") as file:
+    with open(dict_time_path, "wb") as file:
         pickle.dump(dict_time, file)
     if compute_GFI:
+        with open(dict_time_imp_path, "wb") as file:
+            pickle.dump(dict_time, file)
         return precisions, importances
     return precisions
 

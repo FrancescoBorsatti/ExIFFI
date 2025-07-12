@@ -21,9 +21,9 @@ Precisions = namedtuple(
     "Precisions", ["direct", "inverse", "dataset", "model", "value"]
 )
 NewPrecisions = namedtuple(
-    "NewPrecisions", ["direct", "inverse", "dataset", "model", "value", "aucfs"]
+    "NewPrecisions", ["direct", "inverse", "dataset", "model_name", "value", "aucfs"]
 )
-Precisions_random = namedtuple("Precisions_random", ["random", "dataset", "model"])
+Precisions_random = namedtuple("Precisions_random", ["random", "dataset", "model_name"])
 
 
 class sklearn_IsolationForest(IsolationForest):
@@ -413,7 +413,7 @@ def save_fs_prec(precs: namedtuple, path: str) -> None:
         direct=precs.direct,
         inverse=precs.inverse,
         dataset=precs.dataset,
-        model=precs.model,
+        model_name=precs.model_name,
         value=precs.value,
         aucfs=aucfs,
     )
@@ -433,7 +433,7 @@ def save_fs_prec_random(precs: namedtuple, path: str) -> None:
     """
 
     new_precs = Precisions_random(
-        random=precs.random, dataset=precs.dataset, model=precs.model
+        random=precs.random, dataset=precs.dataset, model_name=precs.model_name
     )
     save_element(new_precs, path, filetype="pickle")
 

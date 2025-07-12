@@ -10,13 +10,15 @@ elif [ $dataset_name = "piade_s2" ]; then
   dataset_path="../../datasets/data/PIADE/"
 elif [ $dataset_name = "CoffeData" ]; then
   dataset_path="../../datasets/data/CoffeData/"
+elif [[ $dataset_name = "wine" || $dataset_name = "glass" ]]; then
+  dataset_path="../../datasets/data/real/"
 else
   echo "Dataset name $dataset_name not supported. Supported names: ['TEP_ACME', 'piade_s2', 'CoffeData']"
   exit 1
 fi
 
-model_names=("EIF+")
-interpretations=("EXIFFI+")
+model_names=("EIF")
+interpretations=("ACME")
 n_estimators=300
 n_runs=10
 contamination=0.15
@@ -33,7 +35,7 @@ for (( i=0; i<n_models; i++ )); do
   echo "Feature selection experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
   echo "#############################################"
 
-  if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "CoffeData" ]]; then
+  if [[ "$dataset_name" = "TEP_ACME" || "$dataset_name" = "wine" || "$dataset_name" = "glass" ]]; then
 
     python $SCRIPT_PATH \
         --dataset_name $dataset_name \
@@ -49,6 +51,8 @@ for (( i=0; i<n_models; i++ )); do
         --scaler_type 4 \
         --seed $seed \
         --file_pos $file_pos \
+        --feature_selection \
+        --compute_random \
         --plot_feature_selection \
         --rotation
 
