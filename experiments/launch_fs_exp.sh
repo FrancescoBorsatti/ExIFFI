@@ -18,7 +18,7 @@ else
 fi
 
 model_names=("EIF")
-interpretations=("ACME")
+interpretations=("EXIFFI")
 n_estimators=300
 n_runs=10
 contamination=0.15
