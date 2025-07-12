@@ -73,10 +73,10 @@ parser.add_argument(
     help="File position for get_most_recent_file",
 )
 parser.add_argument(
-    "--model_name",
+    "--eval_model",
     type=str,
     default="EIF+",
-    help="Name of the AD model. Accepted values are: [IF,EIF,EIF+,DIF,AE]",
+    help="Name of the AD model used to evaluate with Average Precision on the different feature subsets",
 )
 parser.add_argument(
     "--model_interpretation",
@@ -150,7 +150,9 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-check_arguments(model_name=args.model_name, interpretation=args.interpretation)
+check_arguments(
+    model_name=args.model_interpretation, interpretation=args.interpretation
+)
 
 dataset = load_dataset(
     dataset_name=args.dataset_name,
@@ -162,7 +164,7 @@ dataset = load_dataset(
 )
 
 model = load_model(
-    model_name=args.model_name,
+    model_name=args.eval_model,
     interpretation=args.interpretation,
     n_estimators=args.n_estimators,
     max_depth=args.max_depth,
@@ -173,7 +175,7 @@ print("#" * 50)
 print("Feature Selection Experiment")
 print("#" * 50)
 print(f"Dataset: {dataset.name}")
-print(f"Model: {args.model_name}")
+print(f"AD Model: {args.eval_model}")
 print(f"Model for Feature Order: {args.model_interpretation}")
 print(f"Interpretation Model: {args.interpretation}")
 print(f"Scenario: {args.scenario}")
@@ -184,45 +186,47 @@ cwd = os.getcwd()
 
 results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
 
+fs_model_path = generate_path(
+    basepath=results_path,
+    folders=[
+        dataset.name,
+        "experiments",
+        "feature_selection",
+        args.eval_model,
+    ],
+)
+
+fs_int_path = generate_path(
+    basepath=fs_model_path,
+    folders=[
+        f"{args.model_interpretation}_{args.interpretation}",
+        f"scenario_{args.scenario}",
+    ],
+)
+
+fs_random_path = generate_path(
+    basepath=fs_model_path,
+    folders=[
+        "random",
+        f"scenario_{args.scenario}",
+    ],
+)
+
 
 if args.feature_selection:
     print("#" * 50)
     print("Direct Feature Selection experiment")
     print("#" * 50)
 
-    fs_model_path = generate_path(
-        basepath=results_path,
-        folders=[
-            dataset.name,
-            "experiments",
-            "feature_selection",
-            args.model_name,
-        ],
-    )
-
-    fs_int_path = generate_path(
-        basepath=fs_model_path,
-        folders=[
-            f"{args.model_interpretation}_{args.interpretation}",
-            f"scenario_{args.scenario}",
-        ],
-    )
-
-    fs_random_path = generate_path(
-        basepath=fs_model_path,
-        folders=[
-            "random",
-            f"scenario_{args.scenario}",
-        ],
-    )
-
     gfi_path = generate_path(
         basepath=results_path,
         folders=[
             dataset.name,
             "experiments",
-            "global_importances" if args.interpretation in ["EXIFFI+","EXIFFI","DIFFI"] else 'local_importances',
-            args.model_name,
+            "global_importances"
+            if args.interpretation in ["EXIFFI+", "EXIFFI", "DIFFI"]
+            else "local_importances",
+            args.model_interpretation,
             args.interpretation,
             "imp_mat",
             f"scenario_{args.scenario}",
@@ -297,7 +301,7 @@ if args.plot_feature_selection:
             dataset.name,
             "plots",
             "fs_plots",
-            args.model_name,
+            args.eval_model,
             args.model_interpretation,
             args.interpretation,
         ],
@@ -312,7 +316,7 @@ if args.plot_feature_selection:
         plot_path=path_plots,
         precision_file_random=fs_prec_random,
         model=args.model_interpretation,
-        eval_model=args.model,
+        eval_model=args.eval_model,
         interpretation=args.interpretation,
         scenario=args.scenario,
         plot_image=False,

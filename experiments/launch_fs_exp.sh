@@ -15,15 +15,15 @@ else
   exit 1
 fi
 
-model_names=("IF")
-interpretations=("ACME")
+model_names=("EIF+")
+interpretations=("EXIFFI+")
 n_estimators=300
 n_runs=10
 contamination=0.15
 scenario=2
 seed=0
 file_pos=0
-model_interpretation="EIF+"
+eval_model="EIF+"
 
 n_models=${#model_names[@]}
 
@@ -38,8 +38,8 @@ for (( i=0; i<n_models; i++ )); do
     python $SCRIPT_PATH \
         --dataset_name $dataset_name \
         --dataset_path $dataset_path \
-        --model_interpretation $model_interpretation \
-        --model_name ${model_names[$i]} \
+        --eval_model $eval_model \
+        --model_interpretation ${model_names[$i]} \
         --interpretation ${interpretations[$i]} \
         --n_estimators $n_estimators \
         --n_runs $n_runs \
@@ -49,8 +49,6 @@ for (( i=0; i<n_models; i++ )); do
         --scaler_type 4 \
         --seed $seed \
         --file_pos $file_pos \
-        --feature_selection \
-        --compute_random \
         --plot_feature_selection \
         --rotation
 

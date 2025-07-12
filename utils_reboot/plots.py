@@ -470,7 +470,10 @@ def plot_feature_selection(
     if precision_file_random is not None:
         precision_random = open_element(precision_file_random)
         median_random = [np.percentile(x, 50) for x in precision_random.random]
-        plt.plot(median_random, label="random", c=colors[3], alpha=0.5, marker="o")
+
+    ipdb.set_trace()
+
+    plt.plot(median_random, label="random", c=colors[3], alpha=0.5, marker="o")
 
     plt.plot(
         median_direct, label="direct", c=colors[4], alpha=0.5, marker="o"
@@ -572,6 +575,9 @@ def plot_feature_selection(
 
     if save_image:
         plt.savefig(plot_path + namefile, bbox_inches="tight")
+        print("#" * 50)
+        print(f"Feature selection plot saved at: {plot_path}")
+        print("#" * 50)
     if plot_image:
         plt.show()
 
