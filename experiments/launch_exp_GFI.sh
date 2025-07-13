@@ -53,7 +53,6 @@ elif [[ "$dataset_name" = "$piade_name" ]]; then
       --n_runs $n_runs \
       --pre_process \
       --scaler_type 1 \
-      --compute_gfi \
       --score_plot \
       --file_pos $file_pos
 

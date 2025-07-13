@@ -60,16 +60,4 @@ for (( i=0; i<n_models; i++ )); do
 
 done
 
-# For PIADE
-#
-# python $SCRIPT_PATH \
-#     --dataset_name $DATASETS \
-#     --dataset_path $DATASET_PATH \
-#     --model "EIF+" \
-#     --interpretation "KernelSHAP" \
-#     --n_estimators 300 \
-#     --contamination 0.01 \
-#     --scenario 2 \
-#     --compute_GFI \
-#     --n_runs_imp 5 \
-#     --background 0.5
+
