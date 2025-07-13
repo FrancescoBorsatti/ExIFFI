@@ -689,12 +689,13 @@ def experiment_local_importances(
     return cumul_imp, labels.astype(int)
 
 
-def compute_plt_data(imp_path: str, filetype: str = "npz") -> dict:
+def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz") -> tuple[dict,list[str]]:
     """
     Compute statistics on the global feature importances obtained from experiment_global_importances. These will then be used in the score_plot method.
 
     Args:
         imp_path (str): The path to the importances file.
+        dataset (Dataset): dataset object
         filetype (str): The type of the importances file. Defaults to 'npz'.
 
     Returns:
@@ -706,6 +707,27 @@ def compute_plt_data(imp_path: str, filetype: str = "npz") -> dict:
     elif filetype == "csv.gz":
         fi = open_element(imp_path, filetype="csv.gz").values
 
+    #NOTE: Separate columns containing inf values from normal columns
+    # and remove them from fi before computing the statistics.
+
+    normal_cols=0
+    normal_cols_idx=[]
+    inf_cols=0
+    inf_cols_idx=[]
+    for i in range(fi.shape[1]):
+        col = fi[:,i]
+        if np.isinf(col).any():
+            inf_cols = inf_cols + 1
+            inf_cols_idx.append(i)
+        else:
+            normal_cols = normal_cols + 1
+            normal_cols_idx.append(i)
+
+    col_names=dataset.feature_names
+    normal_columns = [col_names[i] for i in normal_cols_idx]
+    inf_columns = [col_names[i] for i in inf_cols_idx]
+    fi = fi[:,normal_cols_idx]
+
     # Handle the case in which there are some np.nan in the fi array
     if np.isnan(fi).any():
         # Substitute the np.nan values with 0
@@ -716,8 +738,6 @@ def compute_plt_data(imp_path: str, filetype: str = "npz") -> dict:
         mean_imp = np.mean(fi, axis=0)
         std_imp = np.std(fi, axis=0)
 
-    # (score - minscore)/(maxscore-minscore)
-
     feat_ordered = mean_imp.argsort()
     mean_ordered = mean_imp[feat_ordered]
     std_ordered = std_imp[feat_ordered]
@@ -725,15 +745,13 @@ def compute_plt_data(imp_path: str, filetype: str = "npz") -> dict:
         mean_ordered.max() - mean_ordered.min()
     )
 
-    # import ipdb; ipdb.set_trace()
-
     plt_data = {
         "Importances": mean_ordered,
         "Normalized_imp": normalize_mean_ordered,
         "feat_order": feat_ordered,
         "std": std_ordered,
     }
-    return plt_data
+    return plt_data, normal_columns
 
 
 def feature_selection(

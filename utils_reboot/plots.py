@@ -240,11 +240,11 @@ def score_plot(
 
     """
     # Compute the plt_data with the compute_plt_data function
-    col_names = dataset.feature_names
+    # col_names = dataset.feature_names
     try:
-        plt_data = compute_plt_data(importances_file)
+        plt_data,col_names = compute_plt_data(imp_path=importances_file,dataset=dataset)
     except:
-        plt_data = compute_plt_data(importances_file, filetype="csv.gz")
+        plt_data,col_names = compute_plt_data(imp_path=importances_file,dataset=dataset,filetype="csv.gz")
 
     t = time.localtime()
     current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
