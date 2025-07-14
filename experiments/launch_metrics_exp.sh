@@ -4,16 +4,7 @@ SCRIPT_PATH="test_metrics.py"
 
 dataset_name="${1:-'TEP_ACME'}"
 
-if [ $dataset_name = "TEP_ACME" ]; then
-  dataset_path="../../datasets/data/TEP_ACME/"
-elif [ $dataset_name = "piade_s2" ]; then
-  dataset_path="../../datasets/data/PIADE/"
-elif [ $dataset_name = "CoffeData" ]; then
-  dataset_path="../../datasets/data/CoffeData/"
-else
-  echo "Dataset name $dataset_name not supported. Supported names: ['TEP_ACME', 'piade_s2', 'CoffeData']"
-  exit 1
-fi
+source "./dataset_config.sh"
 
 # For TEP
 
@@ -69,16 +60,4 @@ for (( i=0; i<n_models; i++ )); do
 
 done
 
-# For PIADE
-#
-# python $SCRIPT_PATH \
-#     --dataset_name $DATASETS \
-#     --dataset_path $DATASET_PATH \
-#     --model "EIF+" \
-#     --interpretation "KernelSHAP" \
-#     --n_estimators 300 \
-#     --contamination 0.01 \
-#     --scenario 2 \
-#     --compute_GFI \
-#     --n_runs_imp 5 \
-#     --background 0.5
+

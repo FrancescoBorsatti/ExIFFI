@@ -240,11 +240,11 @@ def score_plot(
 
     """
     # Compute the plt_data with the compute_plt_data function
-    col_names = dataset.feature_names
+    # col_names = dataset.feature_names
     try:
-        plt_data = compute_plt_data(importances_file)
+        plt_data,col_names = compute_plt_data(imp_path=importances_file,dataset=dataset)
     except:
-        plt_data = compute_plt_data(importances_file, filetype="csv.gz")
+        plt_data,col_names = compute_plt_data(imp_path=importances_file,dataset=dataset,filetype="csv.gz")
 
     t = time.localtime()
     current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
@@ -355,7 +355,7 @@ def score_plot(
     )
 
     # xlim=np.min(imp_vals)-0.05*np.min(imp_vals)
-    xlim = np.min(imp_vals)
+    xlim = np.nanmin(imp_vals)
 
     ax1.grid(alpha=0.7)
     ax2 = ax1.twinx()
@@ -728,7 +728,10 @@ def importance_map(
     # Check if dataset.y_test has all zeros
     if np.all(dataset.y_test == 0):
         model.fit(dataset.X_train)
-        labels = model._predict(dataset.X_test, contamination)
+        if model.name == "sklearn_IF":
+            labels = model.predict_labels(dataset.X_test)
+        else:
+            labels = model._predict(dataset.X_test, contamination)
     else:
         labels = np.copy(dataset.y_test)
 

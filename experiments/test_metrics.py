@@ -203,12 +203,12 @@ dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_d
 
 if args.clear_dict:
     print("#" * 50)
-    print(f"Clearing dictionary entries for {model.name}")
+    print(f"Clearing dictionary entries for {model.name} and {dataset.name}")
 
     try:
-        del dict_time["fit"][model.name]
-        del dict_time["predict"][model.name]
-        del dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"]
+        del dict_time["fit"][model.name][dataset.name]
+        del dict_time["predict"][model.name][dataset.name]
+        del dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name]
     except KeyError:
         print("#" * 50)
         print(f"Performance dictionary entries already empty for {dataset.name}")
