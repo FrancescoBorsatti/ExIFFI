@@ -17,8 +17,8 @@ else
   exit 1
 fi
 
-model_names=("EIF")
-interpretations=("EXIFFI")
+model_names=("IF")
+interpretations=("ACME")
 n_estimators=300
 n_runs=10
 contamination=0.15
