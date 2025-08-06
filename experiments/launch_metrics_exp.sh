@@ -8,8 +8,10 @@ source "./dataset_config.sh"
 
 # For TEP
 
-model_names=("EIF+" "EIF" "EIF" "IF" "IF")
-interpretations=("ACME" "EXIFFI" "ACME" "ACME" "DIFFI")
+# model_names=("EIF+" "EIF" "EIF" "IF" "IF")
+model_names=("EIF+")
+interpretations=("EXIFFI+")
+# interpretations=("ACME" "EXIFFI" "ACME" "ACME" "DIFFI")
 n_estimators=300
 scenario=2
 n_runs=10

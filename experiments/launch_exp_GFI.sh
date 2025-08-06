@@ -34,8 +34,8 @@ if [[ "$dataset_name" = "$tep_name" || "$dataset_name" = "$coffe_name" ]]; then
       --pre_process \
       --scaler_type 4 \
       --compute_gfi \
-      --score_plot \
       --file_pos $file_pos
+      # --score_plot \
 
 elif [[ "$dataset_name" = "$piade_name" ]]; then
 
@@ -53,8 +53,8 @@ elif [[ "$dataset_name" = "$piade_name" ]]; then
       --n_runs $n_runs \
       --pre_process \
       --scaler_type 1 \
-      --score_plot \
       --file_pos $file_pos
+      # --score_plot \
 
 else
 
