@@ -10,6 +10,7 @@ utils_reboot/time_dict_backup/
 *.pickle
 *.csv.gz
 *.pdf
+*.png
 
 # Mac OS files
 *.DS_Store
