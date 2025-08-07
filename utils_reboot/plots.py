@@ -3,6 +3,7 @@ from __future__ import annotations
 import os, ipdb
 import time
 from typing import Type, Optional, List
+import sys; sys.path.append("../ExIFFI_original/experiments/")
 
 import numpy as np
 
@@ -26,6 +27,7 @@ from model_reboot.EIF_reboot import ExtendedIsolationForest
 from matplotlib import colors, cm
 from sklearn.ensemble import IsolationForest
 from model_reboot.interpretability_module import local_diffi
+# from test_feature_selection import Precisions, Precisions_random
 
 
 def bar_plot(
@@ -327,7 +329,6 @@ def score_plot(
     plt.rcParams["axes.facecolor"] = "#F2F2F2"
     plt.rcParams["axes.axisbelow"] = True
     color = plt.cm.get_cmap("tab20", number_colours).colors
-    # import ipdb; ipdb.set_trace()
 
     colors = [
         "#000000",
@@ -394,19 +395,115 @@ def score_plot(
 
     return ax1, ax2
 
+def load_feature_selection_data(
+    precision: Precisions,
+    precision_random: Precisions_random
+) -> dict:
+    """
+    Function to load the precision data needed to produce the feature selection plot
+
+    Args:
+        precision (Precisions): namedtuple containing all the data regarding the inverse and direct feature selection experiments
+        precision_random (Precisions_random): namedtuple containing all the data regarding the random feature selection experiment
+
+    Returns:
+        plt_data (dict): The function returns a dictionary containing all the information needed to produce the feature selection plot
+    """
+
+    plt_data = dict()
+
+    plt_data["aucfs"] = precision.aucfs
+    plt_data["median_direct"] = [np.percentile(x, 50) for x in precision.direct]
+    plt_data["five_direct"] = [np.percentile(x, 95) for x in precision.direct]
+    plt_data["ninetyfive_direct"] = [np.percentile(x, 5) for x in precision.direct]
+    plt_data["median_inverse"] = [np.percentile(x, 50) for x in precision.inverse]
+    plt_data["five_inverse"] = [np.percentile(x, 95) for x in precision.inverse]
+    plt_data["ninetyfive_inverse"] = [np.percentile(x, 5) for x in precision.inverse]
+    plt_data["median_random"] = [np.percentile(x, 50) for x in precision_random.random]
+
+    return plt_data
+
+
+def fs_plot_name(
+        model_name: str = "EIF+",
+        eval_model_name: str = "EIF+",
+        dataset_name: str = "TEP_ACME",
+        interpretation: str = "EXIFFI+",
+        scenario: int = 2
+) -> str:
+    """
+    Function to produce the feature selection plot filename
+
+    Args:
+        model_name (str): name of the model used for the feature rankings, by default EIF+
+        eval_model_name (str): name of the model used for the average precision computations, by default EIF+
+        dataset_name (str): name of the dataset used, by default TEP_ACME
+        interpretation (str): interpretation type, by default EXIFFI+
+        scenario (str): training scenario, by default 2
+    """
+
+
+    t = time.localtime()
+    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
+
+    if model_name == "EIF+" and interpretation == "EXIFFI+":
+        namefile = (
+            "/"
+            + current_time
+            + "_"
+            + dataset_name
+            + "_"
+            + eval_model_name
+            + "_"
+            + "EXIFFI+"
+            + "_feature_selection_"
+            + str(scenario)
+            + ".pdf"
+        )
+    elif model_name == "C_EIF+" and interpretation == "C_EXIFFI+":
+        namefile = (
+            "/"
+            + current_time
+            + "_"
+            + dataset_name
+            + "_"
+            + eval_model_name
+            + "_"
+            + "C_EXIFFI+"
+            + "_feature_selection_"
+            + str(scenario)
+            + ".pdf"
+        )
+    else:
+        namefile = (
+            "/"
+            + current_time
+            + "_"
+            + dataset_name
+            + "_"
+            + eval_model_name
+            + "_"
+            + model_name
+            + "_"
+            + interpretation
+            + "_feature_selection_"
+            + str(scenario)
+            + ".pdf"
+        )
+
+    return namefile
+
 
 def plot_feature_selection(
     precision_file: str,
     plot_path: str,
-    precision_file_random: Optional[str] = None,
-    color: int = 3,
-    model: Optional[str] = None,
-    eval_model: Optional[str] = "EIF+",
-    interpretation: Optional[str] = None,
-    scenario: Optional[int] = 2,
+    precision_file_random: str,
+    model: str = "EIF+",
+    eval_model: str = "EIF+",
+    interpretation: str = "EXIFFI+",
+    scenario: int = 2,
     save_image: bool = True,
     plot_image: bool = False,
-    box_loc: tuple = None,
     change_box_loc: float = 0.9,
     rotation: bool = False,
     change_ylim: bool = False,
@@ -418,11 +515,10 @@ def plot_feature_selection(
         precision_file (str): The path to the file containing the precision values.
         plot_path (str): The path where the plot will be saved.
         precision_file_random (Optional[str], optional): The path to the file containing precision values computed with the random Feature Selection approach. Defaults to None.
-        color (int, optional): The color of the plot. Defaults to 0.
-        model (Optional[str], optional): Name of the AD model. Defaults to None.
-        eval_model (Optional[str], optional): Name of the evaluation model. Defaults to 'EIF+'.
-        interpretation (Optional[str], optional): Name of the interpretation model used. Defaults to None.
-        scenario (Optional[int], optional): The scenario number. Defaults to 2.
+        model (str): Name of the AD model. Defaults to None.
+        eval_model (str): Name of the evaluation model. Defaults to 'EIF+'.
+        interpretation (str): Name of the interpretation model used. Defaults to None.
+        scenario str: The scenario number. Defaults to 2.
         save_image (bool, optional): A boolean indicating whether the plot should be saved. Defaults to True.
         plot_image (bool, optional): A boolean indicating whether the plot should be displayed. Defaults to False.
         box_loc (tuple, optional): The location of the text box containing the Area under the curve of Feature Selection value. Defaults to None.
@@ -435,6 +531,8 @@ def plot_feature_selection(
 
     """
 
+    # Set plot options
+
     colors = [
         "tab:orange",
         "tab:red",
@@ -444,39 +542,27 @@ def plot_feature_selection(
         "tab:olive",
         "tab:brown",
     ]
-    if model is None:
-        model = ""
-    # Precisions = namedtuple("Precisions",["direct","inverse","dataset","model","value"])
-
-    t = time.localtime()
-    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
-    precision = open_element(precision_file)
-
-    # model = precision.model
-    aucfs = precision.aucfs
-
-    median_direct = [np.percentile(x, 50) for x in precision.direct]
-    five_direct = [np.percentile(x, 95) for x in precision.direct]
-    ninetyfive_direct = [np.percentile(x, 5) for x in precision.direct]
-    median_inverse = [np.percentile(x, 50) for x in precision.inverse]
-    five_inverse = [np.percentile(x, 95) for x in precision.inverse]
-    ninetyfive_inverse = [np.percentile(x, 5) for x in precision.inverse]
-    dim = len(median_direct)
 
     plt.style.use("default")
     plt.rcParams["axes.facecolor"] = "#F2F2F2"
     plt.grid(alpha=0.7)
 
-    if precision_file_random is not None:
-        precision_random = open_element(precision_file_random)
-        median_random = [np.percentile(x, 50) for x in precision_random.random]
+    precision = open_element(precision_file)
+    precision_random = open_element(precision_file_random)
 
-    plt.plot(median_random, label="random", c=colors[3], alpha=0.5, marker="o")
+    plt_data = load_feature_selection_data(
+        precision = precision,
+        precision_random = precision_random
+    )
+
+    dim = len(plt_data["median_direct"])
+
+    plt.plot(plt_data["median_random"], label="random", c=colors[3], alpha=0.5, marker="o")
 
     plt.plot(
-        median_direct, label="direct", c=colors[4], alpha=0.5, marker="o"
+        plt_data["median_direct"], label="direct", c=colors[4], alpha=0.5, marker="o"
     )  # markers[c])
-    plt.plot(median_inverse, label="inverse", c=colors[1], alpha=0.5, marker="o")
+    plt.plot(plt_data["median_inverse"], label="inverse", c=colors[1], alpha=0.5, marker="o")
 
     plt.xlabel("Number of Features", fontsize=20)
     plt.ylabel("Average Precision", fontsize=20)
@@ -494,8 +580,7 @@ def plot_feature_selection(
         else:
             plt.xticks(range(dim), range(dim, 0, -1))
 
-    if box_loc is None:
-        box_loc = (len(precision.direct) / 2, change_box_loc)
+    box_loc = (len(precision.direct) / 2, change_box_loc)
 
     text_box_content = (
         r"${}".format("AUC") + r"_{FS}$" + " = " + str(np.round(aucfs, 3))
@@ -515,61 +600,24 @@ def plot_feature_selection(
         plt.ylim(0, 1)
 
     plt.fill_between(
-        np.arange(dim), five_direct, ninetyfive_direct, alpha=0.1, color="k"
+        np.arange(dim), plt_data["five_direct"], plt_data["ninetyfive_direct"], alpha=0.1, color="k"
     )
     plt.fill_between(
-        np.arange(dim), five_inverse, ninetyfive_inverse, alpha=0.1, color="k"
+        np.arange(dim), plt_data["five_inverse"], plt_data["ninetyfive_inverse"], alpha=0.1, color="k"
     )
     plt.fill_between(
-        np.arange(dim), median_direct, median_inverse, alpha=0.7, color="coral"
+        np.arange(dim), plt_data["median_direct"], plt_data["median_inverse"], alpha=0.7, color="coral"
     )
     plt.legend(bbox_to_anchor=(1.05, 0.95), loc="upper left")
     plt.grid(visible=True, alpha=0.5, which="major", color="gray", linestyle="-")
 
-    if model == "EIF+" and interpretation == "EXIFFI+":
-        namefile = (
-            "/"
-            + current_time
-            + "_"
-            + precision.dataset
-            + "_"
-            + eval_model
-            + "_"
-            + "EXIFFI+"
-            + "_feature_selection_"
-            + str(scenario)
-            + ".pdf"
-        )
-    elif model == "C_EIF+" and interpretation == "C_EXIFFI+":
-        namefile = (
-            "/"
-            + current_time
-            + "_"
-            + precision.dataset
-            + "_"
-            + eval_model
-            + "_"
-            + "C_EXIFFI+"
-            + "_feature_selection_"
-            + str(scenario)
-            + ".pdf"
-        )
-    else:
-        namefile = (
-            "/"
-            + current_time
-            + "_"
-            + precision.dataset
-            + "_"
-            + eval_model
-            + "_"
-            + model
-            + "_"
-            + interpretation
-            + "_feature_selection_"
-            + str(scenario)
-            + ".pdf"
-        )
+    namefile = fs_plot_name(
+        model_name = model,
+        eval_model_name = eval_model,
+        dataset_name = precision.dataset,
+        interpretation = interpretation,
+        scenario = scenario
+    )
 
     if save_image:
         plt.savefig(plot_path + namefile, bbox_inches="tight")
@@ -578,6 +626,126 @@ def plot_feature_selection(
         print("#" * 50)
     if plot_image:
         plt.show()
+
+def multi_plot_feature_selection(
+    precision_file_paths: List[str],
+    precision_random_path: str,
+    plot_path: str,
+    model_names: List[str] = ["EIF+"],
+    interpretations: List[str] = ["EXIFFI+"],
+    eval_model_name: str = "EIF+",
+    scenario: int = 2,
+    save_image: bool = True,
+    plot_image: bool = False,
+    change_box_loc: float = 0.9,
+    rotation: bool = False,
+    change_ylim: bool = False,
+) -> None:
+
+    # Set plot options
+
+    colors = [
+        "tab:orange",
+        "tab:red",
+        "tab:orange",
+        "tab:green",
+        "tab:blue",
+        "tab:olive",
+        "tab:brown",
+    ]
+
+    plt.style.use("default")
+    plt.rcParams["axes.facecolor"] = "#F2F2F2"
+    plt.grid(alpha=0.7)
+
+    fig,ax = plt.subplots(nrows=1,ncols=len(model_names),sharey=True,figsize=(20,5))
+
+    precision_random = open_element(precision_random_path)
+
+    for i,(model_name,interpretation )in enumerate(zip(model_names,interpretations)):
+        precision = open_element(precision_file_paths[i])
+
+        plt_data = load_feature_selection_data(
+            precision = precision,
+            precision_random = precision_random
+        )
+
+        dim = len(plt_data["median_direct"])
+
+        line1, = ax[i].plot(plt_data["median_random"], label="random", c=colors[3], alpha=0.5, marker="o")
+
+        line2, = ax[i].plot(
+            plt_data["median_direct"], label="direct", c=colors[4], alpha=0.5, marker="o"
+        )
+        line3, = ax[i].plot(plt_data["median_inverse"], label="inverse", c=colors[1], alpha=0.5, marker="o")
+
+        ax[i].set_title(f"Model: {model_name} Interpretation: {interpretation}")
+
+        if precision.direct.shape[0] > 30:
+            # Put the xticks every 5 positions: so at 0, 5, 10, 15, 20, 25, 30
+            ax[i].set_xticks(
+                range(dim, 0, -5),
+                range(0, dim, 5),
+            )
+        else:
+            if rotation:
+                ax[i].set_xticks(range(dim), range(dim, 0, -1), rotation=45)
+            else:
+                ax[i].set_xticks(range(dim), range(dim, 0, -1))
+
+        box_loc = (len(precision.direct) / 2, change_box_loc)
+
+        text_box_content = (
+            r"${}".format("AUC") + r"_{FS}$" + " = " + str(np.round(plt_data["aucfs"], 3))
+        )
+        ax[i].text(
+            box_loc[0],
+            box_loc[1],
+            text_box_content,
+            bbox=dict(facecolor="white", alpha=0.5, boxstyle="round", pad=0.5),
+            verticalalignment="top",
+            horizontalalignment="right",
+        )
+
+        ax[i].set_ylim(0,1.1) if change_ylim else ax[i].set_ylim(0,1)
+
+        ax[i].fill_between(
+            np.arange(dim), plt_data["five_direct"], plt_data["ninetyfive_direct"], alpha=0.1, color="k"
+        )
+        ax[i].fill_between(
+            np.arange(dim), plt_data["five_inverse"], plt_data["ninetyfive_inverse"], alpha=0.1, color="k"
+        )
+        ax[i].fill_between(
+            np.arange(dim), plt_data["median_direct"], plt_data["median_inverse"], alpha=0.7, color="coral"
+        )
+
+        #NOTE: Insert the legend just on the first plot
+        # if i==0:
+        #     # ax[i].legend(bbox_to_anchor=(1.05, 0.95), loc="center")
+
+        ax[i].grid(visible=True, alpha=0.5, which="major", color="gray", linestyle="-")
+
+    fig.supxlabel("Number of Features", fontsize=20)
+    fig.supylabel("Average Precision", fontsize=20)
+
+    # fig.legend(
+    #     loc="upper right",
+    #     bbox_to_anchor=(0.5,1.05),
+    #     ncol=1,
+    #     frameon=True
+    # )
+
+    if save_image:
+        t = time.localtime()
+        current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
+        namefile = f"{current_time}_multi_fs_plot_{eval_model_name}_scenario_{scenario}.png"
+        plt.savefig(os.path.join(plot_path,namefile), bbox_inches="tight")
+        print("#" * 50)
+        print(f"Feature selection plot saved at: {plot_path}")
+        print("#" * 50)
+    if plot_image:
+        plt.show()
+
 
 
 def plot_precision_over_contamination(
@@ -740,7 +908,6 @@ def importance_map(
     mean = dataset.X_test.mean(axis=0)
     mins = list(mins - (maxs - mins) * factor / 10)
     maxs = list(maxs + (maxs - mins) * factor / 10)
-    # import ipdb; ipdb.set_trace()
     if only_positive:
         mins = [-5, -5]
     xx, yy = np.meshgrid(
