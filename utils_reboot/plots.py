@@ -658,7 +658,7 @@ def multi_plot_feature_selection(
     plt.rcParams["axes.facecolor"] = "#F2F2F2"
     plt.grid(alpha=0.7)
 
-    fig,ax = plt.subplots(nrows=1,ncols=len(model_names),sharey=True,figsize=(20,5))
+    fig,ax = plt.subplots(nrows=1,ncols=len(model_names),sharey=True,figsize=(20,5), dpi=200)
 
     precision_random = open_element(precision_random_path)
 
@@ -679,7 +679,7 @@ def multi_plot_feature_selection(
         )
         line3, = ax[i].plot(plt_data["median_inverse"], label="inverse", c=colors[1], alpha=0.5, marker="o")
 
-        ax[i].set_title(f"Model: {model_name} Interpretation: {interpretation}")
+        ax[i].set_title(f"Model: {model_name} Interpretation: {interpretation}", fontsize=15)
 
         if precision.direct.shape[0] > 30:
             # Put the xticks every 5 positions: so at 0, 5, 10, 15, 20, 25, 30
@@ -700,11 +700,12 @@ def multi_plot_feature_selection(
         )
         ax[i].text(
             box_loc[0],
-            box_loc[1],
+            box_loc[1]+0.2,
             text_box_content,
             bbox=dict(facecolor="white", alpha=0.5, boxstyle="round", pad=0.5),
             verticalalignment="top",
             horizontalalignment="right",
+            fontsize=14,
         )
 
         ax[i].set_ylim(0,1.1) if change_ylim else ax[i].set_ylim(0,1)
@@ -726,7 +727,7 @@ def multi_plot_feature_selection(
         ax[i].grid(visible=True, alpha=0.5, which="major", color="gray", linestyle="-")
 
     fig.supxlabel("Number of Features", fontsize=20)
-    fig.supylabel("Average Precision", fontsize=20)
+    fig.supylabel("Average Precision", fontsize=20, x=-0.001)
 
     # fig.legend(
     #     loc="upper right",
@@ -738,7 +739,8 @@ def multi_plot_feature_selection(
     if save_image:
         t = time.localtime()
         current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
-        namefile = f"{current_time}_multi_fs_plot_{eval_model_name}_scenario_{scenario}.png"
+        namefile = f"{current_time}_multi_fs_plot_{eval_model_name}_scenario_{scenario}.pdf"
+        plt.tight_layout()
         plt.savefig(os.path.join(plot_path,namefile), bbox_inches="tight")
         print("#" * 50)
         print(f"Feature selection plot saved at: {plot_path}")
