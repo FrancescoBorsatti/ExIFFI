@@ -233,10 +233,23 @@ def get_feature_indexes(dataset: Type[Dataset], f1: str, f2: str) -> tuple[int, 
 
     return idx1, idx2
 
+def get_current_time() -> str:
+    """
+    This function returns the current time in the format 'dd-mm-YYYY_HH-MM-SS'.
+    It is used to produce the name of the files saved
+
+    Returns:
+        current_time: string representing the current time
+
+    """
+
+    t = time.localtime()
+    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
+    return current_time
 
 def save_element(
     element: Union[
-        np.array,
+        np.ndarray,
         list,
         pd.DataFrame,
         Type[Precisions],
@@ -246,6 +259,7 @@ def save_element(
     directory_path: str,
     filename: str = "",
     filetype: str = "pickle",
+    add_time: bool = True
 ) -> None:
     """
     Function to save an element produced by an experiment in a file (i.e. `npz` or `pickle` file) in the specified directory path.
@@ -255,10 +269,10 @@ def save_element(
         directory_path: Directory path where the file will be saved
         filename: Name of the file
         filetype: Type of the file (i.e. `npz` or `pickle`)
+        add_time: boolean flag to see weather to add the current time to the filename
 
     Returns:
         The method saves element and does not return any value
-
     """
 
     assert filetype in [
@@ -266,10 +280,13 @@ def save_element(
         "npz",
         "csv.gz",
     ], "filetype must be either 'pickle' or 'npz'"
-    t = time.localtime()
-    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
-    filename = current_time + "_" + filename
+
+    if add_time:
+        current_time = get_current_time()
+        filename = current_time + "_" + filename
+
     path = directory_path + "/" + filename
+
     if filetype == "pickle":
         with open(path + ".pickle", "wb") as fl:
             pickle.dump(element, fl)

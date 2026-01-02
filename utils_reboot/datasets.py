@@ -4,8 +4,6 @@ import os
 import json
 import ipdb
 
-# import ipdb; ipdb.set_trace()
-
 sys.path.append("..")
 
 from typing import Type, Optional, List
@@ -81,7 +79,6 @@ class Dataset:
 
         if self.feature_names_filepath is not None:
             self.dataset_feature_names()
-            # import ipdb; ipdb.set_trace()
 
         if self.feature_names is None:
             self.feature_names = np.arange(self.shape[1])
@@ -111,27 +108,27 @@ class Dataset:
             The dataset is loaded in place.
         """
         try:
-            datapath = os.path.join(self.path, self.name + ".mat")
+            self.datapath = os.path.join(self.path, self.name + ".mat")
             try:
-                mat = loadmat(datapath)
+                mat = loadmat(self.datapath)
             except NotImplementedError:
-                mat = mat73.loadmat(datapath)
+                mat = mat73.loadmat(self.datapath)
 
             self.X = mat["X"].astype(float)
             self.y = mat["y"].reshape(-1, 1).astype(float)
 
         except FileNotFoundError:
             datapath = os.path.join(self.path, self.name + ".*")
-            datapath = glob(datapath)[0]
+            self.datapath = glob(datapath)[0]
             try:
-                T = pd.read_csv(datapath)
+                T = pd.read_csv(self.datapath)
                 if "Unnamed: 0" in T.columns:
-                    T = pd.read_csv(datapath, index_col=0)
+                    T = pd.read_csv(self.datapath, index_col=0)
                 self.X = T.loc[:, T.columns != "Target"].to_numpy(float)
                 self.y = T.loc[:, "Target"].to_numpy(float)
             except Exception as e:
                 try:
-                    T = pd.read_csv(datapath)
+                    T = pd.read_csv(self.datapath)
 
                     if "Unnamed: 0" in T.columns:
                         T = T.drop(columns=["Unnamed: 0"])
@@ -139,8 +136,14 @@ class Dataset:
                     self.y = T["y"].to_numpy(dtype=float).reshape(-1, 1)
                 except:
                     raise Exception(
-                        f"The dataset name is not valid, dataset path: {datapath}"
+                        f"The dataset name is not valid, dataset path: {self.datapath}"
                     ) from e
+
+    def get_path(self) -> str:
+        """
+        Return the datapath from which the dataset is loaded
+        """
+        return self.datapath
 
     def __repr__(self) -> str:
         return f"[{self.name}][{self.shape}][{self.n_outliers}]"
@@ -374,7 +377,7 @@ def load_dataset(
     scenario: int = 2,
     pre_process: bool = False,
     scaler_type: int = 1,
-) -> Type[Dataset]:
+) -> Dataset:
     """
     Function to load a dataset
 

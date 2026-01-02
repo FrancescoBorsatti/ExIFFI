@@ -53,7 +53,7 @@ dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_d
 )
 
 
-def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) -> float:
+def set_contamination(dataset: Dataset, cli_contamination: float = 0.1) -> float:
     """
     Set the contamination factor to use for the model predictions
     and importance computation. In case the dataset has labels we use its
@@ -61,7 +61,7 @@ def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) ->
     command line
 
     Args:
-        dataset (Type[Dataset]): dataset object
+        dataset (Dataset): dataset object
         cli_contamination (float): contamination factor passed through the command line, by default 0.1
 
     Returns:
@@ -82,17 +82,17 @@ def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) ->
 
 def compute_global_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p=0.1,
     interpretation="EXIFFI+",
     fit_model=True,
-) -> np.array:
+) -> np.ndarray:
     """
     Compute the global feature importances for an interpration model on a specific dataset.
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
@@ -123,7 +123,7 @@ def compute_global_importances(
 
 def compute_local_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p=0.1,
     interpretation="EXIFFI+",
     fit_model=True,
@@ -134,7 +134,7 @@ def compute_local_importances(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
@@ -150,8 +150,6 @@ def compute_local_importances(
 
     y_pred = I._predict(dataset.X_test, p).astype(int)
     anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-
-    # import ipdb;ipdb.set_trace()
 
     print("Computing Local Importances...")
     print("#" * 50)
@@ -187,24 +185,24 @@ def sklearn_IF_score_function(model, data):
 
 def compute_imp_time_ACME(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p=0.1,
     n_quantiles: int = 70,
     fit_model=True,
-) -> np.array:
+) -> np.ndarray:
     """
-    Compute the local feature importances using the ACME interpretation model on a specific dataset.
+    Compute the time for the computation of the LFI score with ACME
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
+        model (str): The name of the model to explain with ACME. Defaults to 'EIF+'.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70.
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
 
     Returns:
-        The local feature importances vector of all the points in the input dataset
-
+        acme_time (float): time for the LFI score computation
     """
 
     if fit_model:
@@ -240,14 +238,12 @@ def compute_imp_time_ACME(
 
     print("Local Importances computed")
 
-    # import ipdb;ipdb.set_trace()
-
     return acme_time
 
 
 def compute_local_importances_ACME(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     model: str = "EIF+",
     p=0.1,
     n_quantiles: int = 70,
@@ -258,8 +254,7 @@ def compute_local_importances_ACME(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
-        model (str): The name of the model to explain with ACME. Defaults to 'EIF+'.
+        dataset (Dataset): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70.
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
@@ -316,14 +311,12 @@ def compute_local_importances_ACME(
 
     print("Local Importances computed")
 
-    # import ipdb;ipdb.set_trace()
-
     return imp_mat
 
 
 def compute_imp_time_kernelSHAP(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p: float = 0.1,
     background: float = 0.1,
     pre_process: float = False,
@@ -335,7 +328,7 @@ def compute_imp_time_kernelSHAP(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         background (float): The percentage of the dataset to use as background. Defaults to 0.1.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
@@ -343,7 +336,7 @@ def compute_imp_time_kernelSHAP(
         seed (int): set seed for reproducibility
 
     Returns:
-        The time to compute the local feature importances for a single anomaly
+        shap_time (float): time to compute the local feature importances for a single anomaly
     """
 
     set_seed(seed=seed)
@@ -382,7 +375,7 @@ def compute_imp_time_kernelSHAP(
 
 def compute_local_importances_kernelSHAP(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     background: float = 0.1,
     pre_process: float = False,
     scenario: int = 2,
@@ -393,7 +386,7 @@ def compute_local_importances_kernelSHAP(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         background (float): The percentage of the dataset to use as background. Defaults to 0.1.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
@@ -453,7 +446,7 @@ def compute_local_importances_kernelSHAP(
 
 def compute_local_imp_time(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     anomalies: npt.NDArray,
     p: float = 0.1,
     n_quantiles: int = 70,
@@ -502,7 +495,7 @@ def compute_local_imp_time(
 
 
 def compute_bars(
-    dataset: Type[Dataset],
+    dataset: Dataset,
     importances_file: str,
     filetype: str = "npz",
     model: str = "EIF+",
@@ -513,7 +506,7 @@ def compute_bars(
     and that contains the percentage of runs in which that feature was placed in each one of the different possible ranking positions
 
     Args:
-        dataset (Type[Dataset]): input dataset object
+        dataset (Dataset): input dataset object
         importances_file (str): path to the GFI/LFI matrix
         filetype (str): filetype of the importance file
 
@@ -556,7 +549,7 @@ def compute_bars(
 
 def fit_predict_experiment(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 40,
     model="EIF+",
 ) -> tuple[float, float]:
@@ -565,7 +558,7 @@ def fit_predict_experiment(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 40.
         model (str): The name of the model. Defaults to 'EIF+'.
 
@@ -611,7 +604,7 @@ def set_seed(seed):
 
 def experiment_global_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 10,
     seed: int = 0,
     p: float = 0.1,
@@ -622,7 +615,7 @@ def experiment_global_importances(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         seed (int): Starting value for the seed, at each new run it will be incremented by 1. In this way we can get reproducible results
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
@@ -646,7 +639,7 @@ def experiment_global_importances(
 
 def experiment_local_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 10,
     seed: int = 0,
     p: float = 0.1,
@@ -657,7 +650,7 @@ def experiment_local_importances(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         seed (int): Starting value for the seed, at each new run it will be incremented by 1. In this way we can get reproducible results
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
@@ -689,7 +682,7 @@ def experiment_local_importances(
     return cumul_imp, labels.astype(int)
 
 
-def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz") -> tuple[dict,list[str]]:
+def compute_plt_data(imp_path: str, dataset: Dataset, filetype: str = "npz") -> tuple[dict,list[str]]:
     """
     Compute statistics on the global feature importances obtained from experiment_global_importances. These will then be used in the score_plot method.
 
@@ -756,7 +749,7 @@ def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz
 
 def feature_selection(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     importances_indexes: npt.NDArray,
     n_runs: int = 10,
     seed: int = 0,
@@ -769,7 +762,7 @@ def feature_selection(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         importances_indexes (npt.NDArray): The indexes of the features in the dataset.
         n_runs (int): The number of runs. Defaults to 10.
         seed (int): Starting seed for reproducibility
@@ -848,7 +841,7 @@ def feature_selection(
 
 def contamination_in_training_precision_evaluation(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 10,
     train_size=0.8,
     contamination_values: npt.NDArray = np.linspace(0.0, 0.1, 10),
@@ -862,7 +855,7 @@ def contamination_in_training_precision_evaluation(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         train_size (float): The size of the training set. Defaults to 0.8.
         contamination_values (npt.NDArray): The contamination values. Defaults to `np.linspace(0.0,0.1,10)`.
@@ -957,7 +950,7 @@ def performance(
     score: np.array,
     I: Type[ExtendedIsolationForest],
     model_name: str,
-    dataset: Type[Dataset],
+    dataset: Dataset,
     contamination: float = 0.1,
     train_size: float = 0.8,
     scenario: int = 2,
@@ -977,7 +970,7 @@ def performance(
         score (np.array): The Anomaly Scores.
         I (Type[ExtendedIsolationForest]): The AD model.
         model_name (str): The name of the model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         contamination (float): The contamination factor. Defaults to 0.1.
         train_size (float): The size of the training set. Defaults to 0.8.
         scenario (int): The scenario of the experiment. Defaults to 2.
@@ -1040,7 +1033,7 @@ def performance(
 
 def ablation_EIF_plus(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     eta_list: list[float],
     nruns: int = 10,
 ) -> list[np.array]:
@@ -1049,7 +1042,7 @@ def ablation_EIF_plus(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         eta_list (list): The list of eta values.
         nruns (int): The number of runs. Defaults to 10.
 
