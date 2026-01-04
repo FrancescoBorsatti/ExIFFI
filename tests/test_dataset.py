@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 sys.path.append("..")
-sys.path.append(os.path.join(__file__, ".."))
 
 from utils_reboot.datasets import Dataset, load_dataset
 
@@ -27,13 +26,6 @@ cwd= os.getcwd()
 datapath = os.path.join(os.path.dirname(os.path.dirname(cwd)),"datasets","data")
 
 #NOTE: test for load_dataset function
-# Things to assert:
-# - X and y not None
-# - X_train, X_test, y_train, y_test not None
-# - no duplicates
-# - load the raw data and check that the shape is lower if downsample is true
-# - check that training size is different from test size in case scenario==1 else they
-# they have to be equal
 
 @pytest.mark.parametrize(
     "dataset_name, downsample, scenario, pre_process",

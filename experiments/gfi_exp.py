@@ -1,3 +1,7 @@
+"""
+Python script to produce the GFI score plot
+"""
+
 import argparse
 import os
 import sys
@@ -10,7 +14,7 @@ sys.path.append("..")
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-from utils_reboot.datasets import load_dataset  # noqa: E402
+from utils_reboot.datasets import load_dataset
 from utils_reboot.experiments import (
     compute_bars,
     experiment_global_importances,
@@ -26,7 +30,7 @@ from utils_reboot.utils import (
 )
 
 # Create the argument parser
-parser = argparse.ArgumentParser(description="Test Global Importances")
+parser = argparse.ArgumentParser(description="Global Importances Experiment")
 
 # Add the arguments
 parser.add_argument(

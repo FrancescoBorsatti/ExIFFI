@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 dataset_name="${1:-'TEP_ACME'}"
 local_scoremaps=${2:-0}
@@ -17,10 +17,10 @@ for (( i=0; i<n_models; i++ )); do
 
   if [[ "${interpretations[$i]}" = "ACME" || "${interpretations[$i]}" = "KernelSHAP" ]]; then
 
-    ./launch_local_imp_exp.sh \
-      $dataset_name \
-      ${model_names[$i]} \
-      ${interpretations[$i]} \
+    ./launch_local_imp_exp \
+      "$dataset_name" \
+      "${model_names[$i]}" \
+      "${interpretations[$i]}" \
       $n_estimators \
       $scenario \
       $n_runs \
@@ -28,20 +28,20 @@ for (( i=0; i<n_models; i++ )); do
 
     if [[ "$local_scoremaps" = 1 ]]; then
 
-      ./launch_scoremaps_exp.sh \
-          $dataset_name \
-          ${model_names[$i]} \
-          ${interpretations[$i]} \
+      ./launch_scoremaps_exp \
+          "$dataset_name" \
+          "${model_names[$i]}" \
+          "${interpretations[$i]}" \
           $n_estimators \
           $scenario
     fi
 
   elif [[ "${interpretations[$i]}" = "EXIFFI" || "${interpretations[$i]}" = "EXIFFI+" || "${interpretations[$i]}" = "DIFFI" ]]; then
 
-    ./launch_exp_GFI.sh \
-      $dataset_name \
-      ${model_names[$i]} \
-      ${interpretations[$i]} \
+    ./launch_exp_GFI \
+      "$dataset_name" \
+      "${model_names[$i]}" \
+      "${interpretations[$i]}" \
       $n_estimators \
       $scenario \
       $n_runs \
@@ -49,10 +49,10 @@ for (( i=0; i<n_models; i++ )); do
 
     if [[ "$local_scoremaps" = 1 ]]; then
 
-      ./launch_scoremaps_exp.sh \
-          $dataset_name \
-          ${model_names[$i]} \
-          ${interpretations[$i]} \
+      ./launch_scoremaps_exp \
+          "$dataset_name" \
+          "${model_names[$i]}" \
+          "${interpretations[$i]}" \
           $n_estimators \
           $scenario
     fi

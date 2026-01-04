@@ -1,3 +1,7 @@
+"""
+Python script to produce the LFI score plot
+"""
+
 import os
 import sys
 
@@ -29,7 +33,7 @@ from utils_reboot.utils import (  # noqa: E402
 )
 
 # Create the argument parser
-parser = argparse.ArgumentParser(description="Test Local Importances")
+parser = argparse.ArgumentParser(description="Local Importances Experiment")
 
 # Add the arguments
 parser.add_argument(

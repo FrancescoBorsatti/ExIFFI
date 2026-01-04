@@ -1,3 +1,7 @@
+"""
+Python script to produce the local scoremaps for a pair of features
+"""
+
 import sys
 import os
 import argparse
@@ -163,7 +167,6 @@ path_plots = generate_path(
     ],
 )
 
-# ----------------- LOCAL SCOREMAP -----------------#
 # Compute local scoremap
 model.fit(dataset.X_train)
 

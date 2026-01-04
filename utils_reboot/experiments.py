@@ -629,7 +629,10 @@ def experiment_global_importances(
     for i in tqdm(trange(n_runs, desc="Global Importances runs")):
         set_seed(seed=seed + i)
         fi[i, :] = compute_global_importances(
-            I, dataset, p=p, interpretation=interpretation
+            I = I,
+            dataset = dataset,
+            p=p,
+            interpretation=interpretation
         )
 
     fi = pd.DataFrame(fi, columns=dataset.feature_names)
