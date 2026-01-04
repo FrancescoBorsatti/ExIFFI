@@ -1,0 +1,30 @@
+{
+  "TEP_ACME": [
+    "xmeas_11",
+    "xmeas_22"
+  ],
+  "piade_s1": [
+    "%idle",
+    "A_005"
+  ],
+  "piade_s2": [
+    "$scheduled_downtime",
+    "A_010"
+  ],
+  "piade_s3": [
+    "%idle",
+    "A_020"
+  ],
+  "piade_s4": [
+    "A_010",
+    "%idle"
+  ],
+  "piade_s5": [
+    "%idle",
+    "idle/idle"
+  ],
+  "CoffeData": [
+    "Coffe1",
+    "Coffe2"
+  ]
+}

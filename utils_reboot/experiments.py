@@ -10,13 +10,6 @@ import random
 from argparse import Namespace
 from typing import Type, Union, Tuple
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
-
-realpath = os.path.realpath(__file__)  # true path of this script
-realpath = os.path.dirname(realpath)  # go up one dir
-sys.path.append(realpath)  # appened to sys path
-
 import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm, trange
@@ -31,7 +24,7 @@ import shap
 from sklearn.ensemble import IsolationForest
 from sklearn.ensemble import RandomForestRegressor
 from ACME.ACME import ACME
-from exiffi_core.model import ExtendedIsolationForest, IsolationForest
+from exiffi_core.model import ExtendedIsolationForest
 
 from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.models import load_model

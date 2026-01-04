@@ -3,12 +3,8 @@ import sys
 import numpy as np
 from typing import Union, Type
 
-sys.path.append("..")
 from exiffi_core.model import ExtendedIsolationForest, IsolationForest
 from sklearn.ensemble import IsolationForest as sklearn_IsolationForest
-from utils_reboot.datasets import Dataset
-from utils_reboot.experiments import set_contamination
-
 
 class sklearn_IF(sklearn_IsolationForest):
     def __init__(

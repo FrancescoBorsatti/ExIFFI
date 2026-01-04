@@ -1,3 +1,7 @@
+"""
+Python module with utility functions of various types
+"""
+
 import time
 import random
 from typing import Type, Union, Optional, List
@@ -207,7 +211,11 @@ def update_feature_names(
         json.dump(data_feature_names, f)
 
 
-def get_feature_indexes(dataset: Type[Dataset], f1: str, f2: str) -> tuple[int, int]:
+def get_feature_indexes(
+    dataset: Dataset,
+    f1: str,
+    f2: str,
+) -> tuple[int, int]:
     """
     Function to get the indexes of two features in the dataset.
 
@@ -368,6 +376,7 @@ def open_element(
         "pickle",
         "npz",
         "csv.gz",
+        "json"
     ], "filetype must be either 'pickle' or 'npz'"
     if filetype == "pickle":
         with open(file_path, "rb") as fl:
@@ -379,11 +388,13 @@ def open_element(
             element = np.load(file_path, allow_pickle=True)["element"]
     elif filetype == "csv.gz":
         element = pd.read_csv(file_path)
+    elif filetype == "json":
+        with open(file_path, "r") as fl:
+            element = json.load(fl)
     else:
         raise ValueError("Filetype not recognized")
 
     return element
-
 
 def fix_fs_file(dataset, model, interpretation, scenario):
     path = os.path.join(

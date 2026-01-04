@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+dataset_names=("piade_s4" "piade_s5")
+
+#NOTE: GFI experiment no scoremaps
+
+for dataset_name in "${dataset_names[@]}"; do
+
+  ./launch_imp_plots "$dataset_name"
+
+  echo "---------------------------------------------------"
+  echo "Score plot produced, go and check out the most important features"
+  echo "and use them to update the scoremap_feats.json file. Press y when you are ready to continue"
+  echo "---------------------------------------------------"
+  read answer
+
+  if [[ "$answer" == "y" ]]; then
+
+    ./launch_imp_plots "$dataset_name" 0 1
+
+  else
+
+    echo "You were not ready! Going on with the other experiments"
+
+  fi
+
+  ./launch_metrics_exp "$dataset_name" 1
+
+done
+
+

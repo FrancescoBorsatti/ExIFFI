@@ -32,7 +32,7 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; the
   echo "Running GFI experiment for $dataset_name"
   echo "---------------------------------------------------"
 
-  python $script_path \
+  uv run $script_path \
       --dataset_name "$dataset_name" \
       --dataset_path "$dataset_path" \
       --model_name "$model_name" \
@@ -55,7 +55,7 @@ elif [[ "$dataset_name" == ${piade_prefix}[1-5] ]]; then
   echo "Running GFI experiment for $dataset_name"
   echo "---------------------------------------------------"
 
-  python $script_path \
+  uv run $script_path \
       --dataset_name "$dataset_name" \
       --dataset_path "$dataset_path" \
       --model_name "$model_name" \
@@ -66,9 +66,10 @@ elif [[ "$dataset_name" == ${piade_prefix}[1-5] ]]; then
       --n_estimators "$n_estimators" \
       --n_runs "$n_runs" \
       --pre_process \
-      --scaler_type 1 \
-      --file_pos "$file_pos"
-      # --score_plot \
+      --scaler_type 4 \
+      --compute_gfi \
+      --score_plot \
+      --file_pos "$file_pos" \
 
 else
 

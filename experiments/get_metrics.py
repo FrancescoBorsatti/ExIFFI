@@ -14,10 +14,6 @@ import pandas as pd
 sys.path.append("..")
 cwd = os.getcwd()
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
-
-from ExIFFI_original.utils_reboot.experiments import setup_exp
 from utils_reboot.utils import (  # noqa: E402
     get_most_recent_file,
     open_element,
@@ -25,8 +21,8 @@ from utils_reboot.utils import (  # noqa: E402
     generate_path,
     initialize_perf_dict,
 )
-from utils_reboot.models import load_model  # noqa: E402
-from utils_reboot.datasets import Dataset, load_dataset  # noqa: E402
+from utils_reboot.experiments import setup_exp
+from utils_reboot.datasets import Dataset
 
 from exiffi_core.model import (  # noqa: E402
     ExtendedIsolationForest,
@@ -104,7 +100,7 @@ parser.add_argument(
 
 
 def get_precision_file(
-    dataset: Type[Dataset],
+    dataset: Dataset,
     model_name: str = "EIF",
     scenario: int = 2,
 ) -> pd.DataFrame:

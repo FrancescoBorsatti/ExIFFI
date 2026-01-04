@@ -15,7 +15,7 @@ sys.path.append("..")
 
 from utils_reboot.models import load_model
 from utils_reboot.plots import importance_map
-from utils_reboot.utils import get_feature_indexes, generate_path, check_arguments
+from utils_reboot.utils import get_feature_indexes, generate_path, check_arguments, open_element, open_element
 from utils_reboot.experiments import set_contamination, setup_exp
 
 
@@ -114,7 +114,8 @@ args = parser.parse_args()
 
 dataset, model = setup_exp(args = args)
 
-feats_plot = get_feature_indexes(dataset=dataset, f1=args.feature1, f2=args.feature2)
+scoremap_feats_dict = open_element(os.path.join(cwd,"scoremap_feats.json"),"json")
+feats_plot = get_feature_indexes(dataset=dataset, f1=scoremap_feats_dict[dataset.name][0], f2=scoremap_feats_dict[dataset.name][1])
 
 print("#" * 50)
 print("Local Scoremaps Experiment")
