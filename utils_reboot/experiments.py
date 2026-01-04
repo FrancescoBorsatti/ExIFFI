@@ -1,9 +1,14 @@
-from typing import Type, Union
+"""
+Python module containing all the functions needed for the experiments
+"""
 
 import sys
 import os
 import ipdb
 import random
+
+from argparse import Namespace
+from typing import Type, Union, Tuple
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
@@ -16,16 +21,26 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm, trange
 import copy
-
-from exiffi_core.model import ExtendedIsolationForest, IsolationForest
-from model_reboot.interpretability_module import *
-from utils_reboot.datasets import Dataset
-from utils_reboot.utils import save_element, open_element, initialize_perf_dict
 import sklearn
+import pickle
+import time
+import pandas as pd
+import warnings
+
 import shap
 from sklearn.ensemble import IsolationForest
 from sklearn.ensemble import RandomForestRegressor
 from ACME.ACME import ACME
+from exiffi_core.model import ExtendedIsolationForest, IsolationForest
+
+from utils_reboot.datasets import Dataset, load_dataset
+from utils_reboot.models import load_model
+from utils_reboot.utils import (
+    save_element,
+    open_element,
+    initialize_perf_dict,
+    check_arguments,
+)
 from sklearn.metrics import (
     precision_score,
     recall_score,
@@ -35,12 +50,6 @@ from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
 )
-
-import pickle
-import time
-import pandas as pd
-
-import warnings
 
 warnings.filterwarnings("ignore")
 
@@ -1063,3 +1072,39 @@ def ablation_EIF_plus(
             precision.append(average_precision_score(dataset.y_test, score))
         precisions.append(precision)
     return precisions
+
+def setup_exp(
+    args: Namespace
+) -> Tuple[Dataset,ExtendedIsolationForest]:
+    """
+    Function to check the validity of the command line arguments,
+    load the dataset and the model
+
+    Args:
+        args (Namespace): experiment configuration
+
+    Returns:
+        dataset (Dataset): dataset to use for the experiment
+        model (ExtendedIsolationForest): dataset to use for the experiment
+    """
+
+    check_arguments(model_name=args.model_name, interpretation=args.interpretation)
+
+    dataset = load_dataset(
+        dataset_name=args.dataset_name,
+        dataset_path=args.dataset_path,
+        downsample=args.downsample,
+        scenario=args.scenario,
+        pre_process=args.pre_process,
+        scaler_type=args.scaler_type,
+    )
+
+    model = load_model(
+        model_name=args.model_name,
+        interpretation=args.interpretation,
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
+        max_samples=args.max_samples,
+    )
+
+    return dataset, model
