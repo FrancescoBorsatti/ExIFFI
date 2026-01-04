@@ -22,6 +22,7 @@ from utils_reboot.experiments import (  # noqa: E402
     compute_local_importances_kernelSHAP,
     experiment_local_importances,
     set_contamination,
+    setup_exp
 )
 from utils_reboot.models import load_model  # noqa: E402
 from utils_reboot.plots import score_plot  # noqa: E402
@@ -146,24 +147,7 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-check_arguments(model_name=args.model_name, interpretation=args.interpretation)
-
-dataset = load_dataset(
-    dataset_name=args.dataset_name,
-    dataset_path=args.dataset_path,
-    downsample=args.downsample,
-    scenario=args.scenario,
-    pre_process=args.pre_process,
-    scaler_type=args.scaler_type,
-)
-
-model = load_model(
-    model_name=args.model_name,
-    interpretation=args.interpretation,
-    n_estimators=args.n_estimators,
-    max_depth=args.max_depth,
-    max_samples=args.max_samples,
-)
+dataset, model = setup_exp(args = args)
 
 os.chdir("../")
 cwd = os.getcwd()

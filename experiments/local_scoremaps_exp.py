@@ -13,12 +13,10 @@ sys.path.append("..")
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-# from utils_reboot.experiments import *
-from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.models import load_model
 from utils_reboot.plots import importance_map
 from utils_reboot.utils import get_feature_indexes, generate_path, check_arguments
-from utils_reboot.experiments import set_contamination
+from utils_reboot.experiments import set_contamination, setup_exp
 
 
 # from model_reboot.EIF_reboot import ExtendedIsolationForest
@@ -114,24 +112,7 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-check_arguments(model_name=args.model_name, interpretation=args.interpretation)
-
-dataset = load_dataset(
-    dataset_name=args.dataset_name,
-    dataset_path=args.dataset_path,
-    downsample=args.downsample,
-    scenario=args.scenario,
-    pre_process=args.pre_process,
-    scaler_type=args.scaler_type,
-)
-
-model = load_model(
-    model_name=args.model_name,
-    interpretation=args.interpretation,
-    n_estimators=args.n_estimators,
-    max_depth=args.max_depth,
-    max_samples=args.max_samples,
-)
+dataset, model = setup_exp(args = args)
 
 feats_plot = get_feature_indexes(dataset=dataset, f1=args.feature1, f2=args.feature2)
 

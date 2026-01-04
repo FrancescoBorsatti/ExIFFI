@@ -1,4 +1,7 @@
-# initialize feature_selection paths
+"""
+Python script to produce the feature selection plots
+"""
+
 import os
 import sys
 
@@ -7,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 cwd = os.getcwd()
-# os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
 sys.path.append("..")
 import argparse  # noqa: E402
 from collections import namedtuple  # noqa: E402
@@ -16,7 +18,7 @@ from utils_reboot.datasets import load_dataset  # noqa: E402
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
-from utils_reboot.experiments import feature_selection  # noqa: E402
+from utils_reboot.experiments import feature_selection, setup_exp  # noqa: E402
 from utils_reboot.models import load_model  # noqa: E402
 from utils_reboot.plots import plot_feature_selection  # noqa: E402
 from utils_reboot.utils import (  # noqa: E402
@@ -29,7 +31,7 @@ from utils_reboot.utils import (  # noqa: E402
 )
 
 # Create the argument parser
-parser = argparse.ArgumentParser(description="Test Feature Selection")
+parser = argparse.ArgumentParser(description="Feature Selection Experiment")
 
 # Add the arguments
 parser.add_argument(
@@ -150,26 +152,7 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-check_arguments(
-    model_name=args.model_interpretation, interpretation=args.interpretation
-)
-
-dataset = load_dataset(
-    dataset_name=args.dataset_name,
-    dataset_path=args.dataset_path,
-    downsample=args.downsample,
-    scenario=args.scenario,
-    pre_process=args.pre_process,
-    scaler_type=args.scaler_type,
-)
-
-model = load_model(
-    model_name=args.eval_model,
-    interpretation=args.interpretation,
-    n_estimators=args.n_estimators,
-    max_depth=args.max_depth,
-    max_samples=args.max_samples,
-)
+dataset, model = setup_exp(args = args)
 
 print("#" * 50)
 print("Feature Selection Experiment")

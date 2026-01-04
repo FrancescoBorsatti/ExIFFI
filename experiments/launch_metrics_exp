@@ -1,10 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-SCRIPT_PATH="test_metrics.py"
+script_path="metrics_exp.py"
 
 dataset_name="${1:-'TEP_ACME'}"
 
-source "./dataset_config.sh"
+source "./dataset_config"
+
+declare -A cfg
+get_datapath "$dataset_name" cfg
+
+dataset_path=${cfg[dataset_path]}
+tep_name=${cfg[tep_name]}
+coffe_name=${cfg[coffe_name]}
+piade_prefix=${cfg[piade_prefix]}
 
 # For TEP
 
@@ -30,11 +38,11 @@ for (( i=0; i<n_models; i++ )); do
   echo "Performance metrics experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
   echo "#####################################################################################################"
 
-  python $SCRIPT_PATH \
-      --dataset_name $dataset_name \
-      --dataset_path $dataset_path \
-      --model ${model_names[$i]} \
-      --interpretation ${interpretations[$i]} \
+  python $script_path \
+      --dataset_name "$dataset_name" \
+      --dataset_path "$dataset_path" \
+      --model "${model_names[$i]}" \
+      --interpretation "${interpretations[$i]}" \
       --n_estimators $n_estimators \
       --scenario $scenario \
       --pre_process \
@@ -51,10 +59,10 @@ for (( i=0; i<n_models; i++ )); do
   echo "#####################################################################################################"
 
   ./launch_get_metrics.sh \
-      $dataset_name \
-      $dataset_path \
-      ${model_names[$i]} \
-      ${interpretations[$i]} \
+      "$dataset_name" \
+      "$dataset_path" \
+      "${model_names[$i]}" \
+      "${interpretations[$i]}" \
       $n_estimators \
       $scenario \
       $file_pos \

@@ -1,3 +1,7 @@
+"""
+Python script to print the AD metrics of an AD model
+"""
+
 import os
 import sys
 import ipdb
@@ -13,6 +17,7 @@ cwd = os.getcwd()
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
+from ExIFFI_original.utils_reboot.experiments import setup_exp
 from utils_reboot.utils import (  # noqa: E402
     get_most_recent_file,
     open_element,
@@ -111,14 +116,14 @@ def get_precision_file(
         model_name (str): name of the model
         scenario (int): training scenario
     """
-    path = os.path.join(
-        cwd + "/results/",
-        dataset.name,
-        "experiments",
-        "metrics",
-        model_name,
-        f"scenario_{str(scenario)}",
-    )
+    # path = os.path.join(
+    #     cwd + "/results/",
+    #     dataset.name,
+    #     "experiments",
+    #     "metrics",
+    #     model_name,
+    #     f"scenario_{str(scenario)}",
+    # )
     path = generate_path(
         basepath=cwd,
         folders=[
@@ -142,25 +147,7 @@ def get_precision_file(
 # Parse the arguments
 args = parser.parse_args()
 
-check_arguments(model_name=args.model_name, interpretation=args.interpretation)
-
-dataset = load_dataset(
-    dataset_name=args.dataset_name,
-    dataset_path=args.dataset_path,
-    downsample=args.downsample,
-    scenario=args.scenario,
-    pre_process=args.pre_process,
-    scaler_type=args.scaler_type,
-)
-
-model = load_model(
-    model_name=args.model_name,
-    interpretation=args.interpretation,
-    n_estimators=args.n_estimators,
-    max_depth=args.max_depth,
-    max_samples=args.max_samples,
-)
-
+dataset, model = setup_exp(args = args)
 
 print("#" * 50)
 print("Performance Metrics Experiment")

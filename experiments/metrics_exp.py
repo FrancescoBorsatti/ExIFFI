@@ -1,3 +1,7 @@
+"""
+Python script to compute the AD metrics
+"""
+
 import argparse
 import os
 import pickle
@@ -8,7 +12,6 @@ import ipdb
 from tqdm import tqdm, trange
 
 cwd = os.getcwd()
-# os.chdir('/home/davidefrizzo/Desktop/PHD/ExIFFI/experiments')
 sys.path.append("..")
 
 # from append_to_path import append_dirname
@@ -28,6 +31,7 @@ from utils_reboot.experiments import (  # noqa: E402
     compute_local_imp_time,
     performance,
     set_contamination,
+    setup_exp,
 )
 from utils_reboot.models import load_model  # noqa: E402
 from utils_reboot.plots import *  # noqa: E402, F403
@@ -160,28 +164,10 @@ parser.add_argument(
 # Parse the arguments
 args = parser.parse_args()
 
-check_arguments(model_name=args.model_name, interpretation=args.interpretation)
-
-dataset = load_dataset(
-    dataset_name=args.dataset_name,
-    dataset_path=args.dataset_path,
-    downsample=args.downsample,
-    scenario=args.scenario,
-    pre_process=args.pre_process,
-    scaler_type=args.scaler_type,
-)
-
-model = load_model(
-    model_name=args.model_name,
-    interpretation=args.interpretation,
-    n_estimators=args.n_estimators,
-    max_depth=args.max_depth,
-    max_samples=args.max_samples,
-)
+dataset, model = setup_exp(args = args)
 
 os.chdir("../")
 cwd = os.getcwd()
-
 
 print("#" * 50)
 print("Metrics Experiment")
@@ -235,16 +221,10 @@ for i in trange(args.n_runs, desc="Fit Predict experiment runs"):
     try:
         dict_time["fit"][model.name].setdefault(dataset.name, []).append(fit_time)
     except:
-        print(
-            "Model not recognized: creating a new key in the dict_time for the new model"
-        )
-        dict_time["fit"].setdefault(model.name, {}).setdefault(dataset.name, []).append(
-            fit_time
-        )
+        print("Model not recognized: creating a new key in the dict_time for the new model")
+        dict_time["fit"].setdefault(model.name, {}).setdefault(dataset.name, []).append(fit_time)
 
-    contamination = set_contamination(
-        dataset=dataset, cli_contamination=args.contamination
-    )
+    contamination = set_contamination(dataset=dataset, cli_contamination=args.contamination)
 
     start_time = time.time()
 

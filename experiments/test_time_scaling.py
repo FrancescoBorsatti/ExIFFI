@@ -152,7 +152,7 @@ path_experiment_model_fit_predict = path_experiment_model + "/" + 'fit_predict'
 if not os.path.exists(path_experiment_model_fit_predict):
     os.makedirs(path_experiment_model_fit_predict)
 
-# Fit Predict Experiment 
+# Fit Predict Experiment
 if fit_predict:
     fit_time,predict_time=fit_predict_experiment(I=I,dataset=dataset,n_runs=n_runs,model=I.name)
 

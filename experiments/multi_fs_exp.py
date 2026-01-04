@@ -108,9 +108,7 @@ for model_name,interpretation in zip(args.model_interpretations,args.interpretat
     print("-"*50)
     print(f"Checking arguments for model {model_name} and interpretation {interpretation}")
     print("-"*50)
-    check_arguments(
-        model_name=model_name, interpretation=interpretation
-    )
+    check_arguments(model_name=model_name, interpretation=interpretation)
     print("-"*50)
     print(f"Arguments ok for model {model_name} and interpretation {interpretation}")
     print("-"*50)
