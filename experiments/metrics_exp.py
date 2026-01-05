@@ -237,18 +237,18 @@ for i in trange(args.n_runs, desc="Fit Predict experiment runs"):
 
     anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
     predict_time = time.time() - start_time
+    predict_sample_time = predict_time / len(anomalies)
 
     try:
-        dict_time["predict"][model.name].setdefault(dataset.name, []).append(
-            predict_time
-        )
-    except:
-        print(
-            "Model not recognized: creating a new key in the dict_time for the new model"
-        )
-        dict_time["predict"].setdefault(model.name, {}).setdefault(
-            dataset.name, []
-        ).append(predict_time)
+
+        dict_time["predict"][model.name].setdefault(dataset.name, []).append(predict_time)
+        dict_time["predict_sample"][model.name].setdefault(dataset.name, []).append(predict_sample_time)
+
+    except Exception as _:
+
+        print("Model not recognized: creating a new key in the dict_time for the new model")
+        dict_time["predict"].setdefault(model.name, {}).setdefault(dataset.name, []).append(predict_time)
+        dict_time["predict_sample"].setdefault(model.name, {}).setdefault(dataset.name, []).append(predict_sample_time)
 
 if args.compute_GFI:
     if args.interpretation == "KernelSHAP":
@@ -263,18 +263,10 @@ if args.compute_GFI:
         )
 
         try:
-            dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][
-                dataset.name
-            ].setdefault(f"background_{int(args.background*100)}", []).append(
-                importances_time
-            )
-        except:
-            print(
-                "Model not recognized: creating a new key in the dict_time_imp for the new model"
-            )
-            dict_time_imp["importances"].setdefault(
-                f"{args.model_name}_{args.interpretation}", {}
-            ).setdefault(dataset.name, {}).setdefault(
+            dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name].setdefault(f"background_{int(args.background*100)}", []).append(importances_time)
+        except Exception as _:
+            print("Model not recognized: creating a new key in the dict_time_imp for the new model")
+            dict_time_imp["importances"].setdefault(f"{args.model_name}_{args.interpretation}", {}).setdefault(dataset.name, {}).setdefault(
                 f"background_{int(args.background*100)}", []
             ).append(importances_time)
     else:
@@ -291,7 +283,7 @@ if args.compute_GFI:
             dict_time_imp["importances"][
                 f"{args.model_name}_{args.interpretation}"
             ].setdefault(dataset.name, []).append(importances_time)
-        except:
+        except Exception as _:
             print(
                 "Model not recognized: creating a new key in the dict_time_imp for the new model"
             )

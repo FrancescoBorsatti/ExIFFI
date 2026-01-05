@@ -283,11 +283,14 @@ def save_element(
         The method saves element and does not return any value
     """
 
-    assert filetype in [
+    filetypes = [
         "pickle",
         "npz",
         "csv.gz",
-    ], "filetype must be either 'pickle' or 'npz'"
+        "json"
+    ]
+
+    assert filetype in filetypes, f"filetype must be one of {filetypes}"
 
     if add_time:
         current_time = get_current_time()
@@ -302,7 +305,9 @@ def save_element(
         np.savez(path, element=element)
     elif filetype == "csv.gz":
         element.to_csv(path + ".csv.gz", index=False, compression="gzip")
-
+    elif filetype == "json":
+        with open(path, "w") as fl:
+            json.dump(element,fl,indent=4)
 
 def generate_path(basepath: str = os.getcwd(), folders: List[str] = []) -> str:
     """
@@ -630,6 +635,11 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
     dict_time_imp_path = os.path.join(perf_dict_dirpath, "dict_time_imp.pickle")
 
     if not os.path.exists(dict_time_path):
+
+        print("-"*50)
+        print("Creating new fit-predict time dictionary")
+        print("-"*50)
+
         dict_time = {
             "fit": {
                 "EIF+": {},
@@ -645,6 +655,13 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
                 "EIF+_distrib_split": {},
                 "EIF+_centroid_split": {},
             },
+            "predict_sample": {
+                "EIF+": {},
+                "EIF": {},
+                "EIF+_centroid": {},
+                "EIF+_distrib_split": {},
+                "EIF+_centroid_split": {},
+            }
         }
         with open(dict_time_path, "wb") as file:
             pickle.dump(dict_time, file)
@@ -653,6 +670,11 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
         dict_time = pickle.load(file)
 
     if not os.path.exists(dict_time_imp_path):
+
+        print("-"*50)
+        print("Creating new importances time dictionary")
+        print("-"*50)
+
         dict_time_imp = {
             "importances": {
                 "EIF+_ACME": {},

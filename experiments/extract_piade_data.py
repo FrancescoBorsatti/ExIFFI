@@ -12,10 +12,11 @@ import pandas as pd
 
 sys.path.append("..")
 
-from utils_reboot.utils import generate_path, save_element
+from utils_reboot.utils import generate_path, open_element, save_element
 
 cwd= os.getcwd()
-datapath = os.path.join(os.path.dirname(os.path.dirname(cwd)),"datasets","data","PIADE")
+feat_names_path = os.path.join(os.path.dirname(os.path.dirname(cwd)),"datasets","data")
+datapath = os.path.join(feat_names_path, "PIADE")
 
 parser = argparse.ArgumentParser(description="PIADE data extraction script")
 
@@ -31,6 +32,12 @@ parser.add_argument(
     help="If set, remove the constant columns from the dataframes"
 )
 
+parser.add_argument(
+    "--update_feat_names",
+    action="store_true",
+    help="If set, update the data_feature_names.json file"
+)
+
 args = parser.parse_args()
 
 piade_data = pd.read_csv(os.path.join(datapath,"piade.csv.gz"))
@@ -39,25 +46,19 @@ print("-"*50)
 print(f"piade_data shape: {piade_data.shape}")
 print("-"*50)
 
-# piade_s2_alarms_no_zeros_data = pd.read_csv(os.path.join(datapath,"piade_s2_alarms_no_zeros.csv.gz"))
-#
-# print("-"*50)
-# print(f"piade_s2_alarms_no_zeros_data shape: {piade_s2_alarms_no_zeros_data.shape}")
-# print("-"*50)
+feat_names_dict = open_element(os.path.join(feat_names_path,"data_feature_names.json"),"json")
 
 piade_dfs = {}
 piade_constant_cols = {}
 
 for i in range(1,6):
-    dataname = f"piade_s{i}"
-    piade_datapath = os.path.join(datapath,dataname,f"{dataname}_alarms_no_zeros.csv.gz")
+    dataname = f"piade_s{i}_alarms_no_zeros"
+    piade_datapath = os.path.join(datapath,dataname,f"{dataname}.csv.gz")
     piade_machine_data = pd.read_csv(piade_datapath)
     piade_dfs[dataname] = piade_machine_data
     print("-"*50)
     print(f"{dataname} shape: {piade_machine_data.shape}")
     print("-"*50)
-
-ipdb.set_trace()
 
 for piade_df in piade_dfs.keys():
 
@@ -68,9 +69,9 @@ for piade_df in piade_dfs.keys():
 
     piade_constant_cols[piade_df] = constant_col_names
 
-    print("-"*50)
-    print(f"{piade_df} has {len(constant_col_names)} constant columns")
-    print("-"*50)
+    # print("-"*50)
+    # print(f"{piade_df} has {len(constant_col_names)} constant columns")
+    # print("-"*50)
 
     if args.remove_constant_cols:
 
@@ -81,8 +82,23 @@ for piade_df in piade_dfs.keys():
         piade_dfs[piade_df] = piade_dfs[piade_df].drop(columns=piade_constant_cols[piade_df])
 
         print("-"*50)
+        print("Adding Target column")
+        print("-"*50)
+
+        piade_dfs[piade_df]["Target"] = np.zeros(shape=piade_dfs[piade_df].shape[0])
+
+        print("-"*50)
         print(f"New shape of {piade_df}: {piade_dfs[piade_df].shape}")
         print("-"*50)
+
+    if args.update_feat_names:
+
+        print("-"*50)
+        print("Updating feature names file")
+        print("-"*50)
+
+        feat_names = [col for col in piade_dfs[piade_df].columns if col != "Target"]
+        feat_names_dict[piade_df] = feat_names
 
     if args.save_df:
 
@@ -101,7 +117,7 @@ for piade_df in piade_dfs.keys():
             folders = [piade_df]
         )
 
-        filename = f"{piade_df}_alarms_no_zeros"
+        filename = piade_df
         save_element(
             element = piade_dfs[piade_df],
             directory_path = piade_df_dirpath,
@@ -111,7 +127,20 @@ for piade_df in piade_dfs.keys():
         )
 
         print("-"*50)
-        print(f"{piade_df} data saved at: {os.path.join(piade_df_dirpath,filename)} ")
+        print(f"{piade_df} data saved at: {os.path.join(piade_df_dirpath,filename)}")
         print("-"*50)
+
+if args.update_feat_names:
+
+    print("-"*50)
+    print("Saving updated feature names dictionary into json")
+    print("-"*50)
+
+    save_element(
+        element = feat_names_dict,
+        directory_path = feat_names_path,
+        filename = "data_feature_names_extended.json",
+        filetype = "json"
+    )
 
 

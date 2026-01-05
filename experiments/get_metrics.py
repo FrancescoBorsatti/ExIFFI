@@ -112,14 +112,6 @@ def get_precision_file(
         model_name (str): name of the model
         scenario (int): training scenario
     """
-    # path = os.path.join(
-    #     cwd + "/results/",
-    #     dataset.name,
-    #     "experiments",
-    #     "metrics",
-    #     model_name,
-    #     f"scenario_{str(scenario)}",
-    # )
     path = generate_path(
         basepath=cwd,
         folders=[
@@ -161,9 +153,7 @@ experiment_path = generate_path(basepath=cwd, folders=["experiments"])
 
 if args.return_perf:
     print("#" * 50)
-    print(
-        f"Performance values for {dataset.name} {args.model_name} scenario {str(args.scenario)}"
-    )
+    print(f"Performance values for{dataset.name} {args.model_name}scenario{str(args.scenario)}")
     metrics_df = get_precision_file(dataset, model.name, args.scenario).T
     print(metrics_df.to_markdown())
     print("#" * 50)
@@ -180,6 +170,11 @@ if model.name in dict_time["fit"]:
 if model.name in dict_time["predict"]:
     print(
         f"Predict time for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['predict'][model.name][dataset.name]),3)} +- {np.round(np.std(dict_time['predict'][model.name][dataset.name]),3)}"
+    )
+
+if model.name in dict_time["predict_sample"]:
+    print(
+        f"Predict time per sample for {model.name} {dataset.name} scenario {str(args.scenario)}: {np.round(np.mean(dict_time['predict_sample'][model.name][dataset.name]),5)} +- {np.round(np.std(dict_time['predict_sample'][model.name][dataset.name]),5)}"
     )
 
 if f"{args.model_name}_{args.interpretation}" in dict_time_imp["importances"]:

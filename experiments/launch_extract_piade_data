@@ -7,5 +7,4 @@ echo "Executing $script_path"
 echo "------------------------------------------"
 
 uv run $script_path \
-  --remove_constant_cols \
-  --save_df
+  --update_feat_names

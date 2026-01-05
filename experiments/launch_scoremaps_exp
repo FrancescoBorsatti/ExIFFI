@@ -13,8 +13,7 @@ dataset_path=${cfg[dataset_path]}
 tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
-f1=${cfg[f1]}
-f2=${cfg[f2]}
+piade_suffix=${cfg[piade_suffix]}
 
 model_name="$2"
 interpretation="$3"
@@ -41,7 +40,7 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; the
       --pre_process 1 \
       --scaler_type 4
 
-elif [[ "$dataset_name" == ${piade_prefix}[1-5] ]]; then
+elif [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_prefix}[1-5]${piade_suffix} ]]; then
 
   #WARN: Remove downsample from PIADE?
 

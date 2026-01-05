@@ -13,6 +13,7 @@ dataset_path=${cfg[dataset_path]}
 tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
+piade_suffix=${cfg[piade_suffix]}
 
 model_name="$2"
 interpretation="$3"
@@ -47,13 +48,13 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; the
       --file_pos "$file_pos"
       # --score_plot \
 
-elif [[ "$dataset_name" == ${piade_prefix}[1-5] ]]; then
-
-  #WARN: Use scaler_type=1 for PIADE?
+elif [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_prefix}[1-5]${piade_suffix} ]]; then
 
   echo "---------------------------------------------------"
   echo "Running GFI experiment for $dataset_name"
   echo "---------------------------------------------------"
+
+  #WARN: Momentarily removed compute_gfi
 
   uv run $script_path \
       --dataset_name "$dataset_name" \
@@ -67,7 +68,6 @@ elif [[ "$dataset_name" == ${piade_prefix}[1-5] ]]; then
       --n_runs "$n_runs" \
       --pre_process \
       --scaler_type 4 \
-      --compute_gfi \
       --score_plot \
       --file_pos "$file_pos" \
 

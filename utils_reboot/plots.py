@@ -245,7 +245,7 @@ def score_plot(
     # col_names = dataset.feature_names
     try:
         plt_data,col_names = compute_plt_data(imp_path=importances_file,dataset=dataset)
-    except:
+    except Exception as _:
         plt_data,col_names = compute_plt_data(imp_path=importances_file,dataset=dataset,filetype="csv.gz")
 
     t = time.localtime()

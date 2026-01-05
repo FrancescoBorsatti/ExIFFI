@@ -126,7 +126,8 @@ class Dataset:
                     T = pd.read_csv(self.datapath, index_col=0)
                 self.X = T.loc[:, T.columns != "Target"].to_numpy(float)
                 self.y = T.loc[:, "Target"].to_numpy(float)
-            except Exception as e:
+            except Exception as _:
+                print("Column Target not found, trying with column Y")
                 try:
                     T = pd.read_csv(self.datapath)
 
@@ -134,7 +135,7 @@ class Dataset:
                         T = T.drop(columns=["Unnamed: 0"])
                     self.X = T["X"].to_numpy(dtype=float)
                     self.y = T["y"].to_numpy(dtype=float).reshape(-1, 1)
-                except:
+                except Exception as e:
                     raise Exception(
                         f"The dataset name is not valid, dataset path: {self.datapath}"
                     ) from e
