@@ -34,10 +34,8 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; the
       --model "$model_name" \
       --interpretation "$interpretation" \
       --scenario "$scenario" \
-      --feature1 "$f1" \
-      --feature2 "$f2" \
-      --downsample 1 \
-      --pre_process 1 \
+      --downsample \
+      --pre_process \
       --scaler_type 4
 
 elif [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_prefix}[1-5]${piade_suffix} ]]; then
@@ -52,9 +50,7 @@ elif [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_pr
       --model "$model_name" \
       --interpretation "$interpretation" \
       --scenario "$scenario" \
-      --feature1 "$f1" \
-      --feature2 "$f2" \
-      --pre_process 1 \
+      --pre_process \
       --scaler_type 1
 
 else

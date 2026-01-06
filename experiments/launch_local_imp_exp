@@ -4,6 +4,8 @@ script_path="lfi_exp.py"
 
 dataset_name="${1:-'TEP_ACME'}"
 
+source "./dataset_config"
+
 declare -A cfg
 get_datapath "$dataset_name" cfg
 

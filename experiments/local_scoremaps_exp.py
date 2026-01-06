@@ -13,104 +13,17 @@ sys.path.append("..")
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
+from utils_reboot.exp_config import define_arguments
 from utils_reboot.models import load_model
 from utils_reboot.plots import importance_map
-from utils_reboot.utils import get_feature_indexes, generate_path, check_arguments, open_element, open_element
+from utils_reboot.utils import (
+    get_feature_indexes,
+    generate_path,
+    open_element,
+)
 from utils_reboot.experiments import set_contamination, setup_exp
 
-
-# from model_reboot.EIF_reboot import ExtendedIsolationForest
-from exiffi_core.model import ExtendedIsolationForest, IsolationForest
-
-# Create the argument parser
-parser = argparse.ArgumentParser(description="Test Local Importances")
-
-# Add the arguments
-parser.add_argument(
-    "--dataset_name", type=str, default="wine", help="Name of the dataset"
-)
-parser.add_argument(
-    "--dataset_path", type=str, default="../data/real/", help="Path to the dataset"
-)
-parser.add_argument("--plus", type=bool, default=True, help="EIF parameter: plus")
-parser.add_argument(
-    "--n_estimators", type=int, default=100, help="EIF parameter: n_estimators"
-)
-parser.add_argument(
-    "--max_depth", type=str, default="auto", help="EIF parameter: max_depth"
-)
-parser.add_argument(
-    "--max_samples", type=str, default="auto", help="EIF parameter: max_samples"
-)
-parser.add_argument(
-    "--contamination",
-    type=float,
-    default=0.1,
-    help="Global feature importances parameter: contamination",
-)
-parser.add_argument(
-    "--n_runs",
-    type=int,
-    default=10,
-    help="Global feature importances parameter: n_runs",
-)
-parser.add_argument(
-    "--file_pos",
-    type=int,
-    default=0,
-    help="File position for get_most_recent_file",
-)
-parser.add_argument(
-    "--model_name",
-    type=str,
-    default="EIF+",
-    help="Name of the interpretable AD model. Accepted values are: [IF,EIF,EIF+]",
-)
-parser.add_argument(
-    "--interpretation",
-    type=str,
-    default="EXIFFI+",
-    help="Name of the interpretation model. Accepted values are: [EXIFFI+,EXIFFI,DIFFI,RandomForest]",
-)
-parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
-parser.add_argument(
-    "--pre_process", type=bool, default=False, help="If set, preprocess the dataset"
-)
-parser.add_argument(
-    "--scaler_type", type=int, default=1, help="Scaler type for pre_processing"
-)
-parser.add_argument(
-    "--feature1",
-    type=str,
-    help="First feature of the pair to plot in the importance map",
-)
-parser.add_argument(
-    "--feature2",
-    type=str,
-    help="Second feature of the pair to plot in the importance map",
-)
-parser.add_argument("--eta", type=float, default=1.5, help="eta hyperparameter of EIF+")
-parser.add_argument(
-    "--downsample",
-    type=bool,
-    default=False,
-    help="If set, downsample the dataset if it has more than 7500 samples",
-)
-parser.add_argument(
-    "--only_positive",
-    type=bool,
-    default=False,
-    help="If set, plot only positive values in the grid of points used for the scoremap",
-)
-parser.add_argument(
-    "--factor",
-    type=float,
-    default=3,
-    help="Factor used for the computation of the grid map",
-)
-
-# Parse the arguments
-args = parser.parse_args()
+args = define_arguments(exp_name="local_scoremaps")
 
 dataset, model = setup_exp(args = args)
 

@@ -24,96 +24,13 @@ from utils_reboot.experiments import (
 from utils_reboot.models import load_model
 from utils_reboot.plots import score_plot
 from utils_reboot.utils import (
-    check_arguments,
     generate_path,
     get_most_recent_file,
     save_element,
 )
+from utils_reboot.exp_config import define_arguments
 
-# Create the argument parser
-parser = argparse.ArgumentParser(description="Global Importances Experiment")
-
-# Add the arguments
-parser.add_argument(
-    "--dataset_name", type=str, default="wine", help="Name of the dataset"
-)
-parser.add_argument(
-    "--dataset_path", type=str, default="../data/real/", help="Path to the dataset"
-)
-parser.add_argument(
-    "--n_estimators", type=int, default=100, help="EIF parameter: n_estimators"
-)
-parser.add_argument(
-    "--max_depth", type=str, default="auto", help="EIF parameter: max_depth"
-)
-parser.add_argument(
-    "--max_samples", type=str, default="auto", help="EIF parameter: max_samples"
-)
-parser.add_argument(
-    "--contamination",
-    type=float,
-    default=0.1,
-    help="Global feature importances parameter: contamination",
-)
-parser.add_argument(
-    "--n_runs",
-    type=int,
-    default=40,
-    help="Global feature importances parameter: n_runs",
-)
-parser.add_argument(
-    "--seed",
-    type=int,
-    default=0,
-    help="Starting seed value",
-)
-parser.add_argument(
-    "--file_pos",
-    type=int,
-    default=0,
-    help="File position for get_most_recent_file",
-)
-parser.add_argument(
-    "--pre_process", action="store_true", help="If set, preprocess the dataset"
-)
-parser.add_argument(
-    "--scaler_type",
-    type=int,
-    default=1,
-    help="Scaler to use: 1 for StandardScaler, 2 for MinMaxScaler",
-)
-parser.add_argument(
-    "--model_name", type=str, default="EIF", help="Model to use: [EIF+, C_EIF+]"
-)
-parser.add_argument(
-    "--interpretation",
-    type=str,
-    default="EXIFFI",
-    help="Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+, DIFFI]",
-)
-parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
-parser.add_argument(
-    "--downsample",
-    type=bool,
-    default=False,
-    help="If set, downsample the dataset if it has more than 7500 samples",
-)
-parser.add_argument(
-    "--compute_gfi", action="store_true", help="If set, compute the GFI matrix"
-)
-parser.add_argument(
-    "--compute_bars",
-    action="store_true",
-    help="If set, compute the bars for the Bar Plot",
-)
-parser.add_argument(
-    "--score_plot",
-    action="store_true",
-    help="If set, produce the score plot",
-)
-
-# Parse the arguments
-args = parser.parse_args()
+args = define_arguments(exp_name="gfi_exp")
 
 dataset, model = setup_exp(args = args)
 

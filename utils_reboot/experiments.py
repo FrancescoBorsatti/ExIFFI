@@ -29,11 +29,12 @@ from exiffi_core.model import ExtendedIsolationForest
 from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.models import load_model
 from utils_reboot.utils import (
+    generate_path,
     save_element,
     open_element,
     initialize_perf_dict,
-    check_arguments,
 )
+from utils_reboot.exp_config import check_arguments
 from sklearn.metrics import (
     precision_score,
     recall_score,
@@ -948,7 +949,6 @@ def contamination_in_training_precision_evaluation(
         return precisions, importances
     return precisions
 
-
 def performance(
     y_pred: np.array,
     y_true: np.array,
@@ -1101,3 +1101,35 @@ def setup_exp(
     )
 
     return dataset, model
+
+def get_precision_file(
+    dataset: Dataset,
+    model_name: str = "EIF",
+    scenario: int = 2,
+) -> pd.DataFrame:
+    """
+    Function to retrieve the metrics dataframe obtained in the last experiment
+
+    Args:
+        dataset (Dataset): dataset object
+        model_name (str): name of the model
+        scenario (int): training scenario
+    """
+    path = generate_path(
+        basepath=cwd,
+        folders=[
+            "experiments",
+            "results",
+            dataset.name,
+            "experiments",
+            "metrics",
+            model_name,
+            f"scenario_{args.scenario}",
+        ],
+    )
+    file_path = get_most_recent_file(path, file_pos=args.file_pos)
+    results = open_element(file_path)
+    print("#" * 50)
+    print(f"Performance metrics table loaded from: {file_path}")
+    print("#" * 50)
+    return results

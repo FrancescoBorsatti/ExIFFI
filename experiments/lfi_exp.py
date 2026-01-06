@@ -9,10 +9,9 @@ import ipdb
 
 cwd = os.getcwd()
 sys.path.append("..")
-import argparse
-from collections import namedtuple
 
 from utils_reboot.datasets import load_dataset  # noqa: E402
+from utils_reboot.exp_config import define_arguments
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
@@ -27,125 +26,12 @@ from utils_reboot.experiments import (  # noqa: E402
 from utils_reboot.models import load_model  # noqa: E402
 from utils_reboot.plots import score_plot  # noqa: E402
 from utils_reboot.utils import (  # noqa: E402
-    check_arguments,
     generate_path,
     get_most_recent_file,
     save_element,
 )
 
-# Create the argument parser
-parser = argparse.ArgumentParser(description="Local Importances Experiment")
-
-# Add the arguments
-parser.add_argument(
-    "--dataset_name", type=str, default="wine", help="Name of the dataset"
-)
-parser.add_argument(
-    "--dataset_path", type=str, default="../data/real/", help="Path to the dataset"
-)
-parser.add_argument(
-    "--n_estimators", type=int, default=100, help="EIF parameter: n_estimators"
-)
-parser.add_argument(
-    "--max_depth", type=str, default="auto", help="EIF parameter: max_depth"
-)
-parser.add_argument(
-    "--max_samples", type=str, default="auto", help="EIF parameter: max_samples"
-)
-parser.add_argument(
-    "--contamination",
-    type=float,
-    default=0.1,
-    help="Global feature importances parameter: contamination",
-)
-parser.add_argument(
-    "--pre_process", action="store_true", help="If set, preprocess the dataset"
-)
-parser.add_argument(
-    "--scaler_type",
-    type=int,
-    default=1,
-    help="Scaler to use: 1 for StandardScaler, 2 for MinMaxScaler",
-)
-parser.add_argument(
-    "--model_name", type=str, default="EIF", help="Model to use: [EIF, EIF+, C_EIF+]"
-)
-parser.add_argument(
-    "--interpretation",
-    type=str,
-    default="EXIFFI",
-    help="Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+]",
-)
-parser.add_argument(
-    "--scenario",
-    type=int,
-    default=1,
-    help="scenario for training the model. Possible values: [1,2]",
-)
-parser.add_argument("--eta", type=float, default=1.5, help="eta hyperparameter of EIF+")
-parser.add_argument(
-    "--n_runs",
-    type=int,
-    default=10,
-    help="Number of runs of Local Feature importance computation",
-)
-parser.add_argument(
-    "--seed",
-    type=int,
-    default=0,
-    help="Starting seed for reproducibility",
-)
-parser.add_argument(
-    "--file_pos",
-    type=int,
-    default=0,
-    help="File position for get_most_recent_file",
-)
-parser.add_argument(
-    "--downsample",
-    type=bool,
-    default=False,
-    help="If set, downsample the dataset if it has more than 7500 samples",
-)
-parser.add_argument(
-    "--n_quantiles",
-    type=int,
-    default=70,
-    help="Number of quantiles to use in ACME interpretation",
-)
-parser.add_argument(
-    "--n_anomalies",
-    type=int,
-    default=100,
-    help="Number of anomalies on which to compute the importance scores with KernelSHAP",
-)
-parser.add_argument(
-    "--background",
-    type=float,
-    default=0.1,
-    help="Background percentage for KernelSHAP interpretation",
-)
-parser.add_argument(
-    "--compute_lfi", action="store_true", help="If set, compute the LFI matrix"
-)
-parser.add_argument(
-    "--compute_bars",
-    action="store_true",
-    help="If set, compute the bars for the Bar Plot",
-)
-parser.add_argument(
-    "--save_labels",
-    action="store_true",
-    help="If set, save the labels",
-)
-parser.add_argument(
-    "--score_plot",
-    action="store_true",
-    help="If set, produce the score plot",
-)
-
-# Parse the arguments
-args = parser.parse_args()
+args = define_arguments(exp_name="lfi_exp")
 
 dataset, model = setup_exp(args = args)
 
