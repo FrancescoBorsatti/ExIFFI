@@ -2,6 +2,7 @@
 Python module with functions to perform ablation studies
 """
 
+import os
 import time
 import ipdb
 from argparse import Namespace
@@ -9,6 +10,11 @@ import numpy as np
 from sklearn.metrics import average_precision_score
 from tqdm import tqdm, trange
 from typing import List
+
+import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoLocator, ScalarFormatter
+import seaborn as sns
+sns.set_theme(style="darkgrid")
 
 from utils_reboot.datasets import Dataset
 from utils_reboot.models import load_model
@@ -74,9 +80,6 @@ def ablation_trees_exp(
 
     return results_dict
 
-#TODO: Write function that takes the result dict and produces a plot:
-# - num trees vs average precision
-# - num trees vs fit and predict timefit and predict time
 def plot_ablation_trees(
     args: Namespace,
     results_dict: dict,
@@ -93,8 +96,47 @@ def plot_ablation_trees(
         save_image (bool): weather to save the plot or not
     """
 
-    for key,val in results_dict.items()
+    plt.style.use("default")
+    plt.rcParams["axes.facecolor"] = "#F2F2F2"
 
+    for key,val in results_dict.items():
+
+        print("-"*50)
         print(f"Producing plot {key} vs number of trees")
+        print("-"*50)
+
+        fig, ax = plt.subplots(figsize=(8,6))
+
+        ax.plot(
+            args.num_trees,
+            val.mean(axis=1),
+            marker="o",
+            c="tab:blue",
+            alpha=0.5,
+        )
+        ax.fill_between(
+            args.num_trees,
+            [np.percentile(x, 10) for x in val],
+            [np.percentile(x, 90) for x in val],
+            alpha=0.1,
+            color="tab:blue",
+        )
+
+        if key == "avg_precs":
+            ax.set_ylim((0,1))
+
+        ax.set_xlabel("Number of trees", fontsize=20)
+        ax.set_ylabel(key, fontsize=20)
+        ax.grid(alpha=0.7)
+
+        if save_image:
+            filename = f"ablation_tree_plot_{key}_{args.model_name}_{args.interpretation}_scenario_{args.scenario}.png"
+            fig.savefig(os.path.join(plot_path,filename),bbox_inches="tight")
+
+            print("-"*50)
+            print(f"Ablation plot for {key} saved at {os.path.join(plot_path,filename)}")
+            print("-"*50)
+
+        plt.close(fig)
 
 

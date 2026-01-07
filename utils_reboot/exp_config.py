@@ -256,6 +256,18 @@ def define_arguments(
             help="List with different values for the n_estimator parameter for the ablation study"
         )
 
+        parser.add_argument(
+            "--run_ablation_trees",
+            action="store_true",
+            help="If set run the ablation trees experiment",
+        )
+
+        parser.add_argument(
+            "--plot_ablation_trees",
+            action="store_true",
+            help="If set plot the results of the ablation trees experiment",
+        )
+
     args = parser.parse_args()
 
     return args
