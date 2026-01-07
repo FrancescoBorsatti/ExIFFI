@@ -8,7 +8,6 @@ import os
 import sys
 import ipdb
 import numpy as np
-from numpy.ma import fix_invalid
 
 cwd = os.getcwd()
 sys.path.append("..")
@@ -42,7 +41,7 @@ dataset = load_dataset(
 )
 
 print("#" * 50)
-print("Ablation study number of trees")
+print("Ablation study on the number of trees")
 print("#" * 50)
 print(f"Dataset: {dataset.name}")
 print(f"Model: {args.model_name}")
@@ -72,6 +71,7 @@ results_dict = ablation_trees_exp(
     dataset = dataset,
     args = args
 )
+ipdb.set_trace()
 
 print("-"*50)
 print("Saving results dict")

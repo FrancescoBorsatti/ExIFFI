@@ -257,12 +257,13 @@ def get_current_time() -> str:
 
 def save_element(
     element: Union[
+        dict,
         np.ndarray,
         list,
         pd.DataFrame,
-        Type[Precisions],
-        Type[NewPrecisions],
-        Type[Precisions_random],
+        Precisions,
+        NewPrecisions,
+        Precisions_random,
     ],
     directory_path: str,
     filename: str = "",
