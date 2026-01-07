@@ -33,6 +33,7 @@ from utils_reboot.exp_config import define_arguments
 args = define_arguments(exp_name="gfi_exp")
 
 dataset, model = setup_exp(args = args)
+ipdb.set_trace()
 
 os.chdir("../")
 cwd = os.getcwd()

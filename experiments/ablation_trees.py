@@ -28,9 +28,6 @@ from utils_reboot.ablation_exp import ablation_trees_exp
 args = define_arguments(exp_name="ablation_trees")
 check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
-os.chdir("../")
-cwd = os.getcwd()
-
 dataset = load_dataset(
     dataset_name=args.dataset_name,
     dataset_path=args.dataset_path,
@@ -51,14 +48,13 @@ print(f"Scenario: {args.scenario}")
 print(f"Scaler: {args.scaler_type}")
 print("#" * 50)
 
-os.chdir("../")
-cwd = os.getcwd()
-
-results_path = generate_path(basepath=cwd, folders=["experiments", "results"])
+results_path = generate_path(basepath=os.path.dirname(cwd), folders=["experiments", "results"])
 
 ablation_tree_dirpath = generate_path(
     basepath = results_path,
     folders = [
+        dataset.name,
+        "experiments",
         "ablation_studies",
         "trees",
         args.model_name,
@@ -71,7 +67,6 @@ results_dict = ablation_trees_exp(
     dataset = dataset,
     args = args
 )
-ipdb.set_trace()
 
 print("-"*50)
 print("Saving results dict")

@@ -32,11 +32,11 @@ uv run $script_path \
     --interpretation "$interpretation" \
     --scenario "$scenario" \
     --seed 0 \
-    --num_trees "${num_trees[*]}"\
+    --num_trees "${num_trees[@]}"\
     --n_runs "$n_runs" \
     --pre_process \
     --scaler_type 4 \
-    --file_pos "$file_pos"
+    --file_pos 0
 
 
 

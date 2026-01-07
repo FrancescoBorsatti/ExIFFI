@@ -24,7 +24,8 @@ def define_arguments(
         "lfi_exp",
         "local_scoremaps",
         "metrics_exp",
-        "get_metrics"
+        "get_metrics",
+        "ablation_trees"
     ]
 
     assert exp_name in exp_names, f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"

@@ -748,8 +748,6 @@ def multi_plot_feature_selection(
     if plot_image:
         plt.show()
 
-
-
 def plot_precision_over_contamination(
     precisions: np.ndarray,
     dataset_name: str,
