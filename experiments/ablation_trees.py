@@ -2,8 +2,6 @@
 Python script to perform the ablation study varying the number of trees
 """
 
-import time
-import argparse
 import os
 import sys
 import ipdb
@@ -37,7 +35,6 @@ dataset = load_dataset(
     pre_process=args.pre_process,
     scaler_type=args.scaler_type,
 )
-ipdb.set_trace()
 
 print("#" * 50)
 print("Ablation study on the number of trees")

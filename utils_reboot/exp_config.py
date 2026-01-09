@@ -25,7 +25,11 @@ def define_arguments(
         "local_scoremaps",
         "metrics_exp",
         "get_metrics",
-        "ablation_trees"
+        "ablation_trees",
+        "ablation_contamination",
+        "ablation_cont_prediction",
+        "ablation_cont_gfi",
+        "ablation_cont_fs",
     ]
 
     assert exp_name in exp_names, f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
@@ -266,6 +270,52 @@ def define_arguments(
             "--plot_ablation_trees",
             action="store_true",
             help="If set plot the results of the ablation trees experiment",
+        )
+
+    if exp_name == "ablation_contamination":
+
+        parser.add_argument(
+            "--min_cont",
+            type=float,
+            default=0.0,
+            help="Minimum contamination value"
+        )
+
+    if exp_name in ["ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs"]:
+
+        parser.add_argument(
+            "--contamination_values",
+            type=float,
+            nargs="+",
+            default=[0.1],
+            help="List of contamination values to try"
+        )
+
+        parser.add_argument(
+            "--hard_code_cont",
+            action="store_true",
+            help="If set, hard code the contamination values"
+        )
+
+    if exp_name in ["ablation_contamination", "ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs"]:
+
+        parser.add_argument(
+            "--n_cont_values",
+            type=int,
+            default=10,
+            help="Number of contamination values to try"
+        )
+
+        parser.add_argument(
+            "--run_ablation_cont",
+            action="store_true",
+            help="If set run the ablation contamination experiment",
+        )
+
+        parser.add_argument(
+            "--plot_ablation_cont",
+            action="store_true",
+            help="If set plot the results of the ablation contamination experiment",
         )
 
     args = parser.parse_args()

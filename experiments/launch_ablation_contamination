@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-script_path="ablation_trees.py"
+script_path="ablation_contamination.py"
 
 dataset_name="${1:-'TEP_ACME'}"
 
@@ -19,11 +19,11 @@ model_name="EIF+"
 interpretation="EXIFFI+"
 scenario=2
 n_runs=10
-# num_trees=(100 200 300 400 500)
-num_trees=(10 30 50 100 200 300)
+n_cont_values=11
+contamination=0.15 #NOTE: target contamination for PIADE datasets
 
 echo "---------------------------------------------------"
-echo "Running ablation tree experiment for $dataset_name"
+echo "Running ablation contamination experiment for $dataset_name"
 echo "---------------------------------------------------"
 
 uv run $script_path \
@@ -33,13 +33,12 @@ uv run $script_path \
     --interpretation "$interpretation" \
     --scenario "$scenario" \
     --seed 0 \
-    --num_trees "${num_trees[@]}"\
+    --contamination $contamination \
+    --n_cont_values $n_cont_values \
     --n_runs "$n_runs" \
     --pre_process \
     --scaler_type 4 \
-    --run_ablation_trees \
-    --plot_ablation_trees \
+    --plot_ablation_cont \
     --file_pos 0
-
 
 
