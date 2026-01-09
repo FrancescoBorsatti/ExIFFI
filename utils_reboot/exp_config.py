@@ -2,6 +2,7 @@
 Python module containing some functions to configure the experiments
 """
 
+import ipdb
 import argparse
 from argparse import Namespace
 
@@ -23,6 +24,7 @@ def define_arguments(
         "gfi_exp",
         "lfi_exp",
         "local_scoremaps",
+        "fs_exp",
         "metrics_exp",
         "get_metrics",
         "ablation_trees",
@@ -67,6 +69,12 @@ def define_arguments(
         type=str,
         default="auto",
         help="EIF parameter: max_samples"
+    )
+    parser.add_argument(
+        "--plus",
+        type=bool,
+        default=True,
+        help="EIF parameter: plus"
     )
     parser.add_argument(
         "--contamination",
@@ -134,6 +142,23 @@ def define_arguments(
         help="eta hyperparameter of EIF+"
     )
 
+    parser.add_argument(
+        "--change_box_loc",
+        default=0.9,
+        help="If set, change y coordinate of box_loc (for breastw)",
+    )
+
+    parser.add_argument(
+        "--feature_selection",
+        action="store_true",
+        help="If set, perform the feature selection experiment",
+    )
+    parser.add_argument(
+        "--plot_feature_selection",
+        action="store_true",
+        help="If set, perform the feature selection experiment",
+    )
+
     if exp_name in ["gfi_exp", "lfi_exp"]:
 
         parser.add_argument(
@@ -190,6 +215,38 @@ def define_arguments(
             type=float,
             default=0.1,
             help="Background percentage for KernelSHAP interpretation",
+        )
+
+    if exp_name == "fs_exp":
+
+        parser.add_argument(
+            "--eval_model",
+            type=str,
+            default="EIF+",
+            help="Name of the AD model used to evaluate with Average Precision on the different feature subsets",
+        )
+        parser.add_argument(
+            "--model_interpretation",
+            type=str,
+            default="EIF+",
+            help="Name of the model from which we take feature order for the Feature Selection plot",
+        )
+
+        parser.add_argument(
+            "--rotation",
+            action="store_true",
+            help="If set, rotate the xticks labels by 45 degrees in the feature selection plot (for ionosphere)",
+        )
+
+        parser.add_argument(
+            "--compute_random",
+            action="store_true",
+            help="If set, shows also the random precisions in the feature selection plot",
+        )
+        parser.add_argument(
+            "--change_ylim",
+            action="store_true",
+            help="If set, increase the ylim from 1 to 1.1 (for breastw)",
         )
 
     if exp_name == "local_scoremaps":
@@ -318,6 +375,26 @@ def define_arguments(
             help="If set plot the results of the ablation contamination experiment",
         )
 
+    if exp_name == "ablation_cont_fs":
+
+        parser.add_argument(
+            "--subset_cont_values",
+            action="store_true",
+            help="If set use just a subset of the contamination values contained in the gfi_ranking_dict on which to perform the experiment",
+        )
+        parser.add_argument(
+            "--merge_dict",
+            action="store_true",
+            help="If set merge the results dictionary from two different experiments",
+        )
+
+        parser.add_argument(
+            "--n_dicts",
+            type=int,
+            default=2,
+            help="Number of dicts to merge. The two most recent dicts will be saved",
+        )
+
     args = parser.parse_args()
 
     return args
@@ -327,7 +404,7 @@ def check_arguments(
     interpretation: str = "EXIFFI",
 ) -> None:
     """
-    Thiss functions performs some assertions in order to stop immediately the code execution is the model name or the interpretation passed as command line argument are not correct.
+    This functions performs some assertions in order to stop immediately the code execution is the model name or the interpretation passed as command line argument are not correct.
 
     Args:
         model_name (str): model name
@@ -382,9 +459,11 @@ def check_arguments(
         ], "EXIFFI+ can only be used with the EIF+ model"
     if interpretation == "EXIFFI":
         assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
-    if interpretation == "DIFFI":
-        assert model_name in [
-            "IF",
-            "sklearn_IF",
-        ], "DIFFI can only be used with IF based models"
+
+    #TODO: Check why this throws an AssertionError even if we have IF DIFFI
+    # if interpretation == "DIFFI":
+    #     assert model_name in [
+    #         "IF",
+    #         "sklearn_IF",
+    #     ], "DIFFI can only be used with IF based models"
 

@@ -40,9 +40,10 @@ uv run $script_path \
     --n_runs "$n_runs" \
     --pre_process \
     --scaler_type 4 \
+    --subset_cont_values \
     --run_ablation_cont \
     --plot_ablation_cont \
-    --file_pos 1
+    --file_pos 0
 
 
 

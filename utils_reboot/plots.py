@@ -583,7 +583,7 @@ def plot_feature_selection(
     box_loc = (len(precision.direct) / 2, change_box_loc)
 
     text_box_content = (
-        r"${}".format("AUC") + r"_{FS}$" + " = " + str(np.round(aucfs, 3))
+        r"${}".format("AUC") + r"_{fs}$" + " = " + str(np.round(plt_data["aucfs"], 3))
     )
     plt.text(
         box_loc[0],
@@ -620,7 +620,7 @@ def plot_feature_selection(
     )
 
     if save_image:
-        plt.savefig(plot_path + namefile, bbox_inches="tight")
+        plt.savefig(plot_path + namefile, bbox_inches="tight", dpi=400)
         print("#" * 50)
         print(f"Feature selection plot saved at: {plot_path}")
         print("#" * 50)
@@ -658,7 +658,7 @@ def multi_plot_feature_selection(
     plt.rcParams["axes.facecolor"] = "#F2F2F2"
     plt.grid(alpha=0.7)
 
-    fig,ax = plt.subplots(nrows=1,ncols=len(model_names),sharey=True,figsize=(20,5), dpi=200)
+    fig,ax = plt.subplots(nrows=1,ncols=len(model_names),sharey=True,figsize=(20,5), dpi=300)
 
     precision_random = open_element(precision_random_path)
 
@@ -741,7 +741,7 @@ def multi_plot_feature_selection(
         current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
         namefile = f"{current_time}_multi_fs_plot_{eval_model_name}_scenario_{scenario}.pdf"
         plt.tight_layout()
-        plt.savefig(os.path.join(plot_path,namefile), bbox_inches="tight")
+        plt.savefig(os.path.join(plot_path,namefile), bbox_inches="tight", dpi=300)
         print("#" * 50)
         print(f"Feature selection plot saved at: {plot_path}")
         print("#" * 50)

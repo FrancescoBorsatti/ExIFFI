@@ -70,6 +70,25 @@ ablation_cont_fs_dirpath = generate_path(
     ]
 )
 
+#NOTE: Select from gfi_ranking_dict just the keys and values corresponding to ars.contamination_values
+
+gfi_dict = gfi_ranking_dict.copy()
+
+if args.subset_cont_values:
+
+    print("-"*50)
+    print(f"Selecting the rankings of the {args.contamination_values} contamination")
+    print("-"*50)
+
+    gfi_dict = {}
+    gfi_dict["cont_values"] = []
+    gfi_dict["gfi_rankings"] = []
+
+    for rank, cont in zip(gfi_ranking_dict["gfi_rankings"], gfi_ranking_dict["cont_values"]):
+        if cont in args.contamination_values:
+            gfi_dict["cont_values"].append(cont)
+            gfi_dict["gfi_rankings"].append(rank)
+
 if args.run_ablation_cont:
 
     print("-"*50)
@@ -80,13 +99,13 @@ if args.run_ablation_cont:
         args = args,
         model = model,
         dataset = dataset,
-        gfi_rankings = gfi_ranking_dict["gfi_rankings"],
-        cont_fs_path = ablation_cont_fs_dirpath
+        gfi_dict = gfi_dict,
+        cont_fs_path = os.path.join(ablation_cont_fs_dirpath,"single_aucfs")
     )
 
     results_dict = {
         "auc_fs_vals": auc_fs_vals,
-        "cont_values": gfi_ranking_dict["cont_values"]
+        "cont_values": gfi_dict["cont_values"]
     }
 
     print("-"*50)
@@ -112,8 +131,21 @@ if args.plot_ablation_cont:
     print("Producing AUC_FS vs contamination plot")
     print("-"*50)
 
-    fs_dict_path = get_most_recent_file(ablation_cont_fs_dirpath,file_pos=args.file_pos)
-    fs_dict = open_element(fs_dict_path,"pickle")
+    #WARN: Not super sure about this, check when the experiment is finished
+
+    if args.merge_dict:
+        fs_dict = {}
+        for i in range(args.n_dicts):
+            fs_dict_path = get_most_recent_file(ablation_cont_fs_dirpath,file_pos=i)
+            d_fs = open_element(fs_dict_path,"pickle")
+            if i==0:
+                fs_dict = d_fs.copy()
+            else:
+                for key in d_fs.keys():
+                    fs_dict[key]+=d_fs[key]
+    else:
+        fs_dict_path = get_most_recent_file(ablation_cont_fs_dirpath,file_pos=args.file_pos)
+        fs_dict = open_element(fs_dict_path,"pickle")
 
     plot_path = generate_path(
         basepath = results_path,

@@ -15,7 +15,7 @@ coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
 
 model_names=("IF")
-interpretations=("ACME")
+interpretations=("DIFFI")
 n_estimators=300
 n_runs=10
 contamination=0.15
@@ -49,7 +49,6 @@ for (( i=0; i<n_models; i++ )); do
         --seed $seed \
         --file_pos $file_pos \
         --feature_selection \
-        --compute_random \
         --plot_feature_selection \
         --rotation
 

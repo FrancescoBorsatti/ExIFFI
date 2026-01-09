@@ -432,7 +432,7 @@ def ablation_cont_fs_exp(
     args: Namespace,
     model: ExtendedIsolationForest,
     dataset: Dataset,
-    gfi_rankings: List,
+    gfi_dict: dict,
     cont_fs_path: str
 ) -> List:
     """
@@ -442,7 +442,7 @@ def ablation_cont_fs_exp(
         args (Namespace): experiment configuration
         model (ExtendedIsolationForest): model object
         dataset (Dataset): dataset object
-        gfi_rankings (List): list of the gfi rankings for different contamination levels
+        gfi_dict (dict): dictionary with the results of the cont_gfi experiment
         cont_fs_path (str): path where to save the intermediate AUC_FS values
 
     Returns:
@@ -450,11 +450,16 @@ def ablation_cont_fs_exp(
     """
 
     auc_fs_vals = []
+    gfi_rankings, cont_values = gfi_dict["gfi_rankings"], gfi_dict["cont_values"]
 
-    for i,gfi_ranking in enumerate(gfi_rankings):
+    for i,(gfi_ranking,cont) in enumerate(zip(gfi_rankings,cont_values)):
 
         print("-"*50)
-        print(f"Feature Selection experiment for ranking {i+1}: {gfi_ranking}")
+        print(f"Feature Selection experiment for the ranking obtained with contamination {cont}")
+        print("-"*50)
+
+        print("-"*50)
+        print(f"Direct Feature Selection experiment for contamination {cont}")
         print("-"*50)
 
         direct = feature_selection(
@@ -466,6 +471,10 @@ def ablation_cont_fs_exp(
             inverse=False,
             scenario=args.scenario,
         )
+
+        print("-"*50)
+        print(f"Inverse Feature Selection experiment for contamination {cont}")
+        print("-"*50)
 
         inverse = feature_selection(
             I=model,
@@ -480,7 +489,7 @@ def ablation_cont_fs_exp(
         auc_fs = abs(np.nansum(np.nanmean(direct, axis=1) - np.nanmean(inverse, axis=1)))
 
         print("-"*50)
-        print(f"AUC_FS value for ranking {gfi_ranking} -> {auc_fs}")
+        print(f"AUC_FS value for contamination {cont} -> {auc_fs}")
         print("-"*50)
 
         auc_fs_vals.append(auc_fs)
@@ -526,7 +535,7 @@ def plot_ablation_cont_fs(
     auc_fs_vals, cont_values = fs_dict["auc_fs_vals"], fs_dict["cont_values"]
 
     print("-"*50)
-    print(f"Producing plot {key} vs contamination level")
+    print("Producing plot of AUC_FS vs contamination values")
     print("-"*50)
 
     fig, ax = plt.subplots(figsize=(8,6))
@@ -550,7 +559,7 @@ def plot_ablation_cont_fs(
     ax.grid(alpha=0.7)
 
     if save_image:
-        filename = f"{get_current_time()}_ablation_cont_plot_{key}_{args.model_name}_{args.interpretation}_scenario_{args.scenario}.png"
+        filename = f"{get_current_time()}_ablation_cont_plot_aucfs_{args.model_name}_{args.interpretation}_scenario_{args.scenario}.png"
         fig.savefig(os.path.join(plot_path,filename),dpi=300,bbox_inches="tight")
 
         print("-"*50)
