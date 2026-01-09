@@ -19,7 +19,7 @@ sns.set_theme(style="darkgrid")
 from utils_reboot.datasets import Dataset
 from utils_reboot.models import load_model
 from utils_reboot.experiments import set_seed, set_contamination, feature_selection
-from utils_reboot.utils import get_current_time
+from utils_reboot.utils import get_current_time, save_element
 from exiffi_core.model import ExtendedIsolationForest
 
 def ablation_trees_exp(
@@ -433,6 +433,7 @@ def ablation_cont_fs_exp(
     model: ExtendedIsolationForest,
     dataset: Dataset,
     gfi_rankings: List,
+    cont_fs_path: str
 ) -> List:
     """
     This function computes the AUC_FS for all the GFI rankings produced by the different contamination values
@@ -442,6 +443,7 @@ def ablation_cont_fs_exp(
         model (ExtendedIsolationForest): model object
         dataset (Dataset): dataset object
         gfi_rankings (List): list of the gfi rankings for different contamination levels
+        cont_fs_path (str): path where to save the intermediate AUC_FS values
 
     Returns:
         auc_fs_vals (List): list of AUC_FS values
@@ -449,10 +451,10 @@ def ablation_cont_fs_exp(
 
     auc_fs_vals = []
 
-    for gfi_ranking in gfi_rankings:
+    for i,gfi_ranking in enumerate(gfi_rankings):
 
         print("-"*50)
-        print(f"Feature Selection experiment for ranking {gfi_ranking}")
+        print(f"Feature Selection experiment for ranking {i+1}: {gfi_ranking}")
         print("-"*50)
 
         direct = feature_selection(
@@ -482,6 +484,21 @@ def ablation_cont_fs_exp(
         print("-"*50)
 
         auc_fs_vals.append(auc_fs)
+
+        auc_fs_dict = { "auc_fs_vals": auc_fs_vals }
+
+        filename = f"{get_current_time()}_auc_fs_dict_ranking_{i+1}_{args.model_name}_{args.interpretation}_scenario_{args.scenario}"
+
+        save_element(
+            element = auc_fs_dict,
+            directory_path = cont_fs_path,
+            filename = filename,
+            filetype = "pickle"
+        )
+
+        print("-"*50)
+        print(f"Current list of AUC_FS values saved in {os.path.join(cont_fs_path,filename)}")
+        print("-"*50)
 
     return auc_fs_vals
 

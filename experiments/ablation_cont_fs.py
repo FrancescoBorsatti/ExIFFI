@@ -80,7 +80,8 @@ if args.run_ablation_cont:
         args = args,
         model = model,
         dataset = dataset,
-        gfi_rankings = gfi_ranking_dict["gfi_rankings"]
+        gfi_rankings = gfi_ranking_dict["gfi_rankings"],
+        cont_fs_path = ablation_cont_fs_dirpath
     )
 
     results_dict = {
