@@ -14,8 +14,8 @@ tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
 
-model_names=("EIF+")
-interpretations=("ACME")
+model_name="${2:-EIF+}"
+interpretation="${3:-EXIFFI+}"
 n_estimators=300
 n_runs=10
 contamination=0.15
@@ -24,48 +24,43 @@ seed=0
 file_pos=0
 eval_model="EIF+"
 
-n_models=${#model_names[@]}
+echo "#############################################"
+echo "Feature selection experiment for model $model_name and interpretation $interpretation"
+echo "#############################################"
 
-for (( i=0; i<n_models; i++ )); do
+if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "wine" || "$dataset_name" == "glass" || "$dataset_name" == "$coffe_name" ]]; then
+
+  uv run $script_path \
+      --dataset_name "$dataset_name" \
+      --dataset_path "$dataset_path" \
+      --eval_model "$eval_model" \
+      --model_interpretation "$model_name" \
+      --interpretation "$interpretation" \
+      --n_estimators $n_estimators \
+      --n_runs $n_runs \
+      --scenario $scenario \
+      --seed $seed \
+      --pre_process \
+      --scaler_type 4 \
+      --seed $seed \
+      --file_pos $file_pos \
+      --feature_selection \
+      --plot_feature_selection \
+      --rotation
+
+elif [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
 
   echo "#############################################"
-  echo "Feature selection experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
+  echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
   echo "#############################################"
+  exit 1
 
-  if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "wine" || "$dataset_name" == "glass" || "$dataset_name" == "$coffe_name" ]]; then
+else
 
-    uv run $script_path \
-        --dataset_name "$dataset_name" \
-        --dataset_path "$dataset_path" \
-        --eval_model "$eval_model" \
-        --model_interpretation "${model_names[$i]}" \
-        --interpretation "${interpretations[$i]}" \
-        --n_estimators $n_estimators \
-        --n_runs $n_runs \
-        --scenario $scenario \
-        --seed $seed \
-        --pre_process \
-        --scaler_type 4 \
-        --seed $seed \
-        --file_pos $file_pos \
-        --feature_selection \
-        --plot_feature_selection \
-        --rotation
+  echo "#############################################"
+  echo "Dataset $dataset_name not supported"
+  echo "#############################################"
+  exit 1
 
-  elif [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
+fi
 
-    echo "#############################################"
-    echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
-    echo "#############################################"
-    exit 1
-
-  else
-
-    echo "#############################################"
-    echo "Dataset $dataset_name not supported"
-    echo "#############################################"
-    exit 1
-
-  fi
-
-done

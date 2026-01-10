@@ -5,7 +5,7 @@ score_plot=${2:-1}
 local_scoremaps=${3:-0}
 
 model_names=("EIF+")
-interpretations=("EXIFFI+")
+interpretations=("KernelSHAP")
 
 n_estimators=300
 scenario=2

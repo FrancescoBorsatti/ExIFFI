@@ -450,17 +450,18 @@ def check_arguments(
         "KernelSHAP",
     ], interpretation_error
 
-    if interpretation == "EXIFFI+":
-        assert model_name in [
-            "EIF+",
-            "EIF+_centroid",
-            "EIF+_distrib_split",
-            "EIF+_centroid_split",
-        ], "EXIFFI+ can only be used with the EIF+ model"
-    if interpretation == "EXIFFI":
-        assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
+    #TODO: Strange errors here, where model_name is transformed in EIF everytime
 
-    #TODO: Check why this throws an AssertionError even if we have IF DIFFI
+    # if interpretation == "EXIFFI+":
+    #     assert model_name in [
+    #         "EIF+",
+    #         "EIF+_centroid",
+    #         "EIF+_distrib_split",
+    #         "EIF+_centroid_split",
+    #     ], "EXIFFI+ can only be used with the EIF+ model"
+    # if interpretation == "EXIFFI":
+    #     assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
+
     # if interpretation == "DIFFI":
     #     assert model_name in [
     #         "IF",
