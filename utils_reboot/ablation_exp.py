@@ -532,7 +532,7 @@ def plot_ablation_cont_fs(
     plt.style.use("default")
     plt.rcParams["axes.facecolor"] = "#F2F2F2"
 
-    auc_fs_vals, cont_values = fs_dict["auc_fs_vals"], fs_dict["cont_values"]
+    auc_fs_vals, cont_values = fs_dict["auc_fs_vals"][2:], fs_dict["cont_values"][2:]
 
     print("-"*50)
     print("Producing plot of AUC_FS vs contamination values")
@@ -552,9 +552,9 @@ def plot_ablation_cont_fs(
 
     ax.set_xlabel("Contamination Values", fontsize=20)
     ax.set_xticks((np.round(cont_values,4)))
-    # ax.set_xscale("log")
-    # ax.tick_params(axis="x", rotation=45)
-    ax.set_xticklabels(np.round(cont_values, 4), rotation = 45, ha  = "right")
+    ax.set_xscale("log")
+    ax.tick_params(axis="x", rotation=45)
+    # ax.set_xticklabels(np.round(cont_values, 4), rotation = 45, ha  = "right")
     ax.set_ylabel("AUC_FS", fontsize=20)
     ax.grid(alpha=0.7)
 

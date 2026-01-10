@@ -349,13 +349,16 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
 
     """
 
+    #NOTE: Insert here only the files contained in directory_path, do
+    # not consider subdirectories
+    files_list = [x for x in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path,x))]
+
     files = sorted(
-        os.listdir(directory_path),
+        files_list,
         key=lambda x: os.path.getmtime(os.path.join(directory_path, x)),
         reverse=True,
     )
     return os.path.join(directory_path, files[file_pos])
-
 
 def open_element(
     file_path: str, filetype: str = "pickle"

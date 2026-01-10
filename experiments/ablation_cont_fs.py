@@ -142,7 +142,18 @@ if args.plot_ablation_cont:
                 fs_dict = d_fs.copy()
             else:
                 for key in d_fs.keys():
-                    fs_dict[key]+=d_fs[key]
+                    fs_dict[key] = list(fs_dict[key]) + list(d_fs[key])
+
+        #NOTE: After the merge we have to sort the values in the dictionary
+
+        pairs = zip(fs_dict["cont_values"], fs_dict["auc_fs_vals"])
+        pairs_sorted = sorted(pairs)
+
+        cont_sorted, aucfs_sorted = map(list, zip(*pairs_sorted))
+
+        fs_dict["cont_values"] = cont_sorted
+        fs_dict["auc_fs_vals"] = aucfs_sorted
+
     else:
         fs_dict_path = get_most_recent_file(ablation_cont_fs_dirpath,file_pos=args.file_pos)
         fs_dict = open_element(fs_dict_path,"pickle")

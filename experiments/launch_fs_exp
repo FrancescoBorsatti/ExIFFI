@@ -14,8 +14,8 @@ tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
 
-model_names=("IF")
-interpretations=("DIFFI")
+model_names=("EIF+")
+interpretations=("ACME")
 n_estimators=300
 n_runs=10
 contamination=0.15
