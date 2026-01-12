@@ -358,6 +358,7 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
         key=lambda x: os.path.getmtime(os.path.join(directory_path, x)),
         reverse=True,
     )
+
     return os.path.join(directory_path, files[file_pos])
 
 def open_element(

@@ -26,7 +26,7 @@ uv run $script_path \
     --dataset_path "$dataset_path" \
     --eval_model $eval_model \
     --model_interpretations "${model_names[@]}" \
-    --interpretation "${interpretations[@]}" \
+    --interpretations "${interpretations[@]}" \
     --scenario $scenario \
     --scaler_type 4 \
     --pre_process \

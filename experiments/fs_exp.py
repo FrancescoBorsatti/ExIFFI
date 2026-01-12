@@ -4,7 +4,7 @@ Python script to produce the feature selection plots
 
 import os
 import sys
-
+from glob import glob
 import ipdb
 import numpy as np
 import pandas as pd
@@ -28,7 +28,6 @@ from utils_reboot.exp_config import define_arguments, check_arguments
 
 args = define_arguments(exp_name="fs_exp")
 check_arguments(model_name=args.model_interpretation, interpretation=args.interpretation)
-
 dataset, model = setup_exp(args = args)
 
 print("#" * 50)
@@ -93,11 +92,14 @@ if args.feature_selection:
         ],
     )
 
-    # feature selection → direct and inverse feature selection
-    most_recent_file = get_most_recent_file(gfi_path, file_pos=args.file_pos)
+    #NOTE: Force to use the most recent .csv.gz file for `KernelSHAP`
+    if args.interpretation == "KernelSHAP":
+        most_recent_file = glob(gfi_path+"/*.csv.gz")[0]
+    else:
+        most_recent_file = get_most_recent_file(gfi_path, file_pos=1)
+
     matrix = open_element(most_recent_file, filetype="csv.gz")
 
-    # All features
     feat_order = np.argsort(matrix.values.mean(axis=0))
     Precisions = namedtuple(
         "Precisions", ["direct", "inverse", "dataset", "model_name", "value"]

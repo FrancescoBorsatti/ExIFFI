@@ -231,6 +231,20 @@ def define_arguments(
             default="EIF+",
             help="Name of the model from which we take feature order for the Feature Selection plot",
         )
+        parser.add_argument(
+            "--model_interpretations",
+            type=str,
+            nargs="+",
+            default="EIF",
+            help="List of strings with name of the model used in the different fs_exp experiments",
+        )
+        parser.add_argument(
+            "--interpretations",
+            type=str,
+            nargs="+",
+            default="EXIFFI",
+            help="List of strings with name of the interpretation used in the different fs_exp experiments",
+        )
 
         parser.add_argument(
             "--rotation",
@@ -450,21 +464,19 @@ def check_arguments(
         "KernelSHAP",
     ], interpretation_error
 
-    #TODO: Strange errors here, where model_name is transformed in EIF everytime
+    if interpretation == "EXIFFI+":
+        assert model_name in [
+            "EIF+",
+            "EIF+_centroid",
+            "EIF+_distrib_split",
+            "EIF+_centroid_split",
+        ], "EXIFFI+ can only be used with the EIF+ model"
+    if interpretation == "EXIFFI":
+        assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
 
-    # if interpretation == "EXIFFI+":
-    #     assert model_name in [
-    #         "EIF+",
-    #         "EIF+_centroid",
-    #         "EIF+_distrib_split",
-    #         "EIF+_centroid_split",
-    #     ], "EXIFFI+ can only be used with the EIF+ model"
-    # if interpretation == "EXIFFI":
-    #     assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
-
-    # if interpretation == "DIFFI":
-    #     assert model_name in [
-    #         "IF",
-    #         "sklearn_IF",
-    #     ], "DIFFI can only be used with IF based models"
+    if interpretation == "DIFFI":
+        assert model_name in [
+            "IF",
+            "sklearn_IF",
+        ], "DIFFI can only be used with IF based models"
 
