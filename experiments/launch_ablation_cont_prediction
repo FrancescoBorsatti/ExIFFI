@@ -40,6 +40,7 @@ uv run $script_path \
     --n_runs "$n_runs" \
     --pre_process \
     --scaler_type 4 \
+    --run_ablation_cont \
     --plot_ablation_cont \
     --file_pos 0
 
