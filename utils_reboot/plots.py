@@ -385,7 +385,7 @@ def score_plot(
         ax1.set_yticklabels(yticks)
 
     if save_image:
-        plt.savefig(plot_path + f"/{name_file}.pdf", bbox_inches="tight")
+        plt.savefig(plot_path + f"/{name_file}.png", bbox_inches="tight", dpi=300)
         print("#" * 50)
         print(f"Score plot saved at: {plot_path}")
         print("#" * 50)
@@ -748,7 +748,6 @@ def multi_plot_feature_selection(
         t = time.localtime()
         current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
         namefile = f"{current_time}_multi_fs_plot_{eval_model_name}_scenario_{scenario}.png"
-        # namefile = f"multi_fs_plot_{eval_model_name}_scenario_{scenario}.png"
         plt.tight_layout()
         plt.savefig(os.path.join(plot_path,namefile), bbox_inches="tight")
         print("#" * 50)

@@ -92,13 +92,12 @@ if args.feature_selection:
         ],
     )
 
-    #NOTE: Force to use the most recent .csv.gz file for `KernelSHAP`
-    if args.interpretation == "KernelSHAP":
-        most_recent_file = glob(gfi_path+"/*.csv.gz")[0]
-    else:
-        most_recent_file = get_most_recent_file(gfi_path, file_pos=1)
+    most_recent_file = get_most_recent_file(gfi_path, file_pos=1)
 
-    matrix = open_element(most_recent_file, filetype="csv.gz")
+    filetype = "npz" if "npz" in most_recent_file else "csv.gz"
+    matrix = open_element(most_recent_file, filetype=filetype)
+    if filetype == "npz":
+        matrix = pd.DataFrame(matrix,columns=dataset.feature_names)
 
     feat_order = np.argsort(matrix.values.mean(axis=0))
     Precisions = namedtuple(
