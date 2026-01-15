@@ -32,6 +32,7 @@ def define_arguments(
         "ablation_cont_prediction",
         "ablation_cont_gfi",
         "ablation_cont_fs",
+        "multi_ablation_cont"
     ]
 
     assert exp_name in exp_names, f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
@@ -352,7 +353,7 @@ def define_arguments(
             help="Minimum contamination value"
         )
 
-    if exp_name in ["ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs"]:
+    if exp_name in ["multi_ablation_cont","ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs"]:
 
         parser.add_argument(
             "--contamination_values",
@@ -368,7 +369,7 @@ def define_arguments(
             help="If set, hard code the contamination values"
         )
 
-    if exp_name in ["ablation_contamination", "ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs"]:
+    if exp_name in ["ablation_contamination", "ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs","multi_ablation_cont"]:
 
         parser.add_argument(
             "--n_cont_values",

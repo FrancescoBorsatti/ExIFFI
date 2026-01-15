@@ -34,6 +34,7 @@ from utils_reboot.utils import (  # noqa: E402
 args = define_arguments(exp_name="lfi_exp")
 
 dataset, model = setup_exp(args = args)
+ipdb.set_trace()
 
 os.chdir("../")
 cwd = os.getcwd()
@@ -124,6 +125,7 @@ if args.compute_lfi:
             filetype="csv.gz",
         )
     elif args.interpretation == "KernelSHAP":
+
         imp_mat = compute_local_importances_kernelSHAP(
             I=model,
             dataset=dataset,
@@ -137,7 +139,9 @@ if args.compute_lfi:
             directory_path=imp_mat_path,
             filetype="csv.gz",
         )
+
     else:
+
         imp_mat, labels = experiment_local_importances(
             I=model,
             dataset=dataset,

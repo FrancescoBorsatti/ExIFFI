@@ -662,7 +662,7 @@ def multi_plot_feature_selection(
 
     precision_random = open_element(precision_random_path)
 
-    for i,(model_name,interpretation )in enumerate(zip(model_names,interpretations)):
+    for i,(model_name,interpretation) in enumerate(zip(model_names,interpretations)):
         precision = open_element(precision_file_paths[i])
 
         plt_data = load_feature_selection_data(
@@ -691,7 +691,7 @@ def multi_plot_feature_selection(
             if rotation:
                 #NOTE: Print the xticks labels every 2 values (so 15,13,11,... instead of 15,14,13,12,...)
                 ax[i].set_xticks(
-                    range(0, dim, 2), 
+                    range(0, dim, 2),
                     [str(x) for x in range(dim, 0, -1)][::2], 
                     rotation=45
                 )

@@ -42,7 +42,6 @@ uv run $script_path \
     --scaler_type 4 \
     --subset_cont_values \
     --merge_dict \
-    --run_ablation_cont \
     --plot_ablation_cont \
     --file_pos 0
 

@@ -170,7 +170,7 @@ if args.plot_ablation_cont:
         ]
     )
 
-    plot_ablation_cont_fs(
+    _ = plot_ablation_cont_fs(
         args = args,
         fs_dict = fs_dict,
         plot_path = plot_path

@@ -121,12 +121,13 @@ if args.plot_ablation_cont:
         ]
     )
 
-    plot_ablation_contamination(
+    _ = plot_ablation_contamination(
         args = args,
         contamination_values = cont_values,
         results_dict = results_dict,
         plot_path = plot_path,
-        exp_name = "ablation_cont_prediction"
+        exp_name = "ablation_cont_prediction",
+        save_image = False
     )
 
 

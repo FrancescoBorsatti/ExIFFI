@@ -298,10 +298,10 @@ def plot_ablation_contamination(
         exp_name (str): type of ablation contamination experiment
 
     Returns:
-        None: the function produces the plot and returns nothing
+        None: nothing is returned
     """
 
-    assert exp_name in ["ablation_contamination","ablation_cont_prediction"], "This plot function can be used just for the ablation contamination plots"
+    assert exp_name in ["multi_ablation_cont","ablation_contamination","ablation_cont_prediction"], "This plot function can be used just for the ablation contamination plots"
 
     dict_labels = ["Average Precision", "Fit Time [s]", "Predict Time [s]"] if exp_name == "ablation_contamination"  else  ["ROC AUC Score", "Fit Time [s]", "Predict Time [s]"]
 
@@ -351,6 +351,94 @@ def plot_ablation_contamination(
             print("-"*50)
 
         plt.close(fig)
+
+def multi_plot_ablation_contamination(
+    args: Namespace,
+    contamination_values: np.ndarray,
+    results_dict_pred: dict,
+    results_dict_fs: dict,
+    plot_path: str,
+    save_image: bool = True,
+    exp_name: str = "multi_ablation_cont"
+) -> None:
+    """
+    Function to produce a plt subplot with the plots of ablation_cont_prediction and ablation_cont_fs experiments one on top of the other.
+
+    Args:
+        args (Namespace): experiment configuration
+        contamination_values (np.ndarray): contamination values
+        results_dict_pred (dict): dictionary containing the results of the ablation_cont_prediction experiment
+        results_dict_fs (dict): dictionary containing the results of the ablation_cont_fs experiment
+        plot_path (str): path where to save the plots
+        save_image (bool): weather to save the plot or not
+        exp_name (str): type of ablation contamination experiment
+
+    Returns:
+        None: the function produces the plot and returns nothing
+    """
+
+    assert exp_name in ["multi_ablation_cont","ablation_cont_fs","ablation_cont_prediction"], "This plot function can be used just for the ablation contamination plots"
+
+    plt.style.use("default")
+    plt.rcParams["axes.facecolor"] = "#F2F2F2"
+    plt.grid(alpha=0.7)
+
+    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(25,15),sharex=True,dpi=200)
+
+    val = results_dict_pred["roc_auc"]
+
+    ax[0].plot(
+        contamination_values,
+        val.mean(axis=1),
+        marker="o",
+        c="tab:blue",
+        alpha=0.5,
+    )
+    ax[0].fill_between(
+        contamination_values,
+        [np.percentile(x, 10) for x in val],
+        [np.percentile(x, 90) for x in val],
+        alpha=0.1,
+        color="tab:blue",
+    )
+
+    ax[0].set_ylim((0.4,1.0))
+    ax[0].grid(alpha=0.7)
+
+    ax[0].set_xlabel("Contamination Values", fontsize=20)
+    ax[0].set_xticks((np.round(contamination_values,4)))
+    ax[0].set_xscale("log")
+    ax[0].tick_params(axis="x", rotation=45)
+    ax[0].tick_params(axis="y", labelsize=20)
+    # ax[0].set_xticklabels(np.round(contamination_values, 4), rotation = 45, ha  = "right")
+    ax[0].set_ylabel("Avg. Precision", fontsize=20)
+
+    auc_fs_vals, cont_values = results_dict_fs["auc_fs_vals"], results_dict_fs["cont_values"]
+
+    ax[1].plot(
+        cont_values,
+        auc_fs_vals,
+        marker="o",
+        c="tab:blue",
+        alpha=0.5,
+    )
+
+    ax[1].set_xlabel("Contamination Values", fontsize=20)
+    ax[1].set_xticks((np.round(cont_values,4)))
+    ax[1].set_xscale("log")
+    ax[1].tick_params(axis="x", rotation=45)
+    ax[1].tick_params(axis="y", labelsize=20)
+    # ax[1].set_xticklabels(np.round(cont_values, 4), rotation = 45, ha  = "right")
+    ax[1].set_ylabel("AUC_FS", fontsize=20)
+    ax[1].grid(alpha=0.7)
+
+    if save_image:
+        filename = f"{get_current_time()}_multi_ablation_cont_plot_{args.model_name}_{args.interpretation}_scenario_{args.scenario}.png"
+        fig.savefig(os.path.join(plot_path,filename),dpi=300,bbox_inches="tight")
+
+        print("-"*50)
+        print(f"Multi ablation contamination plot saved at: {os.path.join(plot_path,filename)}")
+        print("-"*50)
 
 def ablation_cont_gfi_exp(
     dataset: Dataset,
@@ -526,12 +614,14 @@ def plot_ablation_cont_fs(
         save_image (bool): weather to save the plot or not
 
     Returns:
-        None: the function produces the plot and returns nothing
+        None: nothing is returned
     """
 
     plt.style.use("default")
     plt.rcParams["axes.facecolor"] = "#F2F2F2"
 
+    #NOTE: This is used just to plot the last 4 contamination values in the
+    # final exp
     auc_fs_vals, cont_values = fs_dict["auc_fs_vals"][2:], fs_dict["cont_values"][2:]
 
     print("-"*50)
@@ -565,5 +655,4 @@ def plot_ablation_cont_fs(
         print("-"*50)
         print(f"Ablation plot for feature selection saved at {os.path.join(plot_path,filename)}")
         print("-"*50)
-
 
