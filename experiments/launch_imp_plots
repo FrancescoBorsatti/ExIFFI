@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/opt/homebrew/bin/bash
 
 dataset_name="${1:-'TEP_ACME'}"
 
