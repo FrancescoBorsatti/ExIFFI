@@ -1,0 +1,3 @@
+#NOTE: gitignore file for experiments folder
+
+*.npz
