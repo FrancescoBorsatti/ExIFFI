@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/opt/homebrew/bin/bash
 
 script_path="fs_exp.py"
 
@@ -45,7 +45,7 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "wine" || "$dataset_n
       --scaler_type 4 \
       --seed $seed \
       --file_pos $file_pos \
-      --feature_selection \
+      --compute_random \
       --plot_feature_selection \
       --rotation
 

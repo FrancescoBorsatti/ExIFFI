@@ -7,7 +7,7 @@ interpretation="${3:-EXIFFI+}"
 n_estimators=300
 scenario=2
 n_runs=40
-file_pos=4
+file_pos=2
 
 score_plot=${4:-1}
 local_scoremaps=${5:-0}

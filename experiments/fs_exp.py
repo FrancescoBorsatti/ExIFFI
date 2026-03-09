@@ -71,35 +71,36 @@ fs_random_path = generate_path(
     ],
 )
 
+gfi_path = generate_path(
+    basepath=results_path,
+    folders=[
+        dataset.name,
+        "experiments",
+        "global_importances"
+        if args.interpretation in ["EXIFFI+", "EXIFFI", "DIFFI"]
+        else "local_importances",
+        args.model_interpretation,
+        args.interpretation,
+        "imp_mat",
+        f"scenario_{args.scenario}",
+    ],
+)
+
+most_recent_file = get_most_recent_file(gfi_path, file_pos=0)
+
+filetype = "npz" if "npz" in most_recent_file else "csv.gz"
+matrix = open_element(most_recent_file, filetype=filetype)
+if filetype == "npz":
+    matrix = pd.DataFrame(matrix,columns=dataset.feature_names)
+
+feat_order = np.argsort(matrix.values.mean(axis=0))
 
 if args.feature_selection:
-    print("#" * 50)
+
+    print("*" * 50)
     print("Direct Feature Selection experiment")
-    print("#" * 50)
+    print("*" * 50)
 
-    gfi_path = generate_path(
-        basepath=results_path,
-        folders=[
-            dataset.name,
-            "experiments",
-            "global_importances"
-            if args.interpretation in ["EXIFFI+", "EXIFFI", "DIFFI"]
-            else "local_importances",
-            args.model_interpretation,
-            args.interpretation,
-            "imp_mat",
-            f"scenario_{args.scenario}",
-        ],
-    )
-
-    most_recent_file = get_most_recent_file(gfi_path, file_pos=1)
-
-    filetype = "npz" if "npz" in most_recent_file else "csv.gz"
-    matrix = open_element(most_recent_file, filetype=filetype)
-    if filetype == "npz":
-        matrix = pd.DataFrame(matrix,columns=dataset.feature_names)
-
-    feat_order = np.argsort(matrix.values.mean(axis=0))
     Precisions = namedtuple(
         "Precisions", ["direct", "inverse", "dataset", "model_name", "value"]
     )
@@ -115,9 +116,9 @@ if args.feature_selection:
         scenario=args.scenario,
     )
 
-    print("#" * 50)
+    print("*" * 50)
     print("Inverse Feature Selection experiment")
-    print("#" * 50)
+    print("*" * 50)
 
     inverse = feature_selection(
         I=model,
@@ -134,23 +135,28 @@ if args.feature_selection:
     data = Precisions(direct, inverse, dataset.name, model.name, value)
     save_fs_prec(data, fs_int_path)
 
-    # random feature selection
-    if args.compute_random:
-        Precisions_random = namedtuple(
-            "Precisions_random", ["random", "dataset", "model_name"]
-        )
-        random_fs = feature_selection(
-            I=model,
-            dataset=dataset,
-            importances_indexes=feat_order,
-            n_runs=args.n_runs,
-            seed=args.seed,
-            inverse=True,
-            random=True,
-            scenario=args.scenario,
-        )
-        data_random = Precisions_random(random_fs, dataset.name, model.name)
-        save_fs_prec_random(data_random, fs_random_path)
+if args.compute_random:
+
+    print("*" * 50)
+    print("Random Feature Selection experiment")
+    print("*" * 50)
+
+    Precisions_random = namedtuple(
+        "Precisions_random", ["random", "dataset", "model_name"]
+    )
+
+    random_fs = feature_selection(
+        I=model,
+        dataset=dataset,
+        importances_indexes=feat_order,
+        n_runs=args.n_runs,
+        seed=args.seed,
+        inverse=True,
+        random=True,
+        scenario=args.scenario,
+    )
+    data_random = Precisions_random(random_fs, dataset.name, model.name)
+    save_fs_prec_random(data_random, fs_random_path)
 
 if args.plot_feature_selection:
 

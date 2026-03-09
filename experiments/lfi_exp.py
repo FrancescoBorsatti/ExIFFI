@@ -29,6 +29,7 @@ from utils_reboot.utils import (  # noqa: E402
     generate_path,
     get_most_recent_file,
     save_element,
+    open_element
 )
 
 args = define_arguments(exp_name="lfi_exp")
@@ -136,7 +137,7 @@ if args.compute_lfi:
         save_element(
             element=imp_mat,
             directory_path=imp_mat_path,
-            filetype="csv.gz",
+            filetype="npz",
         )
 
     else:
@@ -179,7 +180,13 @@ if args.score_plot:
     print("Producing score plot")
     print("#" * 50)
 
-    imp_path = get_most_recent_file(imp_mat_path, file_pos=args.file_pos)
+    imp_mats = []
+    for i in range(3):
+        imp_path = get_most_recent_file(imp_mat_path, file_pos=i)
+        imp_mat = open_element(imp_path,filetype="npz")
+        imp_mats.append(imp_mat)
+
+    ipdb.set_trace()
 
     score_plot(
         dataset=dataset,
