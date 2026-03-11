@@ -20,7 +20,7 @@ tests/try_stuff.py
 notebooks/
 
 # documentation
-mkdocs.yaml
+mkdocs.yml
 docs/
 
 
