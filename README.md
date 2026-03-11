@@ -7,9 +7,11 @@ Anomaly Detection in Industrial Processes through
 ExIFFI"](https://arxiv.org/abs/2405.01158) paper.
 
 In particular this experiment contains all the python script necessary to run
-and execute the experiments, whose results are reported in the paper. In
-particular this repository is used as a submodule of [the official paper's
-repository](https://github.com/FrancescoBorsatti/ExIFFI_Industrial_Test.git).
+and execute the experiments, whose results are reported in the paper.
+
+>[!info]
+> This repository is used as a submodule of [the official paper's
+> repository](https://github.com/FrancescoBorsatti/ExIFFI_Industrial_Test.git).
 
 ## Launch experiments
 
