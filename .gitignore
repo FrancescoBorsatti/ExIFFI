@@ -16,4 +16,11 @@ tests/try_stuff.py
 # Mac OS files
 *.DS_Store
 
+# notebooks
+notebooks/
+
+# documentation
+mkdocs.yaml
+docs/
+
 
