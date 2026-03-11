@@ -34,7 +34,6 @@ from utils_reboot.utils import (  # noqa: E402
 args = define_arguments(exp_name="lfi_exp")
 
 dataset, model = setup_exp(args = args)
-ipdb.set_trace()
 
 os.chdir("../")
 cwd = os.getcwd()
