@@ -16,6 +16,9 @@ tests/try_stuff.py
 # Mac OS files
 *.DS_Store
 
+# old notes
+coffedata_exp_tutorial.md
+
 # notebooks
 notebooks/
 
