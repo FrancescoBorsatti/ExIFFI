@@ -72,11 +72,11 @@ The command line arguments are the same used in `launch_exp_GFI`.
 
 ### Feature Selection Experiments
 
-This script performs the feature selection experiment and produce the plot
+This script performs the feature selection experiment and produces the plot
 containing the results.
 
 >[!warning]
-> In order to successfully execute this script you need to have saved the `GFI`
+> In order to successfully execute this script it is necessary to have saved the `GFI`
 > matrices (which are needed to get the feature rankings). These matrices are automatically
 > saved by the `launch_exp_GFI` script so make sure to run that first.
 
