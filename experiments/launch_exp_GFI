@@ -45,6 +45,7 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; the
       --pre_process \
       --scaler_type 4 \
       --file_pos "$file_pos" \
+      --compute_gfi \
       --score_plot
 
 elif [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_prefix}[1-5]${piade_suffix} ]]; then
