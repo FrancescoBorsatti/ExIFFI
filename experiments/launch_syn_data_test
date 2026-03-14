@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+script_path="syn_data_test.py"
+
+echo "------------------------------------------------"
+echo "Executing $script_path"
+echo "------------------------------------------------"
+
+n_inliers=1000
+n_outliers=50
+anomaly_axis=1
+anomaly_interval=(10 15)
+n_dims=6
+center=0
+radius=5
+axes=(0 1)
+
+python $script_path \
+  --n_inliers $n_inliers \
+  --n_outliers $n_outliers \
+  --anomaly_axis $anomaly_axis \
+  --anomaly_interval "${anomaly_interval[@]}" \
+  --n_dims $n_dims \
+  --center $center \
+  --radius $radius \
+  --axes "${axes[@]}" \
+  --show_plot

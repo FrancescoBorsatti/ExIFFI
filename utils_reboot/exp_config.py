@@ -2,9 +2,11 @@
 Python module containing some functions to configure the experiments
 """
 
-import ipdb
 import argparse
 from argparse import Namespace
+
+import ipdb
+
 
 def define_arguments(
     exp_name: str = "gfi_exp",
@@ -32,51 +34,34 @@ def define_arguments(
         "ablation_cont_prediction",
         "ablation_cont_gfi",
         "ablation_cont_fs",
-        "multi_ablation_cont"
+        "multi_ablation_cont",
+        "syn_data_exp",
     ]
 
-    assert exp_name in exp_names, f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
+    assert (
+        exp_name in exp_names
+    ), f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
 
     parser = argparse.ArgumentParser(description="ExIFFI Industrial experiments")
 
-    #NOTE: Arguments common to all experiments
+    # NOTE: Arguments common to all experiments
 
     parser.add_argument(
-        "--dataset_name",
-        type=str,
-        default="wine",
-        help="Name of the dataset"
+        "--dataset_name", type=str, default="wine", help="Name of the dataset"
     )
     parser.add_argument(
-        "--dataset_path",
-        type=str,
-        default="../data/real/",
-        help="Path to the dataset"
+        "--dataset_path", type=str, default="../data/real/", help="Path to the dataset"
     )
     parser.add_argument(
-        "--n_estimators",
-        type=int,
-        default=100,
-        help="EIF parameter: n_estimators"
+        "--n_estimators", type=int, default=100, help="EIF parameter: n_estimators"
     )
     parser.add_argument(
-        "--max_depth",
-        type=str,
-        default="auto",
-        help="EIF parameter: max_depth"
+        "--max_depth", type=str, default="auto", help="EIF parameter: max_depth"
     )
     parser.add_argument(
-        "--max_samples",
-        type=str,
-        default="auto",
-        help="EIF parameter: max_samples"
+        "--max_samples", type=str, default="auto", help="EIF parameter: max_samples"
     )
-    parser.add_argument(
-        "--plus",
-        type=bool,
-        default=True,
-        help="EIF parameter: plus"
-    )
+    parser.add_argument("--plus", type=bool, default=True, help="EIF parameter: plus")
     parser.add_argument(
         "--contamination",
         type=float,
@@ -102,9 +87,7 @@ def define_arguments(
         help="File position for get_most_recent_file",
     )
     parser.add_argument(
-        "--pre_process",
-        action="store_true",
-        help="If set, preprocess the dataset"
+        "--pre_process", action="store_true", help="If set, preprocess the dataset"
     )
     parser.add_argument(
         "--scaler_type",
@@ -113,10 +96,7 @@ def define_arguments(
         help="Scaler to use: 1 for StandardScaler, 2 for MinMaxScaler",
     )
     parser.add_argument(
-        "--model_name",
-        type=str,
-        default="EIF",
-        help="Model to use: [EIF+, C_EIF+]"
+        "--model_name", type=str, default="EIF", help="Model to use: [EIF+, C_EIF+]"
     )
     parser.add_argument(
         "--interpretation",
@@ -124,12 +104,7 @@ def define_arguments(
         default="EXIFFI",
         help="Interpretation method to use: [EXIFFI, EXIFFI+, C_EXIFFI+, DIFFI]",
     )
-    parser.add_argument(
-        "--scenario",
-        type=int,
-        default=2,
-        help="Scenario to run"
-    )
+    parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
     parser.add_argument(
         "--downsample",
         type=bool,
@@ -137,10 +112,7 @@ def define_arguments(
         help="If set, downsample the dataset if it has more than 7500 samples",
     )
     parser.add_argument(
-        "--eta",
-        type=float,
-        default=1.5,
-        help="eta hyperparameter of EIF+"
+        "--eta", type=float, default=1.5, help="eta hyperparameter of EIF+"
     )
 
     parser.add_argument(
@@ -161,7 +133,6 @@ def define_arguments(
     )
 
     if exp_name in ["gfi_exp", "lfi_exp"]:
-
         parser.add_argument(
             "--compute_bars",
             action="store_true",
@@ -173,17 +144,12 @@ def define_arguments(
             help="If set, produce the score plot",
         )
 
-
     if exp_name == "gfi_exp":
-
         parser.add_argument(
-            "--compute_gfi",
-            action="store_true",
-            help="If set, compute the GFI matrix"
+            "--compute_gfi", action="store_true", help="If set, compute the GFI matrix"
         )
 
     if exp_name == "lfi_exp":
-
         parser.add_argument(
             "--n_anomalies",
             type=int,
@@ -191,9 +157,7 @@ def define_arguments(
             help="Number of anomalies on which to compute the importance scores with KernelSHAP",
         )
         parser.add_argument(
-            "--compute_lfi",
-            action="store_true",
-            help="If set, compute the LFI matrix"
+            "--compute_lfi", action="store_true", help="If set, compute the LFI matrix"
         )
 
         parser.add_argument(
@@ -202,8 +166,7 @@ def define_arguments(
             help="If set, save the labels",
         )
 
-    if exp_name in ["lfi_exp","metrics_exp"]:
-
+    if exp_name in ["lfi_exp", "metrics_exp"]:
         parser.add_argument(
             "--n_quantiles",
             type=int,
@@ -219,7 +182,6 @@ def define_arguments(
         )
 
     if exp_name == "fs_exp":
-
         parser.add_argument(
             "--eval_model",
             type=str,
@@ -265,7 +227,6 @@ def define_arguments(
         )
 
     if exp_name == "local_scoremaps":
-
         parser.add_argument(
             "--only_positive",
             type=bool,
@@ -280,7 +241,6 @@ def define_arguments(
         )
 
     if exp_name == "metrics_exp":
-
         parser.add_argument(
             "--n_runs_imp",
             type=int,
@@ -315,7 +275,6 @@ def define_arguments(
         )
 
     if exp_name == "get_metrics":
-
         parser.add_argument(
             "--return_perf",
             action="store_true",
@@ -323,13 +282,12 @@ def define_arguments(
         )
 
     if exp_name == "ablation_trees":
-
         parser.add_argument(
             "--num_trees",
             nargs="+",
             type=int,
             default=[100, 200],
-            help="List with different values for the n_estimator parameter for the ablation study"
+            help="List with different values for the n_estimator parameter for the ablation study",
         )
 
         parser.add_argument(
@@ -345,37 +303,42 @@ def define_arguments(
         )
 
     if exp_name == "ablation_contamination":
-
         parser.add_argument(
-            "--min_cont",
-            type=float,
-            default=0.0,
-            help="Minimum contamination value"
+            "--min_cont", type=float, default=0.0, help="Minimum contamination value"
         )
 
-    if exp_name in ["multi_ablation_cont","ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs"]:
-
+    if exp_name in [
+        "multi_ablation_cont",
+        "ablation_cont_prediction",
+        "ablation_cont_gfi",
+        "ablation_cont_fs",
+    ]:
         parser.add_argument(
             "--contamination_values",
             type=float,
             nargs="+",
             default=[0.1],
-            help="List of contamination values to try"
+            help="List of contamination values to try",
         )
 
         parser.add_argument(
             "--hard_code_cont",
             action="store_true",
-            help="If set, hard code the contamination values"
+            help="If set, hard code the contamination values",
         )
 
-    if exp_name in ["ablation_contamination", "ablation_cont_prediction", "ablation_cont_gfi",  "ablation_cont_fs","multi_ablation_cont"]:
-
+    if exp_name in [
+        "ablation_contamination",
+        "ablation_cont_prediction",
+        "ablation_cont_gfi",
+        "ablation_cont_fs",
+        "multi_ablation_cont",
+    ]:
         parser.add_argument(
             "--n_cont_values",
             type=int,
             default=10,
-            help="Number of contamination values to try"
+            help="Number of contamination values to try",
         )
 
         parser.add_argument(
@@ -391,7 +354,6 @@ def define_arguments(
         )
 
     if exp_name == "ablation_cont_fs":
-
         parser.add_argument(
             "--subset_cont_values",
             action="store_true",
@@ -410,9 +372,71 @@ def define_arguments(
             help="Number of dicts to merge. The two most recent dicts will be saved",
         )
 
+    if exp_name == "syn_data_exp":
+        parser.add_argument(
+            "--n_inliers",
+            type=int,
+            default=1000,
+            help="Number of samples for the synthetic inliers",
+        )
+
+        parser.add_argument(
+            "--n_outliers",
+            type=int,
+            default=100,
+            help="Number of samples for the synthetic outliers",
+        )
+
+        parser.add_argument(
+            "--n_dims",
+            type=int,
+            default=6,
+            help="Number of features for the synthetic dataset",
+        )
+
+        parser.add_argument(
+            "--center", type=int, default=0, help="Center of the inliers ball"
+        )
+
+        parser.add_argument(
+            "--radius", type=float, default=5.0, help="Inliers ball radius"
+        )
+
+        parser.add_argument(
+            "--axes",
+            type=int,
+            nargs="+",
+            default=[0, 1],
+            help="Pair of features to plot",
+        )
+
+        parser.add_argument(
+            "--anomaly_axis",
+            type=int,
+            default=0,
+            help="Axis along which to craft anomalies",
+        )
+
+        parser.add_argument(
+            "--anomaly_interval",
+            type=int,
+            nargs="+",
+            default=[5, 10],
+            help="Interval where to draw anomalies",
+        )
+
+        parser.add_argument(
+            "--save_plot", action="store_true", help="If set, save the plot"
+        )
+
+        parser.add_argument(
+            "--show_plot", action="store_true", help="If set, show the plot"
+        )
+
     args = parser.parse_args()
 
     return args
+
 
 def check_arguments(
     model_name: str = "EIF",
@@ -480,4 +504,3 @@ def check_arguments(
             "IF",
             "sklearn_IF",
         ], "DIFFI can only be used with IF based models"
-
