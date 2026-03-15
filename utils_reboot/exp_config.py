@@ -395,11 +395,10 @@ def define_arguments(
         )
 
         parser.add_argument(
-            "--center", type=int, default=0, help="Center of the inliers ball"
-        )
-
-        parser.add_argument(
             "--radius", type=float, default=5.0, help="Inliers ball radius"
+        )
+        parser.add_argument(
+            "--moon_radius", type=float, default=5.0, help="Moon inliers radius"
         )
 
         parser.add_argument(

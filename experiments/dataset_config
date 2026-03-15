@@ -4,6 +4,16 @@ tep_name="TEP_ACME"
 coffe_name="CoffeData"
 piade_prefix="piade_s"
 piade_suffix="_alarms_no_zeros"
+real_dataset_names=("$tep_name" "$coffe_name" "$piade_prefix")
+
+contains() {
+  local target="$1"
+  shift
+  for element in "$@"; do
+    [[ "$element" == "$target" ]] && return 0
+  done
+  return 1
+}
 
 get_datapath() {
 
@@ -14,7 +24,18 @@ get_datapath() {
   out[piade_prefix]="$piade_prefix"
   out[piade_suffix]="$piade_suffix"
 
-  case "$dataset_name" in
+  if ! contains "$dataset_name" "${real_dataset_names[@]}"; then
+
+    out[dataset_path]="../../datasets/data/syn/$dataset_name"
+
+    if [[ ! -e "${out[dataset_path]}" ]]; then
+      echo "No synthetic dataset at ${out[dataset_path]}"
+      exit 1
+    fi
+
+  else
+
+    case "$dataset_name" in
 
     "$tep_name")
       out[dataset_path]="../../datasets/data/$dataset_name"
@@ -37,6 +58,7 @@ get_datapath() {
       echo "Supported names: TEP_ACME, piade_s[1-5], CoffeData" >&2
       return 1
       ;;
-  esac
-}
+    esac
 
+  fi
+}

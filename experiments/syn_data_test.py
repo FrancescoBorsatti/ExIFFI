@@ -12,7 +12,7 @@ import pandas as pd
 sys.path.append("..")
 
 from utils_reboot.exp_config import define_arguments
-from utils_reboot.syn_datasets import generate_syn_data, plot_syn_data
+from utils_reboot.syn_datasets import generate_moon_inliers, generate_syn_data, plot_syn_data
 from utils_reboot.utils import generate_path, save_element
 
 experiment_path = os.getcwd()
