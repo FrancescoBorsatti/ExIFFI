@@ -2,22 +2,23 @@
 Python module with utility functions of various types
 """
 
-import time
-import random
-from typing import Type, Union, Optional, List
-import numpy.typing as npt
-import pickle
-import numpy as np
-import pandas as pd
-import os
 import json
+import os
+import pickle
+import random
+import time
 from collections import namedtuple
+from typing import List, Optional, Type, Union
+
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+from utils_reboot.datasets import Dataset
 
 # from append_to_path import append_dirname
 # append_dirname("ExIFFI_Industrial_Test")
 
-from utils_reboot.datasets import Dataset
-from sklearn.ensemble import IsolationForest
 # from pyod.models.dif import DIF as oldDIF
 # from pyod.models.auto_encoder import AutoEncoder as oldAutoEncoder
 
@@ -241,6 +242,7 @@ def get_feature_indexes(
 
     return idx1, idx2
 
+
 def get_current_time() -> str:
     """
     This function returns the current time in the format 'dd-mm-YYYY_HH-MM-SS'.
@@ -255,6 +257,7 @@ def get_current_time() -> str:
     current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
     return current_time
 
+
 def save_element(
     element: Union[
         dict,
@@ -268,7 +271,7 @@ def save_element(
     directory_path: str,
     filename: str = "",
     filetype: str = "pickle",
-    add_time: bool = True
+    add_time: bool = True,
 ) -> None:
     """
     Function to save an element produced by an experiment in a file (i.e. `npz` or `pickle` file) in the specified directory path.
@@ -284,12 +287,7 @@ def save_element(
         The method saves element and does not return any value
     """
 
-    filetypes = [
-        "pickle",
-        "npz",
-        "csv.gz",
-        "json"
-    ]
+    filetypes = ["pickle", "npz", "csv.gz", "json"]
 
     assert filetype in filetypes, f"filetype must be one of {filetypes}"
 
@@ -308,7 +306,8 @@ def save_element(
         element.to_csv(path + ".csv.gz", index=False, compression="gzip")
     elif filetype == "json":
         with open(path, "w") as fl:
-            json.dump(element,fl,indent=4)
+            json.dump(element, fl, indent=4)
+
 
 def generate_path(basepath: str = os.getcwd(), folders: List[str] = []) -> str:
     """
@@ -349,9 +348,13 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
 
     """
 
-    #NOTE: Insert here only the files contained in directory_path, do
+    # NOTE: Insert here only the files contained in directory_path, do
     # not consider subdirectories
-    files_list = [x for x in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path,x))]
+    files_list = [
+        x
+        for x in os.listdir(directory_path)
+        if os.path.isfile(os.path.join(directory_path, x))
+    ]
 
     files = sorted(
         files_list,
@@ -361,9 +364,8 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
 
     return os.path.join(directory_path, files[file_pos])
 
-def open_element(
-    file_path: str, filetype: str = "pickle"
-) -> Union[
+
+def open_element(file_path: str, filetype: str = "pickle") -> Union[
     np.array,
     list,
     pd.DataFrame,
@@ -386,7 +388,7 @@ def open_element(
         "pickle",
         "npz",
         "csv.gz",
-        "json"
+        "json",
     ], "filetype must be either 'pickle' or 'npz'"
     if filetype == "pickle":
         with open(file_path, "rb") as fl:
@@ -405,6 +407,7 @@ def open_element(
         raise ValueError("Filetype not recognized")
 
     return element
+
 
 def fix_fs_file(dataset, model, interpretation, scenario):
     path = os.path.join(
@@ -574,9 +577,9 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
 
     if not os.path.exists(dict_time_path):
 
-        print("-"*50)
+        print("-" * 50)
         print("Creating new fit-predict time dictionary")
-        print("-"*50)
+        print("-" * 50)
 
         dict_time = {
             "fit": {
@@ -599,7 +602,7 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
                 "EIF+_centroid": {},
                 "EIF+_distrib_split": {},
                 "EIF+_centroid_split": {},
-            }
+            },
         }
         with open(dict_time_path, "wb") as file:
             pickle.dump(dict_time, file)
@@ -609,9 +612,9 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
 
     if not os.path.exists(dict_time_imp_path):
 
-        print("-"*50)
+        print("-" * 50)
         print("Creating new importances time dictionary")
-        print("-"*50)
+        print("-" * 50)
 
         dict_time_imp = {
             "importances": {

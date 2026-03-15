@@ -6,35 +6,49 @@ import os
 import sys
 
 import ipdb
+import numpy as np
+import pandas as pd
 
 sys.path.append("..")
 
 from utils_reboot.exp_config import define_arguments
-from utils_reboot.syn_datasets import (
-    generate_axis_outliers,
-    generate_ball_inliers,
-    plot_syn_data,
-)
-from utils_reboot.utils import generate_path
+from utils_reboot.syn_datasets import generate_syn_data, plot_syn_data
+from utils_reboot.utils import generate_path, save_element
 
 experiment_path = os.getcwd()
+dataset_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+    "datasets",
+    "data",
+)
 
 args = define_arguments(exp_name="syn_data_exp")
 
-plot_path = generate_path(basepath=experiment_path, folders=["syn_data_plots"])
+dataset = generate_syn_data(args=args)
 
-inliers = generate_ball_inliers(args=args)
-x_anomaly_interval = [args.anomaly_interval[0], args.anomaly_interval[1]]
-y_anomaly_interval = [-args.anomaly_interval[1], -args.anomaly_interval[0]]
-x_outliers = generate_axis_outliers(
-    args=args, anomaly_axis=args.anomaly_axis, anomaly_interval=x_anomaly_interval
-)
-y_outliers = generate_axis_outliers(
-    args=args,
-    anomaly_axis=args.anomaly_axis,
-    anomaly_interval=y_anomaly_interval,
-)
+if args.plot_syn_data:
 
-datasets = [inliers, x_outliers, y_outliers]
+    plot_path = generate_path(basepath=experiment_path, folders=["syn_data_plots", args.syn_data_name])
+    plot_syn_data(args=args, dataset=dataset, plot_path=plot_path)
 
-plot_syn_data(args=args, datasets = datasets, plot_path=plot_path)
+if args.save_syn_data:
+
+    syn_data_path = generate_path(
+        basepath=dataset_path, folders=["syn", args.syn_data_name]
+    )
+    filename = args.syn_data_name
+    dataset_df = pd.DataFrame(dataset)
+    n_cols = dataset_df.shape[1]
+    dataset_df.columns = [str(i) for i in range(n_cols - 1)] + ["Target"]
+
+    save_element(
+        element=dataset_df,
+        directory_path=syn_data_path,
+        filename=filename,
+        filetype="csv.gz",
+        add_time=False,
+    )
+
+    print("-"*50)
+    print(f"Synthetic dataset {args.syn_data_name} saved at {os.path.join(syn_data_path,filename)}")
+    print("-"*50)

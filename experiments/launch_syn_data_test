@@ -6,22 +6,28 @@ echo "------------------------------------------------"
 echo "Executing $script_path"
 echo "------------------------------------------------"
 
+syn_data_name="${1:-Xaxis}"
 n_inliers=1000
 n_outliers=50
 anomaly_axis=1
 anomaly_interval=(10 15)
+v=(4 3 2 0 0 0)
 n_dims=6
 center=0
 radius=5
 axes=(0 1)
 
 python $script_path \
+  --syn_data_name "$syn_data_name" \
   --n_inliers $n_inliers \
   --n_outliers $n_outliers \
   --anomaly_axis $anomaly_axis \
   --anomaly_interval "${anomaly_interval[@]}" \
+  --v "${v[@]}" \
   --n_dims $n_dims \
   --center $center \
   --radius $radius \
   --axes "${axes[@]}" \
-  --show_plot
+  --save_syn_data \
+  --plot_syn_data \
+  --save_plot

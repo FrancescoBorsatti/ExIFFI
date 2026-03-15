@@ -411,6 +411,14 @@ def define_arguments(
         )
 
         parser.add_argument(
+            "--v",
+            type=int,
+            nargs="+",
+            default=[1,1,0,0,0,0],
+            help="Weight of the features for the bisect_prop anomalies",
+        )
+
+        parser.add_argument(
             "--anomaly_axis",
             type=int,
             default=0,
@@ -431,6 +439,21 @@ def define_arguments(
 
         parser.add_argument(
             "--show_plot", action="store_true", help="If set, show the plot"
+        )
+
+        parser.add_argument(
+            "--plot_syn_data", action="store_true", help="If set, plot the synthetic data"
+        )
+
+        parser.add_argument(
+            "--save_syn_data", action="store_true", help="If set, save the synthetic data"
+        )
+
+        parser.add_argument(
+            "--syn_data_name",
+            type=str,
+            default="Xaxis",
+            help="Name of the synthetic dataset to create"
         )
 
     args = parser.parse_args()
