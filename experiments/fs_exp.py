@@ -14,13 +14,13 @@ import pandas as pd
 cwd = os.getcwd()
 sys.path.append("..")
 
-from utils_reboot.datasets import load_dataset  # noqa: E402
+from utils_reboot.datasets import load_dataset
 from utils_reboot.exp_config import check_arguments, define_arguments
-from utils_reboot.experiments import feature_selection, setup_exp  # noqa: E402
-from utils_reboot.models import load_model  # noqa: E402
-from utils_reboot.plots import plot_feature_selection  # noqa: E402
+from utils_reboot.experiments import feature_selection, setup_exp
+from utils_reboot.models import load_model
+from utils_reboot.plots import plot_feature_selection
 from utils_reboot.utils import (
-    generate_path,  # noqa: E402
+    generate_path,
     get_most_recent_file,
     open_element,
     save_fs_prec,
