@@ -216,7 +216,7 @@ def define_arguments(
         )
 
         parser.add_argument(
-            "--compute_random",
+            "--random_feature_selection",
             action="store_true",
             help="If set, shows also the random precisions in the feature selection plot",
         )

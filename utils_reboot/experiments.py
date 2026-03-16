@@ -798,8 +798,6 @@ def feature_selection(
                 dataset_shrinking.initialize_train()
                 dataset_shrinking.initialize_test()
 
-            # import ipdb; ipdb.set_trace()
-
             try:
                 if dataset.X.shape[1] == dataset_shrinking.X.shape[1]:
                     start_time = time.time()
@@ -824,10 +822,8 @@ def feature_selection(
                 avg_prec = sklearn.metrics.average_precision_score(
                     dataset_shrinking.y, score
                 )
-                # import ipdb;
-                # ipdb.set_trace()
                 runs[run] = avg_prec
-            except:
+            except Exception as e:
                 runs[run] = np.nan
 
         precisions[number_of_features_dropped] = runs

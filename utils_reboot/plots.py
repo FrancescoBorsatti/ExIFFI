@@ -426,7 +426,7 @@ def fs_plot_name(
             + "EXIFFI+"
             + "_feature_selection_"
             + str(scenario)
-            + ".pdf"
+            + ".png"
         )
     elif model_name == "C_EIF+" and interpretation == "C_EXIFFI+":
         namefile = (
@@ -440,7 +440,7 @@ def fs_plot_name(
             + "C_EXIFFI+"
             + "_feature_selection_"
             + str(scenario)
-            + ".pdf"
+            + ".png"
         )
     else:
         namefile = (
@@ -456,7 +456,7 @@ def fs_plot_name(
             + interpretation
             + "_feature_selection_"
             + str(scenario)
-            + ".pdf"
+            + ".png"
         )
 
     return namefile

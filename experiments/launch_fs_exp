@@ -28,7 +28,14 @@ echo "#############################################"
 echo "Feature selection experiment for model $model_name and interpretation $interpretation"
 echo "#############################################"
 
-if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "wine" || "$dataset_name" == "glass" || "$dataset_name" == "$coffe_name" ]]; then
+if [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
+
+  echo "#############################################"
+  echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
+  echo "#############################################"
+  exit 1
+
+else
 
   uv run $script_path \
       --dataset_name "$dataset_name" \
@@ -46,22 +53,10 @@ if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "wine" || "$dataset_n
       --seed $seed \
       --file_pos $file_pos \
       --feature_selection \
+      --random_feature_selection \
       --plot_feature_selection \
+      --change_ylim \
       --rotation
-
-elif [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
-
-  echo "#############################################"
-  echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
-  echo "#############################################"
-  exit 1
-
-else
-
-  echo "#############################################"
-  echo "Dataset $dataset_name not supported"
-  echo "#############################################"
-  exit 1
 
 fi
 
