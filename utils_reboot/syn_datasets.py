@@ -8,7 +8,7 @@ import os
 import re
 from argparse import Namespace
 from numbers import Integral
-from typing import List, Union, Tuple
+from typing import List, Tuple, Union
 
 import ipdb
 import matplotlib.pyplot as plt
@@ -19,8 +19,8 @@ from sklearn.datasets import make_moons
 
 sns.set_theme(style="darkgrid")
 from matplotlib.ticker import AutoLocator, ScalarFormatter
-from utils_reboot.utils import generate_path, get_current_time, save_element
 from utils_reboot.datasets import set_seed
+from utils_reboot.utils import generate_path, get_current_time, save_element
 
 
 def generate_ball_inliers(args: Namespace, n_samples: int = 1000) -> np.ndarray:
@@ -125,9 +125,11 @@ def my_make_moons(
     return X, y
 
 
-def generate_moon_inliers(args: Namespace) -> np.ndarray:
+def generate_my_moon_inliers(args: Namespace) -> np.ndarray:
     """
-    Generate inliers with a moon shape
+    Generate inliers with a moon shape using the my_make_moons function.
+    In this case we generate an args.n_dims dimensional moon shaped set of
+    inlier points
 
     Args:
         args (Namespace): experiment config object
@@ -142,6 +144,35 @@ def generate_moon_inliers(args: Namespace) -> np.ndarray:
         n_dims=args.n_dims,
     )
     inliers = inliers[inliers_labels == 0] * args.moon_radius
+
+    return inliers
+
+
+def generate_moon_inliers(args: Namespace) -> np.ndarray:
+    """
+    Generate inliers with a moon shape using the traditional make_moons
+    function from sklearn.datasets. In this case 2d moon inliers are generated
+    and the other features are random noise
+
+    Args:
+        args (Namespace): experiment config object
+
+    Returns:
+        inliers (np.ndarray): inliers with moon shape
+    """
+
+    inliers, inliers_labels = make_moons(
+        n_samples=(args.n_inliers, args.n_inliers),
+        noise=0.1,
+        random_state=42,
+    )
+    inliers = inliers[inliers_labels == 0] * args.moon_radius
+
+    inliers_noise = np.zeros(shape=(inliers.shape[0], args.n_dims - inliers.shape[1]))
+    for i in range(inliers_noise.shape[1]):
+        inliers_noise[:, i] = np.random.normal(0, 1, size=inliers_noise.shape[0])
+
+    inliers = np.concatenate([inliers, inliers_noise], axis=1)
 
     return inliers
 
@@ -418,7 +449,10 @@ def moon_anomalies(args: Namespace, anomaly_axis: int = 0) -> np.ndarray:
         dataset (np.ndarray): synthetic dataset data
     """
 
-    inliers = generate_moon_inliers(args=args)
+    if "my_moon" in args.syn_data_name:
+        inliers = generate_my_moon_inliers(args=args)
+    else:
+        inliers = generate_moon_inliers(args=args)
     inliers_labels = np.zeros(shape=(inliers.shape[0], 1))
     inliers = np.concatenate([inliers, inliers_labels], axis=1)
 

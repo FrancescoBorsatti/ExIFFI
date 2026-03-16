@@ -28,6 +28,7 @@ python $script_path \
   --radius $radius \
   --moon_radius $moon_radius \
   --axes "${axes[@]}" \
+  --save_syn_data \
   --plot_syn_data \
   --save_plot
 
