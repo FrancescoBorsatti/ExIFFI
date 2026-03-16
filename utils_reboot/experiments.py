@@ -1081,7 +1081,7 @@ def setup_exp(args: Namespace) -> Tuple[Dataset, ExtendedIsolationForest]:
     )
 
     model = load_model(
-        model_name=args.model_name,
+        model_name=args.eval_model if args.exp_type == "fs_exp" else args.model_name,
         interpretation=args.interpretation,
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,

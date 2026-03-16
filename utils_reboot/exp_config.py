@@ -456,6 +456,7 @@ def define_arguments(
         )
 
     args = parser.parse_args()
+    args.exp_type = exp_name
 
     return args
 
