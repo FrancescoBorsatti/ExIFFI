@@ -3,10 +3,12 @@ Python module with functions to generate synthetic datasets
 to test ExIFFI on multivariate interactions
 """
 
+import numbers
 import os
 import re
 from argparse import Namespace
-from typing import List
+from numbers import Integral
+from typing import List, Union, Tuple
 
 import ipdb
 import matplotlib.pyplot as plt
@@ -18,6 +20,7 @@ from sklearn.datasets import make_moons
 sns.set_theme(style="darkgrid")
 from matplotlib.ticker import AutoLocator, ScalarFormatter
 from utils_reboot.utils import generate_path, get_current_time, save_element
+from utils_reboot.datasets import set_seed
 
 
 def generate_ball_inliers(args: Namespace, n_samples: int = 1000) -> np.ndarray:
@@ -48,6 +51,80 @@ def generate_ball_inliers(args: Namespace, n_samples: int = 1000) -> np.ndarray:
     return np.array(inliers)
 
 
+def my_make_moons(
+    n_samples: Union[int, tuple] = 100,
+    noise: Union[None, float] = None,
+    n_dims: int = 2,
+    shuffle: bool = False,
+    random_state: int = 42,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Modified version of the make_moons function of sklearn
+    to try to make moons of any n-dimensional shape
+
+    Args:
+        n_samples (Union[int, tuple]): number of samples to generate. If int
+        is passed that is interpreted as the total number of samples (two moons with
+        the same number of samples), otherwise a tuple of shape (2,) is passed with the number
+        of samples for each moon.
+        noise (float): amount of noise to add to the data
+        n_dims (int): number of dimensions for the moon data
+        shuffle (bool): weather to shuffle the data or not
+        random_state (int): integer for setting the seed in case of shuffling
+    """
+
+    if n_dims < 2:
+        raise ValueError(f"n_dims must be at least 2, got {n_dims}")
+
+    if isinstance(n_samples, numbers.Integral):
+        n_samples_out = n_samples // 2
+        n_samples_in = n_samples - n_samples_out
+    else:
+        try:
+            n_samples_out, n_samples_in = n_samples
+        except ValueError as e:
+            raise ValueError(
+                "`n_samples` can be either an int or a two-element tuple."
+            ) from e
+
+    angles = np.linspace(0, np.pi, n_samples_out)
+    angles_in = np.linspace(0, np.pi, n_samples_in)
+
+    outer_x = np.cos(angles)
+    outer_y = np.sin(angles)
+    inner_x = 1 - np.cos(angles_in)
+    inner_y = 1 - np.sin(angles_in) - 0.5
+
+    X_outer = np.zeros((n_samples_out, n_dims))
+    X_inner = np.zeros((n_samples_in, n_dims))
+
+    X_outer[:, 0] = outer_x
+    X_outer[:, 1] = outer_y
+    X_inner[:, 0] = inner_x
+    X_inner[:, 1] = inner_y
+
+    for dim in range(2, n_dims):
+        scale = 0.3 / (dim)
+        X_outer[:, dim] = np.sin(angles * dim) * scale
+        X_inner[:, dim] = np.sin(angles_in * dim) * scale
+
+    X = np.vstack([X_outer, X_inner])
+    y = np.hstack(
+        [np.zeros(n_samples_out, dtype=np.intp), np.ones(n_samples_in, dtype=np.intp)]
+    )
+
+    if noise is not None:
+        X += np.random.normal(scale=noise, size=X.shape)
+
+    if shuffle:
+        set_seed(seed=random_state)
+        indices = np.random.permutation(X.shape[0])
+        X = X[indices]
+        y = y[indices]
+
+    return X, y
+
+
 def generate_moon_inliers(args: Namespace) -> np.ndarray:
     """
     Generate inliers with a moon shape
@@ -59,23 +136,14 @@ def generate_moon_inliers(args: Namespace) -> np.ndarray:
         inliers (np.ndarray): inliers with moon shape
     """
 
-    assert (
-        args.n_dims % 2 == 0
-    ), f"In order to generate moon inliers an even number of dimensions is required, but got {args.n_dims}"
+    inliers, inliers_labels = my_make_moons(
+        n_samples=(args.n_inliers, args.n_inliers),
+        noise=0.1,
+        n_dims=args.n_dims,
+    )
+    inliers = inliers[inliers_labels == 0] * args.moon_radius
 
-    inliers_list = []
-    n_rounds = int(args.n_dims / 2)
-    seeds = np.arange(n_rounds)
-    for i in range(n_rounds):
-        inliers, inliers_labels = make_moons(
-            n_samples=args.n_inliers, noise=0.1, random_state=seeds[i]
-        )
-        inliers = inliers[inliers_labels == 0] * args.moon_radius
-        inliers_list.append(inliers)
-
-    moon_inliers = np.concatenate(inliers_list, axis=1)
-
-    return moon_inliers
+    return inliers
 
 
 def generate_axis_outliers(
@@ -391,7 +459,7 @@ def generate_syn_data(args: Namespace) -> np.ndarray:
             dataset = bisect_anomalies(args=args, d=d)
     elif args.syn_data_name == "separated_anomalies":
         dataset = separated_anomalies(args=args)
-    elif args.syn_data_name == "moon_anomalies":
+    elif "moon_anomalies" in args.syn_data_name:
         dataset = moon_anomalies(args=args, anomaly_axis=0)
     else:
         raise ValueError(f"Synthetic dataset name {args.syn_data_name} not supported")

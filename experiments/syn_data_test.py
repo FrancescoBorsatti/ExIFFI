@@ -26,6 +26,11 @@ args = define_arguments(exp_name="syn_data_exp")
 
 dataset = generate_syn_data(args=args)
 
+print("-"*50)
+print("Synthetic dataset info")
+print(f"Dataset shape: {dataset.shape}")
+print("-"*50)
+
 if args.plot_syn_data:
 
     plot_path = generate_path(basepath=experiment_path, folders=["syn_data_plots", args.syn_data_name])

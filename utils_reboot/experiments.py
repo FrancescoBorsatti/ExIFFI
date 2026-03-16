@@ -2,48 +2,45 @@
 Python module containing all the functions needed for the experiments
 """
 
-import sys
+import copy
 import os
-import ipdb
+import pickle
 import random
-
+import sys
+import time
+import warnings
 from argparse import Namespace
-from typing import Type, Union, Tuple
+from typing import Tuple, Type, Union
 
+import ipdb
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm, trange
-import copy
-import sklearn
-import pickle
-import time
 import pandas as pd
-import warnings
-
 import shap
-from sklearn.ensemble import IsolationForest
-from sklearn.ensemble import RandomForestRegressor
+import sklearn
 from ACME.ACME import ACME
 from exiffi_core.model import ExtendedIsolationForest
-
-from utils_reboot.datasets import Dataset, load_dataset
-from utils_reboot.models import load_model
-from utils_reboot.utils import (
-    generate_path,
-    save_element,
-    open_element,
-    initialize_perf_dict,
-)
-from utils_reboot.exp_config import check_arguments
+from sklearn.ensemble import IsolationForest, RandomForestRegressor
 from sklearn.metrics import (
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
     accuracy_score,
     average_precision_score,
     balanced_accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
+from tqdm import tqdm, trange
+from utils_reboot.datasets import Dataset, load_dataset
+from utils_reboot.exp_config import check_arguments
+from utils_reboot.models import load_model
+from utils_reboot.utils import (
+    generate_path,
+    initialize_perf_dict,
+    open_element,
+    save_element,
+)
+from model_reboot.interpretability_module import diffi_ib
 
 warnings.filterwarnings("ignore")
 
@@ -109,11 +106,7 @@ def compute_global_importances(
         I.fit(dataset.X_train)
     if interpretation == "DIFFI":
         fi, _ = diffi_ib(I, dataset.X_test)
-    elif (
-        interpretation == "EXIFFI"
-        or interpretation == "EXIFFI+"
-        or interpretation == "C_EXIFFI+"
-    ):
+    elif interpretation in ["EXIFFI", "EXIFFI+", "C_EXIFFI"]:
         fi = I.global_importances(dataset.X_test, p)
     elif interpretation == "RandomForest":
         rf = RandomForestRegressor()
@@ -632,10 +625,7 @@ def experiment_global_importances(
     for i in tqdm(trange(n_runs, desc="Global Importances runs")):
         set_seed(seed=seed + i)
         fi[i, :] = compute_global_importances(
-            I = I,
-            dataset = dataset,
-            p=p,
-            interpretation=interpretation
+            I=I, dataset=dataset, p=p, interpretation=interpretation
         )
 
     fi = pd.DataFrame(fi, columns=dataset.feature_names)
@@ -688,7 +678,9 @@ def experiment_local_importances(
     return cumul_imp, labels.astype(int)
 
 
-def compute_plt_data(imp_path: str, dataset: Dataset, filetype: str = "npz") -> tuple[dict,list[str]]:
+def compute_plt_data(
+    imp_path: str, dataset: Dataset, filetype: str = "npz"
+) -> tuple[dict, list[str]]:
     """
     Compute statistics on the global feature importances obtained from experiment_global_importances. These will then be used in the score_plot method.
 
@@ -706,15 +698,15 @@ def compute_plt_data(imp_path: str, dataset: Dataset, filetype: str = "npz") -> 
     elif filetype == "csv.gz":
         fi = open_element(imp_path, filetype="csv.gz").values
 
-    #NOTE: Separate columns containing inf values from normal columns
+    # NOTE: Separate columns containing inf values from normal columns
     # and remove them from fi before computing the statistics.
 
-    normal_cols=0
-    normal_cols_idx=[]
-    inf_cols=0
-    inf_cols_idx=[]
+    normal_cols = 0
+    normal_cols_idx = []
+    inf_cols = 0
+    inf_cols_idx = []
     for i in range(fi.shape[1]):
-        col = fi[:,i]
+        col = fi[:, i]
         if np.isinf(col).any():
             inf_cols = inf_cols + 1
             inf_cols_idx.append(i)
@@ -722,10 +714,10 @@ def compute_plt_data(imp_path: str, dataset: Dataset, filetype: str = "npz") -> 
             normal_cols = normal_cols + 1
             normal_cols_idx.append(i)
 
-    col_names=dataset.feature_names
+    col_names = dataset.feature_names
     normal_columns = [col_names[i] for i in normal_cols_idx]
     inf_columns = [col_names[i] for i in inf_cols_idx]
-    fi = fi[:,normal_cols_idx]
+    fi = fi[:, normal_cols_idx]
 
     # Handle the case in which there are some np.nan in the fi array
     if np.isnan(fi).any():
@@ -949,6 +941,7 @@ def contamination_in_training_precision_evaluation(
         return precisions, importances
     return precisions
 
+
 def performance(
     y_pred: np.array,
     y_true: np.array,
@@ -1066,9 +1059,8 @@ def ablation_EIF_plus(
         precisions.append(precision)
     return precisions
 
-def setup_exp(
-    args: Namespace
-) -> Tuple[Dataset,ExtendedIsolationForest]:
+
+def setup_exp(args: Namespace) -> Tuple[Dataset, ExtendedIsolationForest]:
     """
     Function to check the validity of the command line arguments,
     load the dataset and the model
@@ -1101,6 +1093,7 @@ def setup_exp(
     )
 
     return dataset, model
+
 
 def get_precision_file(
     dataset: Dataset,

@@ -15,7 +15,7 @@ v=(4 3 2 0 0 0)
 n_dims=6
 radius=2
 moon_radius=5
-axes=(3 5)
+axes=(0 1)
 
 python $script_path \
   --syn_data_name "$syn_data_name" \
@@ -29,4 +29,12 @@ python $script_path \
   --moon_radius $moon_radius \
   --axes "${axes[@]}" \
   --plot_syn_data \
-  --show_plot
+  --save_plot
+
+#NOTE: plot options
+# --plot_syn_data \
+# --save_plot \
+# --show_plot
+
+#NOTE: save options
+# --save_syn_data \
