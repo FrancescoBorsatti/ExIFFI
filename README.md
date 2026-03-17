@@ -70,6 +70,25 @@ The command line arguments are the same used in `launch_exp_GFI`.
 ./launch_scoremaps_exp TEP_ACME EIF+ EXIFFI+
 ```
 
+### Performance Metrics Experiments
+
+In order to compute the `AD` performance metrics for a `model-interpretation`
+pair two scripts can be used:
+- `metrics_exp.py` → this scripts computes the performance metrics and logs the
+fit, predict and importance computation times in a dictionary.
+- `get_metrics.py` → this scripts prints out the metrics table in a nice
+markdown format and prints out the fit, predict and importance times.
+
+In order to launch the experiment use the `launch_metrics_exp` script where it
+is possible to define the lists `model_names` and `interpretations` to run the
+experiment on multiple `model-interpretation` pairs. Finally the script can be
+launched as follows:
+
+```bash
+./launch_metrics_exp TEP_ACME 1 # to compute both metrics and times
+./launch_metrics_exp TEP_ACME # to compute just the times
+```
+
 ### Feature Selection Experiments
 
 This script performs the feature selection experiment and produces the plot
