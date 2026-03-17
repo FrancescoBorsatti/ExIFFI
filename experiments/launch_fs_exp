@@ -53,7 +53,6 @@ else
       --seed $seed \
       --file_pos $file_pos \
       --feature_selection \
-      --random_feature_selection \
       --plot_feature_selection \
       --change_ylim \
       --rotation
