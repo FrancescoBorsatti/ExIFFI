@@ -2,30 +2,22 @@
 Python script to compute the AD metrics
 """
 
-import argparse
 import os
 import pickle
 import sys
 import time
-import numpy as np
+
 import ipdb
-from tqdm import tqdm, trange
+import numpy as np
+from tqdm import trange
 
 cwd = os.getcwd()
 sys.path.append("..")
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
-
 import warnings
 
-from exiffi_core.model import (  # noqa: E402
-    ExtendedIsolationForest,
-    IsolationForest,
-)
-
 from model_reboot.interpretability_module import *  # noqa: E402
-from utils_reboot.datasets import load_dataset  # noqa: E402
+from utils_reboot.exp_config import define_arguments
 from utils_reboot.experiments import (  # noqa: E402
     compute_imp_time_kernelSHAP,
     compute_local_imp_time,
@@ -33,22 +25,20 @@ from utils_reboot.experiments import (  # noqa: E402
     set_contamination,
     setup_exp,
 )
-from utils_reboot.models import load_model  # noqa: E402
 from utils_reboot.plots import *  # noqa: E402, F403
-from utils_reboot.utils import (  # noqa: E402
-    generate_path,
+from utils_reboot.utils import (
+    generate_path,  # noqa: E402
     get_most_recent_file,
     initialize_perf_dict,
     open_element,
 )
-from utils_reboot.exp_config import define_arguments
 
-# modelgnore all warnings
+# ignore all warnings
 warnings.filterwarnings("ignore")
 
-args = define_arguments(exp_name = "metrics_exp")
+args = define_arguments(exp_name="metrics_exp")
 
-dataset, model = setup_exp(args = args)
+dataset, model = setup_exp(args=args)
 
 os.chdir("../")
 cwd = os.getcwd()
@@ -78,7 +68,9 @@ if args.clear_dict:
     try:
         del dict_time["fit"][model.name][dataset.name]
         del dict_time["predict"][model.name][dataset.name]
-        del dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name]
+        del dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][
+            dataset.name
+        ]
     except KeyError:
         print("#" * 50)
         print(f"Performance dictionary entries already empty for {dataset.name}")
@@ -104,11 +96,17 @@ for i in trange(args.n_runs, desc="Fit Predict experiment runs"):
 
     try:
         dict_time["fit"][model.name].setdefault(dataset.name, []).append(fit_time)
-    except:
-        print("Model not recognized: creating a new key in the dict_time for the new model")
-        dict_time["fit"].setdefault(model.name, {}).setdefault(dataset.name, []).append(fit_time)
+    except Exception as _:
+        print(
+            "Model not recognized: creating a new key in the dict_time for the new model"
+        )
+        dict_time["fit"].setdefault(model.name, {}).setdefault(dataset.name, []).append(
+            fit_time
+        )
 
-    contamination = set_contamination(dataset=dataset, cli_contamination=args.contamination)
+    contamination = set_contamination(
+        dataset=dataset, cli_contamination=args.contamination
+    )
 
     start_time = time.time()
 
@@ -119,20 +117,29 @@ for i in trange(args.n_runs, desc="Fit Predict experiment runs"):
         score = model.predict_score(dataset.X_test)
         y_pred = model.predict_labels(dataset.X_test)
 
-    anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
     predict_time = time.time() - start_time
-    predict_sample_time = predict_time / len(anomalies)
+    predict_sample_time = predict_time / dataset.X_test.shape[0]
 
     try:
 
-        dict_time["predict"][model.name].setdefault(dataset.name, []).append(predict_time)
-        dict_time["predict_sample"][model.name].setdefault(dataset.name, []).append(predict_sample_time)
+        dict_time["predict"][model.name].setdefault(dataset.name, []).append(
+            predict_time
+        )
+        dict_time["predict_sample"][model.name].setdefault(dataset.name, []).append(
+            predict_sample_time
+        )
 
     except Exception as _:
 
-        print("Model not recognized: creating a new key in the dict_time for the new model")
-        dict_time["predict"].setdefault(model.name, {}).setdefault(dataset.name, []).append(predict_time)
-        dict_time["predict_sample"].setdefault(model.name, {}).setdefault(dataset.name, []).append(predict_sample_time)
+        print(
+            "Model not recognized: creating a new key in the dict_time for the new model"
+        )
+        dict_time["predict"].setdefault(model.name, {}).setdefault(
+            dataset.name, []
+        ).append(predict_time)
+        dict_time["predict_sample"].setdefault(model.name, {}).setdefault(
+            dataset.name, []
+        ).append(predict_sample_time)
 
 if args.compute_GFI:
     if args.interpretation == "KernelSHAP":
@@ -147,13 +154,24 @@ if args.compute_GFI:
         )
 
         try:
-            dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][dataset.name].setdefault(f"background_{int(args.background*100)}", []).append(importances_time)
+            dict_time_imp["importances"][f"{args.model_name}_{args.interpretation}"][
+                dataset.name
+            ].setdefault(f"background_{int(args.background*100)}", []).append(
+                importances_time
+            )
         except Exception as _:
-            print("Model not recognized: creating a new key in the dict_time_imp for the new model")
-            dict_time_imp["importances"].setdefault(f"{args.model_name}_{args.interpretation}", {}).setdefault(dataset.name, {}).setdefault(
+            print(
+                "Model not recognized: creating a new key in the dict_time_imp for the new model"
+            )
+            dict_time_imp["importances"].setdefault(
+                f"{args.model_name}_{args.interpretation}", {}
+            ).setdefault(dataset.name, {}).setdefault(
                 f"background_{int(args.background*100)}", []
-            ).append(importances_time)
+            ).append(
+                importances_time
+            )
     else:
+        anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
         importances_time = compute_local_imp_time(
             I=model,
             dataset=dataset,

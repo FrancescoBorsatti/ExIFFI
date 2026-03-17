@@ -366,7 +366,7 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
 
 
 def open_element(file_path: str, filetype: str = "pickle") -> Union[
-    np.array,
+    np.ndarray,
     list,
     pd.DataFrame,
     Type[Precisions],
@@ -585,25 +585,20 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
             "fit": {
                 "EIF+": {},
                 "EIF": {},
-                "EIF+_centroid": {},
-                "EIF+_distrib_split": {},
-                "EIF+_centroid_split": {},
+                "IF": {},
             },
             "predict": {
                 "EIF+": {},
                 "EIF": {},
-                "EIF+_centroid": {},
-                "EIF+_distrib_split": {},
-                "EIF+_centroid_split": {},
+                "IF": {},
             },
             "predict_sample": {
                 "EIF+": {},
                 "EIF": {},
-                "EIF+_centroid": {},
-                "EIF+_distrib_split": {},
-                "EIF+_centroid_split": {},
+                "IF": {},
             },
         }
+
         with open(dict_time_path, "wb") as file:
             pickle.dump(dict_time, file)
 
@@ -622,9 +617,9 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
                 "EIF+_KernelSHAP": {},
                 "EIF_EXIFFI": {},
                 "EIF+_EXIFFI+": {},
-                "EIF+_centroid_EXIFFI+": {},
-                "EIF+_distrib_split_EXIFFI+": {},
-                "EIF+_centroid_split_EXIFFI+": {},
+                "IF_DIFFI": {},
+                "IF_ACME": {},
+                "IF_KernelSHAP": {},
             },
         }
         with open(dict_time_imp_path, "wb") as file:

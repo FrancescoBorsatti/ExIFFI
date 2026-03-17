@@ -20,6 +20,11 @@ import shap
 import sklearn
 from ACME.ACME import ACME
 from exiffi_core.model import ExtendedIsolationForest
+from model_reboot.interpretability_module import (
+    diffi_ib,
+    local_diffi,
+    local_diffi_batch,
+)
 from sklearn.ensemble import IsolationForest, RandomForestRegressor
 from sklearn.metrics import (
     accuracy_score,
@@ -36,11 +41,11 @@ from utils_reboot.exp_config import check_arguments
 from utils_reboot.models import load_model
 from utils_reboot.utils import (
     generate_path,
+    get_most_recent_file,
     initialize_perf_dict,
     open_element,
     save_element,
 )
-from model_reboot.interpretability_module import diffi_ib
 
 warnings.filterwarnings("ignore")
 
@@ -1092,9 +1097,7 @@ def setup_exp(args: Namespace) -> Tuple[Dataset, ExtendedIsolationForest]:
 
 
 def get_precision_file(
-    dataset: Dataset,
-    model_name: str = "EIF",
-    scenario: int = 2,
+    dataset: Dataset, model_name: str = "EIF", scenario: int = 2, file_pos: int = 0
 ) -> pd.DataFrame:
     """
     Function to retrieve the metrics dataframe obtained in the last experiment
@@ -1103,6 +1106,7 @@ def get_precision_file(
         dataset (Dataset): dataset object
         model_name (str): name of the model
         scenario (int): training scenario
+        file_pos (int): position of the metrics file to load
     """
     path = generate_path(
         basepath=cwd,
@@ -1113,10 +1117,10 @@ def get_precision_file(
             "experiments",
             "metrics",
             model_name,
-            f"scenario_{args.scenario}",
+            f"scenario_{scenario}",
         ],
     )
-    file_path = get_most_recent_file(path, file_pos=args.file_pos)
+    file_path = get_most_recent_file(path, file_pos=file_pos)
     results = open_element(file_path)
     print("#" * 50)
     print(f"Performance metrics table loaded from: {file_path}")

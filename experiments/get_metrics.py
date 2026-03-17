@@ -18,7 +18,6 @@ from utils_reboot.experiments import (
     setup_exp,
     get_precision_file,
 )
-from utils_reboot.datasets import Dataset
 from utils_reboot.exp_config import define_arguments
 
 args = define_arguments(exp_name = "get_metrics")
@@ -41,8 +40,9 @@ experiment_path = generate_path(basepath=cwd, folders=["experiments"])
 
 if args.return_perf:
     print("#" * 50)
-    print(f"Performance values for{dataset.name} {args.model_name}scenario{str(args.scenario)}")
+    print(f"Performance values for{dataset.name} {args.model_name} scenario_{str(args.scenario)}")
     metrics_df = get_precision_file(dataset, model.name, args.scenario).T
+    metrics_df.index.name = "Metrics"
     print(metrics_df.to_markdown())
     print("#" * 50)
 

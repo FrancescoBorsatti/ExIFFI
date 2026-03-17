@@ -17,10 +17,10 @@ piade_prefix=${cfg[piade_prefix]}
 
 # For TEP
 
-# model_names=("EIF+" "EIF" "EIF" "IF" "IF")
+# model_names=("EIF+" "IF")
+# interpretations=("EXIFFI+" "DIFFI")
 model_names=("EIF+")
-interpretations=("EXIFFI+")
-# interpretations=("ACME" "EXIFFI" "ACME" "ACME" "DIFFI")
+interpretations=("ACME")
 n_estimators=300
 scenario=2
 n_runs=10
@@ -28,7 +28,7 @@ n_runs_imp=10
 background=0.25
 seed=0
 file_pos=0
-mode="times"
+mode="metrics"
 contamination=0.15
 
 n_models=${#model_names[@]}
@@ -41,7 +41,31 @@ for (( i=0; i<n_models; i++ )); do
     echo "Performance metrics experiment for model ${model_names[$i]} and interpretation ${interpretations[$i]}"
     echo "-----------------------------------------------------------------------------------------------------"
 
-    if [[ "$dataset_name" != ${piade_prefix}[1-5] && "$dataset_name" != ${piade_prefix}[1-5]${piade_suffix} ]]; then
+    if [[ "$dataset_name" = ${piade_prefix}[1-5] && "$dataset_name" = ${piade_prefix}[1-5]${piade_suffix} ]]; then
+
+      echo "-----------------------------------------------------------------------------------------------------"
+      echo "dataset_name is $dataset_name, so we just perform the time experiments"
+      echo "-----------------------------------------------------------------------------------------------------"
+
+      mode="times"
+
+      uv run $script_path \
+          --dataset_name "$dataset_name" \
+          --dataset_path "$dataset_path" \
+          --model "${model_names[$i]}" \
+          --interpretation "${interpretations[$i]}" \
+          --n_estimators $n_estimators \
+          --scenario $scenario \
+          --pre_process \
+          --compute_GFI \
+          --contamination $contamination \
+          --n_runs $n_runs \
+          --n_runs_imp $n_runs_imp \
+          --background $background \
+          --seed $seed \
+          --file_pos $file_pos
+
+    else
 
       echo "-----------------------------------------------------------------------------------------------------"
       echo "dataset_name is $dataset_name, so running metrics_exp with compute_perf"
@@ -62,30 +86,6 @@ for (( i=0; i<n_models; i++ )); do
           --n_runs $n_runs \
           --n_runs_imp $n_runs_imp \
           --compute_perf \
-          --background $background \
-          --seed $seed \
-          --file_pos $file_pos
-
-    else
-
-      echo "-----------------------------------------------------------------------------------------------------"
-      echo "dataset_name is $dataset_name, so we just perform the time experiments"
-      echo "-----------------------------------------------------------------------------------------------------"
-
-      mode="times"
-
-      uv run $script_path \
-          --dataset_name "$dataset_name" \
-          --dataset_path "$dataset_path" \
-          --model "${model_names[$i]}" \
-          --interpretation "${interpretations[$i]}" \
-          --n_estimators $n_estimators \
-          --scenario $scenario \
-          --pre_process \
-          --compute_GFI \
-          --contamination $contamination \
-          --n_runs $n_runs \
-          --n_runs_imp $n_runs_imp \
           --background $background \
           --seed $seed \
           --file_pos $file_pos
