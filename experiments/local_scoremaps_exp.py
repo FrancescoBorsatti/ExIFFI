@@ -2,33 +2,33 @@
 Python script to produce the local scoremaps for a pair of features
 """
 
-import sys
 import os
-import argparse
+import sys
+
 import ipdb
 
 cwd = os.getcwd()
 sys.path.append("..")
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
-
 from utils_reboot.exp_config import define_arguments
-from utils_reboot.models import load_model
-from utils_reboot.plots import importance_map
-from utils_reboot.utils import (
-    get_feature_indexes,
-    generate_path,
-    open_element,
-)
 from utils_reboot.experiments import set_contamination, setup_exp
+from utils_reboot.plots import importance_map
+from utils_reboot.utils import generate_path, get_feature_indexes, open_element
 
 args = define_arguments(exp_name="local_scoremaps")
 
-dataset, model = setup_exp(args = args)
+dataset, model = setup_exp(args=args)
 
-scoremap_feats_dict = open_element(os.path.join(cwd,"scoremap_feats.json"),"json")
-feats_plot = get_feature_indexes(dataset=dataset, f1=scoremap_feats_dict[dataset.name][0], f2=scoremap_feats_dict[dataset.name][1])
+scoremap_feats_dict = open_element(os.path.join(cwd, "scoremap_feats.json"), "json")
+
+if dataset.name in scoremap_feats_dict.keys():
+    feats_plot = get_feature_indexes(
+        dataset=dataset,
+        f1=scoremap_feats_dict[dataset.name][0],
+        f2=scoremap_feats_dict[dataset.name][1],
+    )
+else:
+    feats_plot = (0, 1)
 
 print("#" * 50)
 print("Local Scoremaps Experiment")

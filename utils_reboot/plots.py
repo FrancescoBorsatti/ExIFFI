@@ -1042,7 +1042,7 @@ def importance_map(
             + interpretation
             + f"_{str(scenario)}"
             + f"_feat_{feats_plot[0]}_{feats_plot[1]}"
-            + ".pdf"
+            + ".png"
         )
     else:
         filename = (
@@ -1053,7 +1053,7 @@ def importance_map(
             + interpretation
             + f"_{str(scenario)}"
             + f"_feat_{feats_plot[0]}_{feats_plot[1]}"
-            + f"_{model.eta}_{int(contamination * 100)}_{model.n_estimators}.pdf"
+            + f"_{model.eta}_{int(contamination * 100)}_{model.n_estimators}.png"
         )
 
     if show_plot:

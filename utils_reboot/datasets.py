@@ -280,7 +280,8 @@ class Dataset:
 
     def pre_process(self, scaler_type: int = 1) -> None:
         """
-        Normalize the data using `StansardScaler()` from `sklearn.preprocessing`.
+        Normalize the data using a scaler defined
+        by scaler_type
 
         Returns:
            The dataset is normalized in place.
