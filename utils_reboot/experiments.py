@@ -20,32 +20,21 @@ import shap
 import sklearn
 from ACME.ACME import ACME
 from exiffi_core.model import ExtendedIsolationForest
-from model_reboot.interpretability_module import (
-    diffi_ib,
-    local_diffi,
-    local_diffi_batch,
-)
+from model_reboot.interpretability_module import (diffi_ib, local_diffi,
+                                                  local_diffi_batch)
+from scipy.stats import pearsonr
 from sklearn.ensemble import IsolationForest, RandomForestRegressor
-from sklearn.metrics import (
-    accuracy_score,
-    average_precision_score,
-    balanced_accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
-)
+from sklearn.feature_selection import mutual_info_regression
+from sklearn.metrics import (accuracy_score, average_precision_score,
+                             balanced_accuracy_score, f1_score,
+                             precision_score, recall_score, roc_auc_score)
 from tqdm import tqdm, trange
 from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.exp_config import check_arguments
 from utils_reboot.models import load_model
-from utils_reboot.utils import (
-    generate_path,
-    get_most_recent_file,
-    initialize_perf_dict,
-    open_element,
-    save_element,
-)
+from utils_reboot.utils import (generate_path, get_most_recent_file,
+                                initialize_perf_dict, open_element,
+                                save_element)
 
 warnings.filterwarnings("ignore")
 
@@ -1126,3 +1115,77 @@ def get_precision_file(
     print(f"Performance metrics table loaded from: {file_path}")
     print("#" * 50)
     return results
+
+def compute_sensor_interactions(data: Dataset, tol: float = 0.05) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Function to perform the sensor interactions experiment. For each pair of features
+    in the input dataframe it computes the Pearson correlation coefficient and the mutual
+    information coefficients and returns two matrices (in form of dataframes) containig the
+    values of the selected coefficients for each feature pair.
+
+    Args:
+        data (Dataset): dataset of sensor measurements on which to compute the sensor interactions
+        tol (float): tolerance value to consider the correlation between two variables as negligible
+
+    Returns:
+        corr_df, mi_df (Tuple[pd.DataFrame, pd.DataFrame]): dataframes with the correlation and mutual information
+        values for each feature pair
+    """
+
+    X = data.X
+    M = X.shape[1]
+
+    corr_matrix = np.zeros((M, M))
+    mi_matrix = np.zeros((M, M))
+    corr_counter, mi_counter, corr_and_mi_counter = 0, 0, 0
+
+    for i in range(M):
+        for j in range(M):
+
+            x = X[:, i]
+            y = X[:, j]
+
+            print("-"*50)
+            print(f"Computing interactions between sensors {data.feature_names[i]} and {data.feature_names[j]}")
+            print("-"*50)
+
+            # Pearson
+            corr = np.corrcoef(x, y)[0, 1]
+            corr_matrix[i, j] = corr
+
+            # Mutual Information
+            mi = mutual_info_regression(x.reshape(-1,1), y)[0]
+            mi_matrix[i, j] = mi
+
+            if abs(corr) < tol:
+                print("-"*50)
+                print(f"Correlation between {data.feature_names[i]} and {data.feature_names[j]} less than the tolerance → not correlated")
+                print("-"*50)
+                corr_counter+=1
+
+            if mi > 0:
+                print("-"*50)
+                print(f"Mutual information between {data.feature_names[i]} and {data.feature_names[j]} positive → not correlated")
+                print("-"*50)
+                mi_counter+=1
+
+            if (abs(corr) < tol) and (mi > 0):
+                print("-"*50)
+                print(f"Mutual information positive and correlation less than the tolerance between {data.feature_names[i]} and {data.feature_names[j]} → highly not correlated")
+                print("-"*50)
+                corr_and_mi_counter+=1
+
+    print("-"*50)
+    print("Sensor interaction experiment results")
+    print(f"Number of small correlated feature pairs: {corr_counter}/{M*M} ({(corr_counter/(M*M))*100}%)")
+    print(f"Number positive mutual information feature pairs: {mi_counter}/{M*M} ({(mi_counter/(M*M))*100}%)")
+    print(f"Number of highly uncorrelated feature pairs: {corr_and_mi_counter}/{M*M} ({(corr_and_mi_counter/(M*M))*100}%)")
+    print("-"*50)
+
+    corr_df, mi_df = pd.DataFrame(corr_matrix), pd.DataFrame(mi_matrix)
+    corr_df.columns = data.feature_names
+    corr_df.index = data.feature_names
+    mi_df.columns = data.feature_names
+    mi_df.index = data.feature_names
+
+    return corr_df, mi_df

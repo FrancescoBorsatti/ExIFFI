@@ -9,10 +9,6 @@ import ipdb
 
 cwd = os.getcwd()
 sys.path.append("..")
-# sys.path.append("../../src/common/append_to_path/append_to_path/")
-
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
 
 from utils_reboot.datasets import load_dataset
 from utils_reboot.experiments import (
