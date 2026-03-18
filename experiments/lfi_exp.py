@@ -10,11 +10,8 @@ import ipdb
 cwd = os.getcwd()
 sys.path.append("..")
 
-from utils_reboot.datasets import load_dataset  # noqa: E402
 from utils_reboot.exp_config import define_arguments
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
 from utils_reboot.experiments import (  # noqa: E402
     compute_bars,
     compute_local_importances_ACME,
@@ -23,7 +20,6 @@ from utils_reboot.experiments import (  # noqa: E402
     set_contamination,
     setup_exp
 )
-from utils_reboot.models import load_model  # noqa: E402
 from utils_reboot.plots import score_plot  # noqa: E402
 from utils_reboot.utils import (  # noqa: E402
     generate_path,
