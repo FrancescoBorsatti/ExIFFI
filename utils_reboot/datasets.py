@@ -1,38 +1,43 @@
 from __future__ import annotations
-import sys
-import os
+
 import json
+import os
+import sys
+
 import ipdb
-from pandas.core.nanops import _na_for_min_count
 
 sys.path.append("..")
 
-from typing import Type, Optional, List
-import numpy.typing as npt
-from dataclasses import dataclass, field
-
-from scipy.io import loadmat
-import mat73
-
-import numpy as np
-import random
-import pandas as pd
-from glob import glob
-
-from sklearn.model_selection import StratifiedShuffleSplit as SSS
-from sklearn.preprocessing import StandardScaler
-import random
 import copy
+import random
+from dataclasses import dataclass, field
+from glob import glob
+from typing import List, Optional, Type
 
+import mat73
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+from scipy.io import loadmat
+from sklearn.model_selection import StratifiedShuffleSplit as SSS
 from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
     MaxAbsScaler,
+    MinMaxScaler,
     RobustScaler,
+    StandardScaler,
 )
 
 
-def set_seed(seed):
+def set_seed(seed: int = 0) -> None:
+    """
+    This function sets the seed for the random and np.random classes
+
+    Args:
+        seed (int): integer seed to set
+
+    Returns:
+        None: this function simply sets the seed and does not return anything
+    """
     random.seed(seed)
     np.random.seed(seed)
 
@@ -373,7 +378,7 @@ class Dataset:
 
 
 def load_dataset(
-    dataset_name: str = "TEP_ACME",
+    dataset_name: str = "tep_acme",
     dataset_path: str = os.getcwd(),
     downsample: bool = False,
     downsample_size: int = 7500,
@@ -385,7 +390,6 @@ def load_dataset(
     Function to load a dataset
 
     Args:
-
         dataset_name (str): dataset name, by default TEP_ACME
         dataset_path (str): path to the dataset file, by default current working directory
         downsample (bool): weather to downsample the dataset or not, by default False
@@ -393,6 +397,9 @@ def load_dataset(
         scenario (int): training scenario, by default 2
         pre_process (bool): weather to pre process the dataset or not
         scaler_type (int): type of scaler to use to scale the data, by default 1
+
+    Returns:
+        dataset (Dataset): an instance of the Dataset class
     """
 
     dataset = Dataset(
@@ -402,7 +409,6 @@ def load_dataset(
     )
     dataset.drop_duplicates()
 
-    # Downsample datasets with more than 7500 samples
     if dataset.shape[0] > downsample_size and downsample:
         dataset.downsample(max_samples=downsample_size)
 

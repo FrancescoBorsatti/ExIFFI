@@ -107,8 +107,7 @@ def define_arguments(
     parser.add_argument("--scenario", type=int, default=2, help="Scenario to run")
     parser.add_argument(
         "--downsample",
-        type=bool,
-        default=False,
+        action="store_true",
         help="If set, downsample the dataset if it has more than 7500 samples",
     )
     parser.add_argument(

@@ -20,21 +20,35 @@ import shap
 import sklearn
 from ACME.ACME import ACME
 from exiffi_core.model import ExtendedIsolationForest
-from model_reboot.interpretability_module import (diffi_ib, local_diffi,
-                                                  local_diffi_batch)
+from model_reboot.interpretability_module import (
+    diffi_ib,
+    local_diffi,
+    local_diffi_batch,
+)
 from scipy.stats import pearsonr
 from sklearn.ensemble import IsolationForest, RandomForestRegressor
 from sklearn.feature_selection import mutual_info_regression
-from sklearn.metrics import (accuracy_score, average_precision_score,
-                             balanced_accuracy_score, f1_score,
-                             precision_score, recall_score, roc_auc_score)
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    balanced_accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from tqdm import tqdm, trange
 from utils_reboot.datasets import Dataset, load_dataset
 from utils_reboot.exp_config import check_arguments
 from utils_reboot.models import load_model
-from utils_reboot.utils import (generate_path, get_most_recent_file,
-                                initialize_perf_dict, open_element,
-                                save_element)
+from utils_reboot.smd_dataset import SMDataset, load_smd_dataset
+from utils_reboot.utils import (
+    generate_path,
+    get_most_recent_file,
+    initialize_perf_dict,
+    open_element,
+    save_element,
+)
 
 warnings.filterwarnings("ignore")
 
@@ -615,7 +629,7 @@ def experiment_global_importances(
         fi (pd.DataFrame): A dataframe containing the GFI scores across the different runs
     """
 
-    fi = np.zeros(shape=(n_runs, dataset.X.shape[1]))
+    fi = np.zeros(shape=(n_runs, dataset.shape[1]))
     for i in tqdm(trange(n_runs, desc="Global Importances runs")):
         set_seed(seed=seed + i)
         fi[i, :] = compute_global_importances(
@@ -1050,7 +1064,9 @@ def ablation_EIF_plus(
     return precisions
 
 
-def setup_exp(args: Namespace) -> Tuple[Dataset, ExtendedIsolationForest]:
+def setup_exp(
+    args: Namespace,
+) -> Tuple[Union[Dataset, SMDataset], ExtendedIsolationForest]:
     """
     Function to check the validity of the command line arguments,
     load the dataset and the model
@@ -1059,20 +1075,32 @@ def setup_exp(args: Namespace) -> Tuple[Dataset, ExtendedIsolationForest]:
         args (Namespace): experiment configuration
 
     Returns:
-        dataset (Dataset): dataset to use for the experiment
+        dataset (Union[Dataset,SMDataset]): dataset to use for the experiment
         model (ExtendedIsolationForest): dataset to use for the experiment
     """
 
     check_arguments(model_name=args.model_name, interpretation=args.interpretation)
 
-    dataset = load_dataset(
-        dataset_name=args.dataset_name,
-        dataset_path=args.dataset_path,
-        downsample=args.downsample,
-        scenario=args.scenario,
-        pre_process=args.pre_process,
-        scaler_type=args.scaler_type,
-    )
+    if "machine" in args.dataset_name:
+
+        dataset = load_smd_dataset(
+            dataset_name=args.dataset_name,
+            dataset_path=args.dataset_path,
+            downsample=args.downsample,
+            pre_process=args.pre_process,
+            scaler_type=args.scaler_type,
+        )
+
+    else:
+
+        dataset = load_dataset(
+            dataset_name=args.dataset_name,
+            dataset_path=args.dataset_path,
+            downsample=args.downsample,
+            scenario=args.scenario,
+            pre_process=args.pre_process,
+            scaler_type=args.scaler_type,
+        )
 
     model = load_model(
         model_name=args.eval_model if args.exp_type == "fs_exp" else args.model_name,
@@ -1116,7 +1144,10 @@ def get_precision_file(
     print("#" * 50)
     return results
 
-def compute_sensor_interactions(data: Dataset, tol: float = 0.05) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+def compute_sensor_interactions(
+    data: Dataset, tol: float = 0.05
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Function to perform the sensor interactions experiment. For each pair of features
     in the input dataframe it computes the Pearson correlation coefficient and the mutual
@@ -1145,42 +1176,56 @@ def compute_sensor_interactions(data: Dataset, tol: float = 0.05) -> Tuple[pd.Da
             x = X[:, i]
             y = X[:, j]
 
-            print("-"*50)
-            print(f"Computing interactions between sensors {data.feature_names[i]} and {data.feature_names[j]}")
-            print("-"*50)
+            print("-" * 50)
+            print(
+                f"Computing interactions between sensors {data.feature_names[i]} and {data.feature_names[j]}"
+            )
+            print("-" * 50)
 
             # Pearson
             corr = np.corrcoef(x, y)[0, 1]
             corr_matrix[i, j] = corr
 
             # Mutual Information
-            mi = mutual_info_regression(x.reshape(-1,1), y)[0]
+            mi = mutual_info_regression(x.reshape(-1, 1), y)[0]
             mi_matrix[i, j] = mi
 
             if abs(corr) < tol:
-                print("-"*50)
-                print(f"Correlation between {data.feature_names[i]} and {data.feature_names[j]} less than the tolerance → not correlated")
-                print("-"*50)
-                corr_counter+=1
+                print("-" * 50)
+                print(
+                    f"Correlation between {data.feature_names[i]} and {data.feature_names[j]} less than the tolerance → not correlated"
+                )
+                print("-" * 50)
+                corr_counter += 1
 
             if mi > 0:
-                print("-"*50)
-                print(f"Mutual information between {data.feature_names[i]} and {data.feature_names[j]} positive → not correlated")
-                print("-"*50)
-                mi_counter+=1
+                print("-" * 50)
+                print(
+                    f"Mutual information between {data.feature_names[i]} and {data.feature_names[j]} positive → not correlated"
+                )
+                print("-" * 50)
+                mi_counter += 1
 
             if (abs(corr) < tol) and (mi > 0):
-                print("-"*50)
-                print(f"Mutual information positive and correlation less than the tolerance between {data.feature_names[i]} and {data.feature_names[j]} → highly not correlated")
-                print("-"*50)
-                corr_and_mi_counter+=1
+                print("-" * 50)
+                print(
+                    f"Mutual information positive and correlation less than the tolerance between {data.feature_names[i]} and {data.feature_names[j]} → highly not correlated"
+                )
+                print("-" * 50)
+                corr_and_mi_counter += 1
 
-    print("-"*50)
+    print("-" * 50)
     print("Sensor interaction experiment results")
-    print(f"Number of small correlated feature pairs: {corr_counter}/{M*M} ({(corr_counter/(M*M))*100}%)")
-    print(f"Number positive mutual information feature pairs: {mi_counter}/{M*M} ({(mi_counter/(M*M))*100}%)")
-    print(f"Number of highly uncorrelated feature pairs: {corr_and_mi_counter}/{M*M} ({(corr_and_mi_counter/(M*M))*100}%)")
-    print("-"*50)
+    print(
+        f"Number of small correlated feature pairs: {corr_counter}/{M*M} ({(corr_counter/(M*M))*100}%)"
+    )
+    print(
+        f"Number positive mutual information feature pairs: {mi_counter}/{M*M} ({(mi_counter/(M*M))*100}%)"
+    )
+    print(
+        f"Number of highly uncorrelated feature pairs: {corr_and_mi_counter}/{M*M} ({(corr_and_mi_counter/(M*M))*100}%)"
+    )
+    print("-" * 50)
 
     corr_df, mi_df = pd.DataFrame(corr_matrix), pd.DataFrame(mi_matrix)
     corr_df.columns = data.feature_names

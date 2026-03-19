@@ -13,6 +13,7 @@ dataset_path=${cfg[dataset_path]}
 tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
+smd_prefix=${cfg[smd_prefix]}
 piade_suffix=${cfg[piade_suffix]}
 
 model_name="$2"
@@ -49,7 +50,7 @@ if [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_pref
     --score_plot \
     --file_pos "$file_pos"
 
-elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; then
+elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
 
   echo "---------------------------------------------------"
   echo "Running GFI experiment for $dataset_name with true dataset contamination"
