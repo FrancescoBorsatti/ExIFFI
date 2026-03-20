@@ -13,6 +13,7 @@ dataset_path=${cfg[dataset_path]}
 tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
+smd_prefix=${cfg[smd_prefix]}
 
 model_name="${2:-EIF+}"
 interpretation="${3:-EXIFFI+}"
@@ -35,7 +36,7 @@ if [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
   echo "#############################################"
   exit 1
 
-elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; then
+elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
 
   echo "#############################################"
   echo "Starting feature selection for $dataset_name, with pre processing"
@@ -58,6 +59,7 @@ elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; t
       --seed $seed \
       --file_pos $file_pos \
       --feature_selection \
+      --random_feature_selection \
       --plot_feature_selection \
       --change_ylim \
       --rotation

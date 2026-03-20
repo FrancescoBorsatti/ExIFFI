@@ -796,18 +796,19 @@ def feature_selection(
                 if not inverse
                 else dataset.X_test[:, importances_indexes[number_of_features_dropped:]]
             )
-            dataset_shrinking.y = dataset.y
+            dataset_shrinking.y = dataset.y_test
             dataset_shrinking.drop_duplicates()
 
-            if scenario == 2:
-                dataset_shrinking.split_dataset(1 - dataset_shrinking.perc_outliers, 0)
-                dataset_shrinking.initialize_test()
-            else:
-                dataset_shrinking.initialize_train()
-                dataset_shrinking.initialize_test()
+            if "machine" not in dataset.name:
+                if scenario == 2:
+                    dataset_shrinking.split_dataset(1 - dataset_shrinking.perc_outliers, 0)
+                    dataset_shrinking.initialize_test()
+                else:
+                    dataset_shrinking.initialize_train()
+                    dataset_shrinking.initialize_test()
 
             try:
-                if dataset.X.shape[1] == dataset_shrinking.X.shape[1]:
+                if dataset.shape[1] == dataset_shrinking.shape[1]:
                     start_time = time.time()
                     I.fit(dataset_shrinking.X_train)
                     fit_time = time.time() - start_time
@@ -831,7 +832,7 @@ def feature_selection(
                     dataset_shrinking.y, score
                 )
                 runs[run] = avg_prec
-            except Exception as e:
+            except Exception as _:
                 runs[run] = np.nan
 
         precisions[number_of_features_dropped] = runs
