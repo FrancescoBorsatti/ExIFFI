@@ -163,7 +163,7 @@ def generate_moon_inliers(args: Namespace) -> np.ndarray:
 
     inliers, inliers_labels = make_moons(
         n_samples=(args.n_inliers, args.n_inliers),
-        noise=0.1,
+        noise=0.02,
         random_state=42,
     )
     inliers = inliers[inliers_labels == 0] * args.moon_radius
@@ -457,6 +457,12 @@ def moon_anomalies(args: Namespace, anomaly_axis: int = 0) -> np.ndarray:
     inliers = np.concatenate([inliers, inliers_labels], axis=1)
 
     outliers = generate_ball_inliers(args=args, n_samples=args.n_outliers)
+    scale = np.ones_like(outliers)
+    scale[:, 0] = 1
+    scale[:, 1] = 2
+    
+    outliers = outliers * scale + np.ones_like(outliers) * (scale**2)
+    
     outliers_labels = np.ones(shape=(outliers.shape[0], 1))
     outliers = np.concatenate([outliers, outliers_labels], axis=1)
 
