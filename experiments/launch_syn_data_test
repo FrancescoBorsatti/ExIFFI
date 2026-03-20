@@ -30,7 +30,7 @@ python $script_path \
   --axes "${axes[@]}" \
   --plot_syn_data \
   --save_syn_data \
-  --save_plot
+  --show_plot
 
   
 #NOTE: plot options
