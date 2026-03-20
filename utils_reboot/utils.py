@@ -5,7 +5,7 @@ Python module with utility functions of various types
 import json
 import os
 import pickle
-import random
+import ipdb
 import time
 from collections import namedtuple
 from typing import List, Optional, Type, Union
@@ -231,14 +231,17 @@ def get_feature_indexes(
 
     feature_names = dataset.feature_names
 
-    try:
-        idx1 = feature_names.index(f1)
-    except ValueError:
-        raise ValueError("Feature name not valid")
-    try:
-        idx2 = feature_names.index(f2)
-    except ValueError:
-        raise ValueError("Feature name not valid")
+    if (isinstance(f1, int)) and (isinstance(f2, int)):
+        return f1, f2
+    else:
+        try:
+            idx1 = feature_names.index(f1)
+        except ValueError:
+            raise ValueError("Feature name not valid")
+        try:
+            idx2 = feature_names.index(f2)
+        except ValueError:
+            raise ValueError("Feature name not valid")
 
     return idx1, idx2
 

@@ -7,18 +7,15 @@ import numbers
 import os
 import re
 from argparse import Namespace
-from numbers import Integral
 from typing import List, Tuple, Union
 
 import ipdb
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import seaborn as sns
 from sklearn.datasets import make_moons
 
 sns.set_theme(style="darkgrid")
-from matplotlib.ticker import AutoLocator, ScalarFormatter
 from utils_reboot.datasets import set_seed
 from utils_reboot.utils import generate_path, get_current_time, save_element
 

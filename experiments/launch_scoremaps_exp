@@ -42,7 +42,7 @@ if [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_pref
     --pre_process \
     --scaler_type 1
 
-elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; then
+elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
 
   echo "#############################################"
   echo "Local scoremaps for labelled dataset with pre processing"
@@ -54,9 +54,7 @@ elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; t
     --n_estimators "$n_estimators" \
     --model "$model_name" \
     --interpretation "$interpretation" \
-    --scenario $scenario \
-    --pre_process \
-    --scaler_type 4
+    --scenario $scenario
 
 else
 

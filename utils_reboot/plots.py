@@ -1,34 +1,37 @@
 from __future__ import annotations
 
-import os, ipdb
-import time
-from typing import Type, Optional, List
+import os
 import sys
+import time
+from typing import List, Optional, Type, Union
+
+import ipdb
 
 sys.path.append("../ExIFFI_original/experiments/")
 
-import numpy as np
-
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoLocator, ScalarFormatter
 import seaborn as sns
+from matplotlib.ticker import AutoLocator, ScalarFormatter
 
-sns.set()
-import pandas as pd
+sns.set_theme(style="darkgrid")
 import pickle
 from collections import namedtuple
 
-from utils_reboot.datasets import Dataset
-from utils_reboot.utils import open_element, get_most_recent_file
-from utils_reboot.experiments import compute_plt_data
+import pandas as pd
+from matplotlib import cm, colors
 from model_reboot.EIF_reboot import ExtendedIsolationForest
-from matplotlib import colors, cm
-from sklearn.ensemble import IsolationForest
 from model_reboot.interpretability_module import local_diffi
+from sklearn.ensemble import IsolationForest
+from utils_reboot.datasets import Dataset
+from utils_reboot.smd_dataset import SMDataset
+from utils_reboot.experiments import compute_plt_data
+from utils_reboot.utils import get_current_time, get_most_recent_file, open_element
+
 # from test_feature_selection import Precisions, Precisions_random
 
 
@@ -921,6 +924,9 @@ def importance_map(
 
     # Check if dataset.y_test has all zeros
     if np.all(dataset.y_test == 0):
+        print("-"*50)
+        print("Fitting the model again since the labels are all zeros")
+        print("-"*50)
         model.fit(dataset.X_train)
         if model.name == "sklearn_IF":
             labels = model.predict_labels(dataset.X_test)
@@ -1060,6 +1066,71 @@ def importance_map(
         plt.show()
     if save_plot:
         plt.savefig(path_plot + "/{}".format(filename), bbox_inches="tight")
+
+
+def lfi_scatter_plot(
+    dataset: Union[Dataset,SMDataset],
+    model: Type[ExtendedIsolationForest],
+    feats_plot: tuple = (0, 1),
+    scenario: int = 2,
+    interpretation: Optional[str] = "EXIFFI+",
+    imp_mat_path: str = os.getcwd(),
+    plot_path: str = os.getcwd(),
+    save_plot: bool = False,
+    show_plot: bool = False,
+) -> None:
+    """
+    Produce the LFI Scatter Plot
+
+    Args:
+        dataset (Type[Dataset]): Input dataset
+        model (Type[ExtendedIsolationForest]): The AD model.
+        imp_mat_path (str): path to the LFI importance matrix
+        plot_path (Optional[str], optional): The path where the plot will be saved. Defaults to os.getcwd().
+        save_plot (Optional[bool], optional): A boolean indicating whether the plot should be saved. Defaults to True.
+        show_plot (Optional[bool], optional): A boolean indicating whether the plot should be displayed. Defaults to False.
+        feats_plot (Optional[tuple], optional): The features to be plotted. Defaults to (0,1).
+        scenario (Optional[int], optional): The scenario number. Defaults to 2.
+        interpretation (Optional[str], optional): Name of the interpretation model used. Defaults to "EXIFFI+".
+
+    Returns:
+        The function produces the LFI scatter plot (and eventually saves it) but does not return anything
+    """
+
+    imp_mat = open_element(imp_mat_path,filetype="csv.gz")
+    if isinstance(imp_mat, pd.DataFrame):
+        imp_mat = imp_mat.values
+    else:
+        print("Importance matrix must be a pd.DataFrame")
+        return
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    ax.grid(alpha=0)
+
+    imp_x = imp_mat[:, feats_plot[0]]
+    imp_y = imp_mat[:, feats_plot[1]]
+
+    ax.scatter(
+        imp_x,
+        imp_y,
+        c="blue",
+    )
+
+    ax.set_xlabel(f"Feature {feats_plot[0]}")
+    ax.set_ylabel(f"Feature {feats_plot[1]}")
+    ax.set_title(f"LFI Scatter Plot {dataset.name} {model.name} {interpretation}")
+    ax.axis("equal")
+
+    if save_plot:
+        filename = f"{get_current_time()}_lfi_scatter_plot_{dataset.name}_{model.name}_{interpretation}_scenario_{scenario}.png"
+        filepath = os.path.join(plot_path, filename)
+        plt.savefig(filepath, bbox_inches="tight", dpi=300)
+        print("-" * 50)
+        print(f"Plot saved at {filepath}")
+        print("-" * 50)
+
+    if show_plot:
+        plt.show()
 
 
 def gfi_over_contamination(

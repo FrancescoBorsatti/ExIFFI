@@ -152,7 +152,10 @@ def compute_local_importances(
     if fit_model:
         I.fit(dataset.X_train)
 
-    y_pred = I._predict(dataset.X_test, p).astype(int)
+    if I.name == "sklearn_IF":
+        y_pred = I.predict_labels(dataset.X_test).astype(int)
+    else:
+        y_pred = I._predict(dataset.X_test, p).astype(int)
     anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
 
     print("Computing Local Importances...")
@@ -795,16 +798,22 @@ def feature_selection(
             if "machine" not in dataset.name:
 
                 dataset_shrinking.X = (
-                    dataset.X_test[:, importances_indexes[: d - number_of_features_dropped]]
+                    dataset.X_test[
+                        :, importances_indexes[: d - number_of_features_dropped]
+                    ]
                     if not inverse
-                    else dataset.X_test[:, importances_indexes[number_of_features_dropped:]]
+                    else dataset.X_test[
+                        :, importances_indexes[number_of_features_dropped:]
+                    ]
                 )
 
                 dataset_shrinking.y = dataset.y_test
                 dataset_shrinking.drop_duplicates()
 
                 if scenario == 2:
-                    dataset_shrinking.split_dataset(1 - dataset_shrinking.perc_outliers, 0)
+                    dataset_shrinking.split_dataset(
+                        1 - dataset_shrinking.perc_outliers, 0
+                    )
                     dataset_shrinking.initialize_test()
                 else:
                     dataset_shrinking.initialize_train()
@@ -813,21 +822,31 @@ def feature_selection(
             else:
 
                 dataset_shrinking.X_train = (
-                    dataset.X_train[:, importances_indexes[: d - number_of_features_dropped]]
+                    dataset.X_train[
+                        :, importances_indexes[: d - number_of_features_dropped]
+                    ]
                     if not inverse
-                    else dataset.X_train[:, importances_indexes[number_of_features_dropped:]]
+                    else dataset.X_train[
+                        :, importances_indexes[number_of_features_dropped:]
+                    ]
                 )
                 dataset_shrinking.X_test = (
-                    dataset.X_test[:, importances_indexes[: d - number_of_features_dropped]]
+                    dataset.X_test[
+                        :, importances_indexes[: d - number_of_features_dropped]
+                    ]
                     if not inverse
-                    else dataset.X_test[:, importances_indexes[number_of_features_dropped:]]
+                    else dataset.X_test[
+                        :, importances_indexes[number_of_features_dropped:]
+                    ]
                 )
 
             try:
                 if dataset.shape[1] == dataset_shrinking.shape[1]:
-                    print("-"*50)
-                    print(f"dataset and dataset_shrinking with same shape: {dataset.shape}")
-                    print("-"*50)
+                    print("-" * 50)
+                    print(
+                        f"dataset and dataset_shrinking with same shape: {dataset.shape}"
+                    )
+                    print("-" * 50)
                     start_time = time.time()
                     I.fit(dataset_shrinking.X_train)
                     fit_time = time.time() - start_time
@@ -847,22 +866,26 @@ def feature_selection(
                         ).append(predict_time)
 
                 else:
-                    print("-"*50)
-                    print(f"dataset and dataset_shrinking with different shape: dataset has {dataset.shape} and dataset_shrinking has {dataset_shrinking.shape}")
-                    print("-"*50)
+                    print("-" * 50)
+                    print(
+                        f"dataset and dataset_shrinking with different shape: dataset has {dataset.shape} and dataset_shrinking has {dataset_shrinking.shape}"
+                    )
+                    print("-" * 50)
                     I.fit(dataset_shrinking.X_train)
                     score = I.predict(dataset_shrinking.X_test)
 
-                #TODO: Add if for SMD dataset (y_test for SMD and y for the others)
-                avg_prec = sklearn.metrics.average_precision_score(
-                    dataset_shrinking.y_test, score
+                y_test = (
+                    dataset_shrinking.y_test
+                    if "machine" in dataset.name
+                    else dataset_shrinking.y
                 )
+                avg_prec = sklearn.metrics.average_precision_score(y_test, score)
                 print(f"average precision: {avg_prec}")
                 runs[run] = avg_prec
             except Exception as _:
-                print("-"*50)
+                print("-" * 50)
                 print("Exception, setting average precision to NaN")
-                print("-"*50)
+                print("-" * 50)
                 ipdb.set_trace()
                 runs[run] = np.nan
 
@@ -1022,7 +1045,7 @@ def performance(
     y_pred = y_pred.astype(int)
     y_true = y_true.astype(int)
 
-    if dataset.X.shape[0] > 7500 and downsample:
+    if len(y_true) > 7500 and downsample:
         dataset.downsample(max_samples=7500)
 
     precisions = []

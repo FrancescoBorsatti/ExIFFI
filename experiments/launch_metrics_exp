@@ -14,13 +14,12 @@ dataset_path=${cfg[dataset_path]}
 tep_name=${cfg[tep_name]}
 coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
+smd_prefix=${cfg[smd_prefix]}
 
 # For TEP
 
-# model_names=("EIF+" "IF")
-# interpretations=("EXIFFI+" "DIFFI")
-model_names=("EIF+" "IF")
-interpretations=("EXIFFI+" "DIFFI")
+model_names=("EIF+" "EIF")
+interpretations=("EXIFFI+" "EXIFFI")
 n_estimators=300
 scenario=2
 n_runs=10
@@ -33,7 +32,7 @@ contamination=0.15
 
 n_models=${#model_names[@]}
 
-for (( i=0; i<n_models; i++ )); do
+for ((i = 0; i < n_models; i++)); do
 
   if [[ "$compute_metrics" != 0 ]]; then
 
@@ -50,22 +49,22 @@ for (( i=0; i<n_models; i++ )); do
       mode="times"
 
       uv run $script_path \
-          --dataset_name "$dataset_name" \
-          --dataset_path "$dataset_path" \
-          --model "${model_names[$i]}" \
-          --interpretation "${interpretations[$i]}" \
-          --n_estimators $n_estimators \
-          --scenario $scenario \
-          --pre_process \
-          --compute_GFI \
-          --contamination $contamination \
-          --n_runs $n_runs \
-          --n_runs_imp $n_runs_imp \
-          --background $background \
-          --seed $seed \
-          --file_pos $file_pos
+        --dataset_name "$dataset_name" \
+        --dataset_path "$dataset_path" \
+        --model "${model_names[$i]}" \
+        --interpretation "${interpretations[$i]}" \
+        --n_estimators $n_estimators \
+        --scenario $scenario \
+        --pre_process \
+        --compute_GFI \
+        --contamination $contamination \
+        --n_runs $n_runs \
+        --n_runs_imp $n_runs_imp \
+        --background $background \
+        --seed $seed \
+        --file_pos $file_pos
 
-    elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; then
+    elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
 
       echo "-----------------------------------------------------------------------------------------------------"
       echo "dataset_name is $dataset_name, so running metrics_exp with compute_perf with pre processing"
@@ -74,22 +73,22 @@ for (( i=0; i<n_models; i++ )); do
       mode="metrics"
 
       uv run $script_path \
-          --dataset_name "$dataset_name" \
-          --dataset_path "$dataset_path" \
-          --model "${model_names[$i]}" \
-          --interpretation "${interpretations[$i]}" \
-          --n_estimators $n_estimators \
-          --scenario $scenario \
-          --pre_process \
-          --scaler_type 4 \
-          --compute_GFI \
-          --contamination $contamination \
-          --n_runs $n_runs \
-          --n_runs_imp $n_runs_imp \
-          --compute_perf \
-          --background $background \
-          --seed $seed \
-          --file_pos $file_pos
+        --dataset_name "$dataset_name" \
+        --dataset_path "$dataset_path" \
+        --model "${model_names[$i]}" \
+        --interpretation "${interpretations[$i]}" \
+        --n_estimators $n_estimators \
+        --scenario $scenario \
+        --pre_process \
+        --scaler_type 4 \
+        --compute_GFI \
+        --contamination $contamination \
+        --n_runs $n_runs \
+        --n_runs_imp $n_runs_imp \
+        --compute_perf \
+        --background $background \
+        --seed $seed \
+        --file_pos $file_pos
 
     else
 
@@ -100,20 +99,20 @@ for (( i=0; i<n_models; i++ )); do
       mode="metrics"
 
       uv run $script_path \
-          --dataset_name "$dataset_name" \
-          --dataset_path "$dataset_path" \
-          --model "${model_names[$i]}" \
-          --interpretation "${interpretations[$i]}" \
-          --n_estimators $n_estimators \
-          --scenario $scenario \
-          --compute_GFI \
-          --contamination $contamination \
-          --n_runs $n_runs \
-          --n_runs_imp $n_runs_imp \
-          --compute_perf \
-          --background $background \
-          --seed $seed \
-          --file_pos $file_pos
+        --dataset_name "$dataset_name" \
+        --dataset_path "$dataset_path" \
+        --model "${model_names[$i]}" \
+        --interpretation "${interpretations[$i]}" \
+        --n_estimators $n_estimators \
+        --scenario $scenario \
+        --compute_GFI \
+        --contamination $contamination \
+        --n_runs $n_runs \
+        --n_runs_imp $n_runs_imp \
+        --compute_perf \
+        --background $background \
+        --seed $seed \
+        --file_pos $file_pos
 
     fi
 
@@ -124,15 +123,13 @@ for (( i=0; i<n_models; i++ )); do
   echo "-----------------------------------------------------------------------------------------------------"
 
   ./launch_get_metrics \
-      "$dataset_name" \
-      "$dataset_path" \
-      "${model_names[$i]}" \
-      "${interpretations[$i]}" \
-      $n_estimators \
-      $scenario \
-      $file_pos \
-      $mode
+    "$dataset_name" \
+    "$dataset_path" \
+    "${model_names[$i]}" \
+    "${interpretations[$i]}" \
+    $n_estimators \
+    $scenario \
+    $file_pos \
+    $mode
 
 done
-
-

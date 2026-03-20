@@ -130,6 +130,13 @@ def define_arguments(
         action="store_true",
         help="If set, perform the feature selection experiment",
     )
+    parser.add_argument(
+        "--save_plot", action="store_true", help="If set, save the plot"
+    )
+
+    parser.add_argument(
+        "--show_plot", action="store_true", help="If set, show the plot"
+    )
 
     if exp_name in ["gfi_exp", "lfi_exp"]:
         parser.add_argument(
@@ -429,14 +436,6 @@ def define_arguments(
             nargs="+",
             default=[5, 10],
             help="Interval where to draw anomalies",
-        )
-
-        parser.add_argument(
-            "--save_plot", action="store_true", help="If set, save the plot"
-        )
-
-        parser.add_argument(
-            "--show_plot", action="store_true", help="If set, show the plot"
         )
 
         parser.add_argument(

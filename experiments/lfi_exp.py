@@ -35,7 +35,7 @@ os.chdir("../")
 cwd = os.getcwd()
 
 print("#" * 50)
-print("LFI Experiment")
+print("Local Scoremap Experiment")
 print("#" * 50)
 print(f"Dataset: {dataset.name}")
 print(f"Model: {args.model_name}")
