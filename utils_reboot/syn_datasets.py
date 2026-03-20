@@ -458,10 +458,14 @@ def moon_anomalies(args: Namespace, anomaly_axis: int = 0) -> np.ndarray:
 
     outliers = generate_ball_inliers(args=args, n_samples=args.n_outliers)
     scale = np.ones_like(outliers)
-    scale[:, 0] = 1
-    scale[:, 1] = 2
-    
-    outliers = outliers * scale + np.ones_like(outliers) * (scale**2)
+    scale[:, 0] = 4
+    scale[:, 1] = 4
+
+    offset = np.ones_like(outliers)
+    offset[:, 0] = 0
+    offset[:, 1] = 3
+
+    outliers = outliers * scale + np.ones_like(outliers) * (offset**2)
     
     outliers_labels = np.ones(shape=(outliers.shape[0], 1))
     outliers = np.concatenate([outliers, outliers_labels], axis=1)
@@ -549,6 +553,8 @@ def plot_syn_data(
     ax.set_ylabel(f"Feature {args.axes[1] + 1}")
     ax.set_title(f"Synthetic Dataset {args.syn_data_name}")
     ax.legend()
+
+    ax.axis('equal')
 
     if args.save_plot:
         filename = f"{get_current_time()}_{args.syn_data_name}.png"

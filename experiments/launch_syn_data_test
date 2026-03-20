@@ -14,7 +14,7 @@ anomaly_interval=(-1 1)
 v=(4 3 2 0 0 0)
 n_dims=6
 radius=2
-moon_radius=30
+moon_radius=35
 axes=(0 1)
 
 python $script_path \
@@ -30,9 +30,9 @@ python $script_path \
   --axes "${axes[@]}" \
   --plot_syn_data \
   --save_syn_data \
-  --show_plot
+  --save_plot
 
-
+  
 #NOTE: plot options
 # --plot_syn_data \
 # --save_plot \
