@@ -54,7 +54,9 @@ elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$
     --n_estimators "$n_estimators" \
     --model "$model_name" \
     --interpretation "$interpretation" \
-    --scenario $scenario
+    --scenario $scenario \
+    --pre_process \
+    --scaler_type 4
 
 else
 

@@ -30,6 +30,7 @@ def define_arguments(
         "metrics_exp",
         "get_metrics",
         "ablation_trees",
+        "ablation_max_samples",
         "ablation_contamination",
         "ablation_cont_prediction",
         "ablation_cont_gfi",
@@ -38,9 +39,9 @@ def define_arguments(
         "syn_data_exp",
     ]
 
-    assert (
-        exp_name in exp_names
-    ), f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
+    assert exp_name in exp_names, (
+        f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
+    )
 
     parser = argparse.ArgumentParser(description="ExIFFI Industrial experiments")
 
@@ -308,6 +309,28 @@ def define_arguments(
             help="If set plot the results of the ablation trees experiment",
         )
 
+    if exp_name == "ablation_max_samples":
+
+        parser.add_argument(
+            "--max_samples_values",
+            nargs="+",
+            type=int,
+            default=[128, 256, 512],
+            help="List with different values for the max_samples parameter for the ablation study",
+        )
+
+        parser.add_argument(
+            "--run_ablation_max_samples",
+            action="store_true",
+            help="If set run the ablation max_samples experiment",
+        )
+
+        parser.add_argument(
+            "--plot_ablation_max_samples",
+            action="store_true",
+            help="If set plot the results of the ablation max_samples experiment",
+        )
+
     if exp_name == "ablation_contamination":
         parser.add_argument(
             "--min_cont", type=float, default=0.0, help="Minimum contamination value"
@@ -419,7 +442,7 @@ def define_arguments(
             "--v",
             type=int,
             nargs="+",
-            default=[1,1,0,0,0,0],
+            default=[1, 1, 0, 0, 0, 0],
             help="Weight of the features for the bisect_prop anomalies",
         )
 
@@ -439,18 +462,22 @@ def define_arguments(
         )
 
         parser.add_argument(
-            "--plot_syn_data", action="store_true", help="If set, plot the synthetic data"
+            "--plot_syn_data",
+            action="store_true",
+            help="If set, plot the synthetic data",
         )
 
         parser.add_argument(
-            "--save_syn_data", action="store_true", help="If set, save the synthetic data"
+            "--save_syn_data",
+            action="store_true",
+            help="If set, save the synthetic data",
         )
 
         parser.add_argument(
             "--syn_data_name",
             type=str,
             default="Xaxis",
-            help="Name of the synthetic dataset to create"
+            help="Name of the synthetic dataset to create",
         )
 
     args = parser.parse_args()
