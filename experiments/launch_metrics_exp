@@ -16,10 +16,8 @@ coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
 smd_prefix=${cfg[smd_prefix]}
 
-# For TEP
-
-model_names=("EIF+" "EIF")
-interpretations=("EXIFFI+" "EXIFFI")
+model_names=("DIF")
+interpretations=("ACME")
 n_estimators=300
 scenario=2
 n_runs=10
@@ -29,6 +27,9 @@ seed=0
 file_pos=0
 mode="metrics"
 contamination=0.15
+epochs=10
+batch_size=64
+device_num=0
 
 n_models=${#model_names[@]}
 
@@ -62,6 +63,9 @@ for ((i = 0; i < n_models; i++)); do
         --n_runs_imp $n_runs_imp \
         --background $background \
         --seed $seed \
+        --epochs $epochs \
+        --batch_size $batch_size \
+        --device_num $device_num \
         --file_pos $file_pos
 
     elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
@@ -88,6 +92,9 @@ for ((i = 0; i < n_models; i++)); do
         --compute_perf \
         --background $background \
         --seed $seed \
+        --epochs $epochs \
+        --batch_size $batch_size \
+        --device_num $device_num \
         --file_pos $file_pos
 
     else
@@ -112,6 +119,9 @@ for ((i = 0; i < n_models; i++)); do
         --compute_perf \
         --background $background \
         --seed $seed \
+        --epochs $epochs \
+        --batch_size $batch_size \
+        --device_num $device_num \
         --file_pos $file_pos
 
     fi

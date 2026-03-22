@@ -76,6 +76,24 @@ def define_arguments(
         help="Global feature importances parameter: n_runs",
     )
     parser.add_argument(
+        "--epochs",
+        type=int,
+        default=10,
+        help="Number of training epochs for AutoEncoder",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=32,
+        help="Batch size for AutoEncoder",
+    )
+    parser.add_argument(
+        "--device_num",
+        type=int,
+        default=0,
+        help="CUDA device number for AutoEncoder",
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=0,
@@ -506,6 +524,9 @@ def check_arguments(
             EIF → Extended Isolation Forest
             EIF+ → Extended Isolation Forest Plus
             IF → Isolation Forest
+            AE → AutoEncoder
+            SVDD → Deep SVDD
+            DIF → Deep Isolation Forest
             EIF+_centroid → EIF+ centroid importance
             EIF+_distrib_split → EIF+ distribution aware splitting
             EIF+_centroid_split → combination of EIF+_centroid and EIF+_distrib_split
@@ -527,6 +548,9 @@ def check_arguments(
         "EIF+_centroid",
         "EIF+_distrib_split",
         "EIF+_centroid_split",
+        "AE",
+        "SVDD",
+        "DIF"
     ], model_error
 
     assert interpretation in [

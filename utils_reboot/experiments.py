@@ -1157,13 +1157,12 @@ def setup_exp(
             scaler_type=args.scaler_type,
         )
 
-    model = load_model(
-        model_name=args.eval_model if args.exp_type == "fs_exp" else args.model_name,
-        interpretation=args.interpretation,
-        n_estimators=args.n_estimators,
-        max_depth=args.max_depth,
-        max_samples=args.max_samples,
+    args.contamination = set_contamination(
+        dataset=dataset, cli_contamination=args.contamination
     )
+    n_features = dataset.X_train.shape[1]
+
+    model = load_model(args=args, n_features=n_features)
 
     return dataset, model
 
