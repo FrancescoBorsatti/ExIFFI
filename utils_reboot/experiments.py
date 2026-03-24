@@ -1217,7 +1217,7 @@ def compute_sensor_interactions(
         values for each feature pair
     """
 
-    X = data.X
+    X = data.X if isinstance(data, Dataset) else np.concatenate([data.X_train,data.X_test])
     M = X.shape[1]
 
     corr_matrix = np.zeros((M, M))

@@ -15,6 +15,7 @@ cwd = os.getcwd()
 sys.path.append("..")
 
 from utils_reboot.datasets import load_dataset
+from utils_reboot.smd_dataset import load_smd_dataset
 from utils_reboot.experiments import compute_sensor_interactions
 from utils_reboot.utils import generate_path, save_element
 
@@ -40,12 +41,23 @@ print("-" * 50)
 print(f"Loading {args.dataset_name} dataset from {args.dataset_path}")
 print("-" * 50)
 
-dataset = load_dataset(
-    dataset_name=args.dataset_name,
-    dataset_path=args.dataset_path,
-    pre_process=True,
-    scaler_type=4,
-)
+if "machine" in args.dataset_name:
+
+    dataset = load_smd_dataset(
+        dataset_name=args.dataset_name,
+        dataset_path=args.dataset_path,
+        pre_process=True,
+        scaler_type=4,
+    )
+
+else:
+
+    dataset = load_dataset(
+        dataset_name=args.dataset_name,
+        dataset_path=args.dataset_path,
+        pre_process=True,
+        scaler_type=4,
+    )
 
 print("-" * 50)
 print(f"{args.dataset_name} dataset loaded")
