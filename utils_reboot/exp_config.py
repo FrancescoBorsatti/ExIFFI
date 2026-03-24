@@ -4,8 +4,16 @@ Python module containing some functions to configure the experiments
 
 import argparse
 from argparse import Namespace
+from typing import Union
 
 import ipdb
+
+
+def str_or_int(value: str) -> Union[str, int]:
+    try:
+        return int(value)
+    except ValueError:
+        return value
 
 
 def define_arguments(
@@ -191,7 +199,7 @@ def define_arguments(
             help="If set, save the labels",
         )
 
-    if exp_name in ["lfi_exp", "metrics_exp"]:
+    if exp_name in ["lfi_exp", "metrics_exp", "local_scoremaps"]:
         parser.add_argument(
             "--n_quantiles",
             type=int,
@@ -256,13 +264,13 @@ def define_arguments(
             "--f1",
             type=str,
             default="feature0",
-            help="Name of first feature to represent in the local scoremaps"
+            help="Name or index of first feature to represent in the local scoremaps",
         )
         parser.add_argument(
             "--f2",
             type=str,
             default="feature1",
-            help="Name of second feature to represent in the local scoremaps"
+            help="Name or index of second feature to represent in the local scoremaps",
         )
         parser.add_argument(
             "--only_positive",
@@ -340,7 +348,6 @@ def define_arguments(
         )
 
     if exp_name == "ablation_max_samples":
-
         parser.add_argument(
             "--max_samples_values",
             nargs="+",
@@ -562,7 +569,7 @@ def check_arguments(
         "EIF+_centroid_split",
         "AE",
         "SVDD",
-        "DIF"
+        "DIF",
     ], model_error
 
     assert interpretation in [

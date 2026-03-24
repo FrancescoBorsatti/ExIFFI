@@ -54,8 +54,8 @@ def update_feature_names(
 
 def get_feature_indexes(
     dataset: Dataset,
-    f1: str,
-    f2: str,
+    f1: Union[str, int],
+    f2: Union[str, int],
 ) -> tuple[int, int]:
     """
     Function to get the indexes of two features in the dataset.
@@ -208,7 +208,9 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
     return os.path.join(directory_path, files[file_pos])
 
 
-def open_element(file_path: str, filetype: str = "pickle") -> Union[
+def open_element(
+    file_path: str, filetype: str = "pickle"
+) -> Union[
     np.ndarray,
     list,
     pd.DataFrame,
@@ -419,7 +421,6 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
     dict_time_imp_path = os.path.join(perf_dict_dirpath, "dict_time_imp.pickle")
 
     if not os.path.exists(dict_time_path):
-
         print("-" * 50)
         print("Creating new fit-predict time dictionary")
         print("-" * 50)
@@ -449,7 +450,6 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
         dict_time = pickle.load(file)
 
     if not os.path.exists(dict_time_imp_path):
-
         print("-" * 50)
         print("Creating new importances time dictionary")
         print("-" * 50)

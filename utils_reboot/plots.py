@@ -29,7 +29,7 @@ from model_reboot.interpretability_module import local_diffi
 from sklearn.ensemble import IsolationForest
 from utils_reboot.datasets import Dataset
 from utils_reboot.smd_dataset import SMDataset
-from utils_reboot.experiments import compute_plt_data
+from utils_reboot.experiments import compute_local_importances_ACME, compute_plt_data
 from utils_reboot.utils import get_current_time, get_most_recent_file, open_element
 
 # from test_feature_selection import Precisions, Precisions_random
@@ -885,7 +885,7 @@ def get_contamination_comparison(
 
 
 def importance_map(
-    dataset: Type[Dataset],
+    dataset: Union[Dataset,SMDataset],
     model: Type[ExtendedIsolationForest],
     resolution: Optional[int] = 30,
     path_plot: Optional[str] = os.getcwd(),
@@ -894,11 +894,11 @@ def importance_map(
     factor: Optional[int] = 3,
     feats_plot: Optional[tuple] = (0, 1),
     col_names: List[str] = None,
-    isdiffi: Optional[bool] = False,
     scenario: Optional[int] = 2,
     interpretation: Optional[str] = "EXIFFI+",
     contamination: float = 0.1,
     only_positive: bool = False,
+    n_quantiles: int = 70,
 ) -> None:
     """
     Produce the Local Feature Importance Scoremap.
@@ -913,10 +913,10 @@ def importance_map(
         factor (Optional[int], optional): The factor by which the min and max values of the features are extended. Defaults to 3.
         feats_plot (Optional[tuple], optional): The features to be plotted. Defaults to (0,1).
         col_names (List[str], optional): The names of the features. Defaults to None.
-        isdiffi (Optional[bool], optional): A boolean indicating whether the local-DIFFI method should be used to compute the importance values. Defaults to False.
         scenario (Optional[int], optional): The scenario number. Defaults to 2.
         interpretation (Optional[str], optional): Name of the interpretation model used. Defaults to "EXIFFI+".
         contamination (float, optional): The contamination value. Defaults to 0.1.
+        n_quantiles (int): number of quantiles to use to compute the LFI scores with ACME
 
     Returns:
         The function saves the plot in the specified path and displays it if the show_plot parameter is set to True.
@@ -951,12 +951,25 @@ def importance_map(
     mean[:, feats_plot[1]] = yy.reshape(len(yy) ** 2)
 
     importance_matrix = np.zeros_like(mean)
-    if isdiffi:
+    print("-"*50)
+    print(f"Computing LFI scores with {interpretation}")
+    print("-"*50)
+    if interpretation == "DIFFI":
         model.max_samples = len(dataset.X)
         for i in range(importance_matrix.shape[0]):
             importance_matrix[i] = local_diffi(model, mean[i])[0]
-    else:
+    elif interpretation == "ACME":
+        importance_matrix = compute_local_importances_ACME(
+            I=model,
+            dataset=dataset,
+            model=model.name,
+            p=contamination,
+            n_quantiles=n_quantiles,
+        )
+    elif interpretation in ["EXIFFI", "EXIFFI+"]:
         importance_matrix = model.local_importances(mean)
+    else:
+        raise ValueError(f"Interpretation {interpretation} not yet supported for the Local Scoremap")
 
     sign = np.sign(
         importance_matrix[:, feats_plot[0]] - importance_matrix[:, feats_plot[1]]
@@ -1037,30 +1050,18 @@ def importance_map(
 
     ax.legend()
 
-    t = time.localtime()
-    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
-    if isdiffi:
-        filename = (
-            current_time
-            + "_importance_map_"
-            + dataset.name
-            + "_"
-            + interpretation
-            + f"_{str(scenario)}"
-            + f"_feat_{feats_plot[0]}_{feats_plot[1]}"
-            + ".png"
-        )
-    else:
-        filename = (
-            current_time
-            + "_importance_map_"
-            + dataset.name
-            + "_"
-            + interpretation
-            + f"_{str(scenario)}"
-            + f"_feat_{feats_plot[0]}_{feats_plot[1]}"
-            + f"_{model.eta}_{int(contamination * 100)}_{model.n_estimators}.png"
-        )
+    current_time = get_current_time()
+
+    filename = (
+        current_time
+        + "_importance_map_"
+        + dataset.name
+        + "_"
+        + interpretation
+        + f"_{str(scenario)}"
+        + f"_feat_{feats_plot[0]}_{feats_plot[1]}"
+        + ".png"
+    )
 
     if show_plot:
         plt.show()

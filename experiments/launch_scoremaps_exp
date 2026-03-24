@@ -20,8 +20,8 @@ interpretation="$3"
 n_estimators=${4:-300}
 scenario=${5:-2}
 contamination=0.15
-f1=33
-f2=9
+f1="33"
+f2="9"
 
 echo "#############################################"
 echo "Producing local scoremap for model ${model_name} and interpretation ${interpretation}"
@@ -43,8 +43,8 @@ if [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_pref
     --scenario "$scenario" \
     --pre_process \
     --scaler_type 1 \
-    --f1 $f1 \
-    --f2 $f2
+    --f1 "$f1" \
+    --f2 "$f2"
 
 elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
 
@@ -61,8 +61,8 @@ elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$
     --scenario $scenario \
     --pre_process \
     --scaler_type 4 \
-    --f1 $f1 \
-    --f2 $f2
+    --f1 "$f1" \
+    --f2 "$f2"
 
 else
 
@@ -77,7 +77,7 @@ else
     --model "$model_name" \
     --interpretation "$interpretation" \
     --scenario $scenario \
-    --f1 $f1 \
-    --f2 $f2
+    --f1 "$f1" \
+    --f2 "$f2"
 
 fi

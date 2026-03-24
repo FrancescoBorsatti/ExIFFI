@@ -10,7 +10,7 @@ import ipdb
 cwd = os.getcwd()
 sys.path.append("..")
 
-from utils_reboot.exp_config import define_arguments
+from utils_reboot.exp_config import define_arguments, str_or_int
 from utils_reboot.experiments import set_contamination, setup_exp
 from utils_reboot.plots import importance_map
 from utils_reboot.utils import generate_path, get_feature_indexes, open_element
@@ -19,18 +19,11 @@ args = define_arguments(exp_name="local_scoremaps")
 
 dataset, model = setup_exp(args=args)
 
-# scoremap_feats_dict = open_element(os.path.join(cwd, "scoremap_feats.json"), "json")
-
-# if dataset.name in scoremap_feats_dict.keys():
-# ipdb.set_trace()
-
 feats_plot = get_feature_indexes(
     dataset=dataset,
-    f1=args.f1,
-    f2=args.f2,
+    f1=str_or_int(args.f1),
+    f2=str_or_int(args.f2),
 )
-
-ipdb.set_trace()
 
 print("#" * 50)
 print("Local Scoremaps Experiment")
@@ -72,31 +65,19 @@ print("#" * 50)
 
 contamination = set_contamination(dataset=dataset, cli_contamination=args.contamination)
 
-if args.interpretation == "DIFFI":
-    importance_map(
-        dataset=dataset,
-        model=model,
-        feats_plot=feats_plot,
-        path_plot=path_plots,
-        col_names=dataset.feature_names,
-        interpretation=args.interpretation,
-        scenario=args.scenario,
-        contamination=contamination,
-        isdiffi=True,
-    )
-else:
-    importance_map(
-        dataset=dataset,
-        model=model,
-        factor=args.factor,
-        feats_plot=feats_plot,
-        path_plot=path_plots,
-        col_names=dataset.feature_names,
-        interpretation=args.interpretation,
-        scenario=args.scenario,
-        contamination=contamination,
-        only_positive=args.only_positive,
-    )
+importance_map(
+    dataset=dataset,
+    model=model,
+    factor=args.factor,
+    feats_plot=feats_plot,
+    path_plot=path_plots,
+    col_names=dataset.feature_names,
+    interpretation=args.interpretation,
+    scenario=args.scenario,
+    contamination=contamination,
+    only_positive=args.only_positive,
+    n_quantiles=args.n_quantiles,
+)
 
 print("#" * 50)
 print(f"Local Scoremap produced and saved in: {path_plots}")
