@@ -1105,7 +1105,6 @@ def lfi_scatter_plot(
         return
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.grid(alpha=0)
 
     imp_x = imp_mat[:, feats_plot[0]]
     imp_y = imp_mat[:, feats_plot[1]]

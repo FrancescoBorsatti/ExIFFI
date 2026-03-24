@@ -527,7 +527,6 @@ def plot_syn_data(
 
     colors = ["blue", "orange"]
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.grid(alpha=0)
 
     target = dataset[:, -1].astype(int)
     inliers_mask = target == 0
