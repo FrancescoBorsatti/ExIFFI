@@ -971,6 +971,7 @@ def importance_map(
     else:
         raise ValueError(f"Interpretation {interpretation} not yet supported for the Local Scoremap")
 
+    importance_matrix = importance_matrix.values
     sign = np.sign(
         importance_matrix[:, feats_plot[0]] - importance_matrix[:, feats_plot[1]]
     )
