@@ -19,16 +19,18 @@ args = define_arguments(exp_name="local_scoremaps")
 
 dataset, model = setup_exp(args=args)
 
-scoremap_feats_dict = open_element(os.path.join(cwd, "scoremap_feats.json"), "json")
+# scoremap_feats_dict = open_element(os.path.join(cwd, "scoremap_feats.json"), "json")
 
-if dataset.name in scoremap_feats_dict.keys():
-    feats_plot = get_feature_indexes(
-        dataset=dataset,
-        f1=scoremap_feats_dict[dataset.name][0],
-        f2=scoremap_feats_dict[dataset.name][1],
-    )
-else:
-    feats_plot = (0, 1)
+# if dataset.name in scoremap_feats_dict.keys():
+# ipdb.set_trace()
+
+feats_plot = get_feature_indexes(
+    dataset=dataset,
+    f1=args.f1,
+    f2=args.f2,
+)
+
+ipdb.set_trace()
 
 print("#" * 50)
 print("Local Scoremaps Experiment")

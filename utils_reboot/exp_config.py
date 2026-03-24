@@ -253,6 +253,18 @@ def define_arguments(
 
     if exp_name == "local_scoremaps":
         parser.add_argument(
+            "--f1",
+            type=str,
+            default="feature0",
+            help="Name of first feature to represent in the local scoremaps"
+        )
+        parser.add_argument(
+            "--f2",
+            type=str,
+            default="feature1",
+            help="Name of second feature to represent in the local scoremaps"
+        )
+        parser.add_argument(
             "--only_positive",
             type=bool,
             default=False,
