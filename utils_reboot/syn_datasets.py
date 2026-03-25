@@ -463,7 +463,7 @@ def moon_anomalies(args: Namespace, anomaly_axis: int = 0) -> np.ndarray:
     offset[:, 1] = 3
 
     outliers = outliers * scale + np.ones_like(outliers) * (offset**2)
-    
+
     outliers_labels = np.ones(shape=(outliers.shape[0], 1))
     outliers = np.concatenate([outliers, outliers_labels], axis=1)
 
@@ -550,10 +550,76 @@ def plot_syn_data(
     ax.set_title(f"Synthetic Dataset {args.syn_data_name}")
     ax.legend()
 
-    ax.axis('equal')
+    ax.axis("equal")
 
     if args.save_plot:
         filename = f"{get_current_time()}_{args.syn_data_name}.png"
+        filepath = os.path.join(plot_path, filename)
+        plt.savefig(filepath, bbox_inches="tight", dpi=300)
+        print("-" * 50)
+        print(f"Plot saved at {filepath}")
+        print("-" * 50)
+
+    if args.show_plot:
+        plt.show()
+
+
+def multi_plot_syn_data(
+    args: Namespace,
+    datasets: List[np.ndarray],
+    titles: List[str],
+    plot_path: str = os.getcwd(),
+) -> None:
+    """
+    This function plots multiple synthetic datasets in subplots
+
+    Args:
+        args (Namespace): experiment config object
+        datasets (List[np.ndarray]): list of synthetic datasets
+        titles (List[str]): list of titles for each subplot
+        plot_path (str): path where to save the plot
+
+    Returns:
+        None: the function produces the plot and does not return anything
+    """
+
+    n_datasets = len(datasets)
+    colors = ["blue", "orange"]
+    fig, axes = plt.subplots(1, n_datasets, figsize=(10 * n_datasets, 10))
+
+    if n_datasets == 1:
+        axes = [axes]
+
+    for i, (dataset, title) in enumerate(zip(datasets, titles)):
+        ax = axes[i]
+
+        target = dataset[:, -1].astype(int)
+        inliers_mask = target == 0
+        outliers_mask = target == 1
+
+        ax.scatter(
+            dataset[inliers_mask, args.axes[0]],
+            dataset[inliers_mask, args.axes[1]],
+            c=colors[0],
+            label="Inliers",
+        )
+        ax.scatter(
+            dataset[outliers_mask, args.axes[0]],
+            dataset[outliers_mask, args.axes[1]],
+            c=colors[1],
+            label="Outliers",
+        )
+
+        ax.set_xlabel(f"Feature {args.axes[0] + 1}")
+        ax.set_ylabel(f"Feature {args.axes[1] + 1}")
+        ax.set_title(title)
+        ax.legend()
+        ax.axis("equal")
+
+    plt.tight_layout()
+
+    if args.save_plot:
+        filename = f"{get_current_time()}_multi_syn_data.png"
         filepath = os.path.join(plot_path, filename)
         plt.savefig(filepath, bbox_inches="tight", dpi=300)
         print("-" * 50)

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+script_path="multi_score_plot_exp.py"
+
+echo "------------------------------------------------"
+echo "Executing $script_path"
+echo "------------------------------------------------"
+
+dataset_names=("separated_anomalies" "moon_anomalies")
+model_name="EIF+"
+interpretation="EXIFFI+"
+scenario=2
+file_pos=0
+
+uv run $script_path \
+  --dataset_names "${dataset_names[@]}" \
+  --model_name "$model_name" \
+  --interpretation "$interpretation" \
+  --scenario $scenario \
+  --downsample \
+  --pre_process \
+  --scaler_type 4 \
+  --file_pos $file_pos \
+  --save_plot

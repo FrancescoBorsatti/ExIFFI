@@ -3,6 +3,8 @@ Python module containing some functions to configure the experiments
 """
 
 import argparse
+import os
+import re
 from argparse import Namespace
 from typing import Union
 
@@ -57,6 +59,12 @@ def define_arguments(
 
     parser.add_argument(
         "--dataset_name", type=str, default="wine", help="Name of the dataset"
+    )
+    parser.add_argument(
+        "--dataset_names",
+        type=str,
+        nargs="+",
+        help="List of dataset names for multi plot experiments",
     )
     parser.add_argument(
         "--dataset_path", type=str, default="../data/real/", help="Path to the dataset"
@@ -199,10 +207,6 @@ def define_arguments(
             help="If set, save the labels",
         )
 
-        parser.add_argument(
-            "--dataset_names", type=str, nargs="+", help="List of dataset names"
-        )
-
     if exp_name in ["lfi_exp", "metrics_exp", "local_scoremaps"]:
         parser.add_argument(
             "--n_quantiles",
@@ -278,7 +282,6 @@ def define_arguments(
         )
 
     if exp_name == "local_scoremaps":
-
         parser.add_argument(
             "--only_positive",
             type=bool,
@@ -524,6 +527,14 @@ def define_arguments(
             help="Name of the synthetic dataset to create",
         )
 
+        parser.add_argument(
+            "--syn_data_names",
+            type=str,
+            nargs="+",
+            default=["Xaxis"],
+            help="List of names of the synthetic datasets to create for multi-plot",
+        )
+
     args = parser.parse_args()
     args.exp_type = exp_name
 
@@ -602,3 +613,63 @@ def check_arguments(
             "IF",
             "sklearn_IF",
         ], "DIFFI can only be used with IF based models"
+
+
+def is_piade(dataset_name: str) -> bool:
+    """
+    Function to check weather a dataset name is in the PIADE category
+
+    Args:
+        dataset_name(str): name of the dataset
+
+    Returns:
+        is_piade (bool): weather the dataset name is of the PIADE category or not
+    """
+
+    pattern = re.compile(r"^piade_s[1-5](_alarms_no_zeros)?$")
+    return bool(pattern.match(dataset_name))
+
+
+def is_smd(dataset_name: str) -> bool:
+    """
+    Same as is_piade but for the SMD dataset
+    """
+
+    if "machine_1" in dataset_name:
+        pattern = re.compile(r"^machine_1-[1-8]")
+    elif "machine_2" in dataset_name:
+        pattern = re.compile(r"machine_2-[1-9]")
+    elif "machine_3" in dataset_name:
+        pattern = re.compile(r"machine_3-[1-11]")
+    else:
+        return False
+
+    return bool(pattern.match(dataset_name))
+
+
+def get_datapath(datapath: str, dataset_name: str) -> str:
+    """
+    Function to get the path where the data are stored given the dataset name
+
+    Args:
+        datapath (str): base path containing all the datasets
+        dataset_name (str): dataset name
+
+    Returns:
+        datapath (str): datapath where to find the data
+    """
+
+    if is_piade(dataset_name):
+        datapath = os.path.join(datapath, "PIADE", dataset_name)
+    elif is_smd(dataset_name):
+        datapath = os.path.join(datapath, "..", "OmniAnomaly", "ServerMachineDataset")
+    elif dataset_name == "TEP_ACME":
+        datapath = os.path.join(datapath, "TEP_ACME")
+    else:
+        datapath = os.path.join(datapath,"syn",dataset_name)
+
+    print("-"*50)
+    print(f"datapat set to {datapath}")
+    print("-"*50)
+
+    return datapath
