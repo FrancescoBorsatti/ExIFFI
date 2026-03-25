@@ -21,7 +21,7 @@ n_estimators=${4:-300}
 scenario=${5:-2}
 contamination=0.15
 f1="33"
-f2="9"
+f2="32"
 
 echo "#############################################"
 echo "Producing local scoremap for model ${model_name} and interpretation ${interpretation}"
