@@ -28,9 +28,12 @@ from model_reboot.EIF_reboot import ExtendedIsolationForest
 from model_reboot.interpretability_module import local_diffi
 from sklearn.ensemble import IsolationForest
 from utils_reboot.datasets import Dataset
+from utils_reboot.experiments import (compute_local_importances_ACME,
+                                      compute_plt_data, get_ACME_lfi,
+                                      get_score_function)
 from utils_reboot.smd_dataset import SMDataset
-from utils_reboot.experiments import compute_local_importances_ACME, compute_plt_data
-from utils_reboot.utils import get_current_time, get_most_recent_file, open_element
+from utils_reboot.utils import (get_current_time, get_most_recent_file,
+                                open_element)
 
 # from test_feature_selection import Precisions, Precisions_random
 
@@ -959,19 +962,21 @@ def importance_map(
         for i in range(importance_matrix.shape[0]):
             importance_matrix[i] = local_diffi(model, mean[i])[0]
     elif interpretation == "ACME":
-        importance_matrix = compute_local_importances_ACME(
-            I=model,
+        score_function = get_score_function(model_name = model.name)
+        importance_matrix = get_ACME_lfi(
+            X=mean,
+            X_to_explain=mean,
+            model=model,
             dataset=dataset,
-            model=model.name,
-            p=contamination,
             n_quantiles=n_quantiles,
+            score_function=score_function
         )
     elif interpretation in ["EXIFFI", "EXIFFI+"]:
         importance_matrix = model.local_importances(mean)
     else:
         raise ValueError(f"Interpretation {interpretation} not yet supported for the Local Scoremap")
 
-    importance_matrix = importance_matrix.values
+    importance_matrix = importance_matrix.values if isinstance(importance_matrix, pd.DataFrame) else importance_matrix
     sign = np.sign(
         importance_matrix[:, feats_plot[0]] - importance_matrix[:, feats_plot[1]]
     )

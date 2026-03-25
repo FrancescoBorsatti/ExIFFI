@@ -10,7 +10,7 @@ import sys
 import time
 import warnings
 from argparse import Namespace
-from typing import Tuple, Type, Union
+from typing import Tuple, Type, Union, Callable
 
 import ipdb
 import numpy as np
@@ -189,6 +189,29 @@ def EIF_score_function(model, data):
 def sklearn_IF_score_function(model, data):
     return 0.5 * (-model.decision_function(data) + 1)
 
+# Score function for pyod based models
+# def pyod_score_function(model, data):
+#     return model.decision_function(data)
+
+def get_score_function(model_name: str = "EIF+") -> Callable:
+    """
+    This function returns the score function (i.e. function to compute the anomaly score)
+    based on the model name. Needed to compute ACME
+
+    Args:
+        model_name (str): model name
+
+    Returns:
+        score_function (Callable): the score function for the specified model
+    """
+
+    if model_name == "sklearn_IF":
+        return sklearn_IF_score_function
+    elif model_name in ["IF","EIF", "EIF+", "AE", "SVDD"]:
+        return EIF_score_function
+    else:
+        raise ValueError(f"Model {model_name} not supported")
+
 
 def compute_imp_time_ACME(
     I: Type[ExtendedIsolationForest],
@@ -221,10 +244,12 @@ def compute_imp_time_ACME(
     print("Computing ACME Local Importances (for a single anomaly)")
     print("#" * 50)
 
+    score_function = get_score_function(model_name=model.name)
+
     data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
     data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
-    data_acme["Score"] = EIF_score_function(I, dataset.X_test)
-    data_acme_anomalies["Score"] = EIF_score_function(I, anomalies)
+    data_acme["Score"] = score_function(I, dataset.X_test)
+    data_acme_anomalies["Score"] = score_function(I, anomalies)
 
     acme_exp = ACME(
         I,
@@ -232,7 +257,7 @@ def compute_imp_time_ACME(
         dataset.feature_names,
         K=n_quantiles,
         task="ad",
-        score_function=EIF_score_function,
+        score_function=score_function,
     )
     acme_exp = acme_exp.explain(data_acme, True)
 
@@ -247,6 +272,57 @@ def compute_imp_time_ACME(
 
     return acme_time
 
+def get_ACME_lfi(
+    X: np.ndarray,
+    X_to_explain: np.ndarray,
+    model: ExtendedIsolationForest,
+    dataset: Union[Dataset, SMDataset],
+    n_quantiles: int = 70,
+    score_function: Callable = EIF_score_function,
+) -> pd.DataFrame:
+    """
+    Function to compute the local importance scores on an arbitrary set of data
+
+    Args:
+        X (np.ndarray): training set
+        X_to_explain (np.ndarray): subset to explain (i.e. the anomalies)
+        model (ExtendedIsolationForest): model to explain
+        n_quantiles (int): number of quantiles to use for input perturbation
+        score_function (Callable): function to compute the anomaly score of a sample
+    """
+
+    data_acme = pd.DataFrame(X, columns=dataset.feature_names)
+    data_acme_to_explain = pd.DataFrame(X_to_explain, columns=dataset.feature_names)
+    data_acme["Score"] = score_function(model, X)
+    data_acme_to_explain["Score"] = score_function(model, X_to_explain)
+
+    acme_exp = ACME(
+        model,
+        "Score",
+        dataset.feature_names,
+        K=n_quantiles,
+        task="ad",
+        score_function=score_function,
+    )
+    acme_exp = acme_exp.explain(data_acme, True)
+
+    imp_mat = pd.DataFrame(columns=dataset.feature_names)
+
+    for i in tqdm(
+        data_acme_to_explain.index.tolist(),
+        desc="Computing ACME Local Importances on anomalies",
+    ):
+        acme_loc = acme_exp.explain_local(data_acme_to_explain.loc[i])
+        feature_table = acme_loc.feature_importance(
+            local=True,
+            weights={"delta": 0.3, "change": 0.3, "distance": 0.2, "ratio": 0.2},
+        )
+        local_imp = feature_table["importance"].reindex(dataset.feature_names)
+        local_imp_values = local_imp.values
+        imp_mat.loc[i] = local_imp_values
+
+    return imp_mat
+
 
 def compute_local_importances_ACME(
     I: Type[ExtendedIsolationForest],
@@ -255,7 +331,7 @@ def compute_local_importances_ACME(
     p=0.1,
     n_quantiles: int = 70,
     fit_model=True,
-) -> np.array:
+) -> pd.DataFrame:
     """
     Compute the local feature importances using the ACME interpretation model on a specific dataset.
 
@@ -281,45 +357,24 @@ def compute_local_importances_ACME(
         y_pred = I.predict(dataset.X_test)
         y_pred = np.vectorize(lambda x: 1 if x == -1 else 0)(y_pred)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-        score_function = sklearn_IF_score_function
     else:
         y_pred = I._predict(dataset.X_test, p).astype(int)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-        score_function = EIF_score_function
 
-    data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
-    data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
-    data_acme["Score"] = score_function(I, dataset.X_test)
-    data_acme_anomalies["Score"] = score_function(I, anomalies)
-    acme_exp = ACME(
-        I,
-        "Score",
-        dataset.feature_names,
-        K=n_quantiles,
-        task="ad",
-        score_function=score_function,
+    score_function = get_score_function(model_name=model.name)
+
+    imp_mat = get_ACME_lfi(
+        X = dataset.X_test,
+        X_to_explain = anomalies,
+        model = I,
+        dataset = dataset,
+        n_quantiles = n_quantiles,
+        score_function = score_function
     )
-    acme_exp = acme_exp.explain(data_acme, True)
-
-    imp_mat = pd.DataFrame(columns=dataset.feature_names)
-
-    for i in tqdm(
-        data_acme_anomalies.index.tolist(),
-        desc="Computing ACME Local Importances on anomalies",
-    ):
-        acme_loc = acme_exp.explain_local(data_acme_anomalies.loc[i])
-        feature_table = acme_loc.feature_importance(
-            local=True,
-            weights={"delta": 0.3, "change": 0.3, "distance": 0.2, "ratio": 0.2},
-        )
-        local_imp = feature_table["importance"].reindex(dataset.feature_names)
-        local_imp_values = local_imp.values
-        imp_mat.loc[i] = local_imp_values
 
     print("Local Importances computed")
 
     return imp_mat
-
 
 def compute_imp_time_kernelSHAP(
     I: Type[ExtendedIsolationForest],
