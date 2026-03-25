@@ -47,9 +47,9 @@ def define_arguments(
         "syn_data_exp",
     ]
 
-    assert exp_name in exp_names, (
-        f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
-    )
+    assert (
+        exp_name in exp_names
+    ), f"Experiment name {exp_name} not supported. Supported experiment names are {exp_names}"
 
     parser = argparse.ArgumentParser(description="ExIFFI Industrial experiments")
 
@@ -199,6 +199,10 @@ def define_arguments(
             help="If set, save the labels",
         )
 
+        parser.add_argument(
+            "--dataset_names", type=str, nargs="+", help="List of dataset names"
+        )
+
     if exp_name in ["lfi_exp", "metrics_exp", "local_scoremaps"]:
         parser.add_argument(
             "--n_quantiles",
@@ -259,7 +263,7 @@ def define_arguments(
             help="If set, increase the ylim from 1 to 1.1 (for breastw)",
         )
 
-    if exp_name == "local_scoremaps":
+    if exp_name in ["lfi_exp", "local_scoremaps"]:
         parser.add_argument(
             "--f1",
             type=str,
@@ -272,6 +276,9 @@ def define_arguments(
             default="feature1",
             help="Name or index of second feature to represent in the local scoremaps",
         )
+
+    if exp_name == "local_scoremaps":
+
         parser.add_argument(
             "--only_positive",
             type=bool,
