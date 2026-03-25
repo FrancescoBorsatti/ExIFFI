@@ -16,7 +16,7 @@ coffe_name=${cfg[coffe_name]}
 piade_prefix=${cfg[piade_prefix]}
 smd_prefix=${cfg[smd_prefix]}
 
-model_names=("DIF")
+model_names=("AE")
 interpretations=("ACME")
 n_estimators=300
 scenario=2

@@ -10,13 +10,12 @@ import ipdb
 cwd = os.getcwd()
 sys.path.append("..")
 
-from utils_reboot.exp_config import define_arguments
+from utils_reboot.exp_config import define_arguments, str_or_int
 from utils_reboot.experiments import setup_exp
 from utils_reboot.plots import lfi_scatter_plot
 from utils_reboot.utils import (
     generate_path,
     get_most_recent_file,
-    open_element,
     get_feature_indexes
 )
 
@@ -24,16 +23,11 @@ args = define_arguments(exp_name="lfi_exp")
 
 dataset, model = setup_exp(args = args)
 
-scoremap_feats_dict = open_element(os.path.join(cwd, "scoremap_feats.json"), "json")
-
-if dataset.name in scoremap_feats_dict.keys():
-    feats_plot = get_feature_indexes(
-        dataset=dataset,
-        f1=scoremap_feats_dict[dataset.name][0],
-        f2=scoremap_feats_dict[dataset.name][1],
-    )
-else:
-    feats_plot = (0, 1)
+feats_plot = get_feature_indexes(
+    dataset=dataset,
+    f1=str_or_int(args.f1),
+    f2=str_or_int(args.f2),
+)
 
 os.chdir("../")
 cwd = os.getcwd()

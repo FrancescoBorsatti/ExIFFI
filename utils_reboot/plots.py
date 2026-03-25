@@ -888,7 +888,7 @@ def get_contamination_comparison(
 
 
 def importance_map(
-    dataset: Union[Dataset,SMDataset],
+    dataset: Union[Dataset, SMDataset],
     model: Type[ExtendedIsolationForest],
     resolution: Optional[int] = 30,
     path_plot: Optional[str] = os.getcwd(),
@@ -927,9 +927,9 @@ def importance_map(
 
     # Check if dataset.y_test has all zeros
     if np.all(dataset.y_test == 0):
-        print("-"*50)
+        print("-" * 50)
         print("Fitting the model again since the labels are all zeros")
-        print("-"*50)
+        print("-" * 50)
         model.fit(dataset.X_train)
         if model.name == "sklearn_IF":
             labels = model.predict_labels(dataset.X_test)
@@ -954,9 +954,9 @@ def importance_map(
     mean[:, feats_plot[1]] = yy.reshape(len(yy) ** 2)
 
     importance_matrix = np.zeros_like(mean)
-    print("-"*50)
+    print("-" * 50)
     print(f"Computing LFI scores with {interpretation}")
-    print("-"*50)
+    print("-" * 50)
     if interpretation == "DIFFI":
         model.max_samples = len(dataset.X)
         for i in range(importance_matrix.shape[0]):
@@ -974,7 +974,9 @@ def importance_map(
     elif interpretation in ["EXIFFI", "EXIFFI+"]:
         importance_matrix = model.local_importances(mean)
     else:
-        raise ValueError(f"Interpretation {interpretation} not yet supported for the Local Scoremap")
+        raise ValueError(
+            f"Interpretation {interpretation} not yet supported for the Local Scoremap"
+        )
 
     importance_matrix = importance_matrix.values if isinstance(importance_matrix, pd.DataFrame) else importance_matrix
     sign = np.sign(
@@ -1076,7 +1078,7 @@ def importance_map(
 
 
 def lfi_scatter_plot(
-    dataset: Union[Dataset,SMDataset],
+    dataset: Union[Dataset, SMDataset],
     model: Type[ExtendedIsolationForest],
     feats_plot: tuple = (0, 1),
     scenario: int = 2,
@@ -1104,7 +1106,7 @@ def lfi_scatter_plot(
         The function produces the LFI scatter plot (and eventually saves it) but does not return anything
     """
 
-    imp_mat = open_element(imp_mat_path,filetype="csv.gz")
+    imp_mat = open_element(imp_mat_path, filetype="csv.gz")
     if isinstance(imp_mat, pd.DataFrame):
         imp_mat = imp_mat.values
     else:
@@ -1129,6 +1131,79 @@ def lfi_scatter_plot(
 
     if save_plot:
         filename = f"{get_current_time()}_lfi_scatter_plot_{dataset.name}_{model.name}_{interpretation}_scenario_{scenario}.png"
+        filepath = os.path.join(plot_path, filename)
+        plt.savefig(filepath, bbox_inches="tight", dpi=300)
+        print("-" * 50)
+        print(f"Plot saved at {filepath}")
+        print("-" * 50)
+
+    if show_plot:
+        plt.show()
+
+
+def multi_lfi_scatter_plot(
+    imp_mat_paths: List[str],
+    dataset_names: List[str],
+    model_name: str = "EIF+",
+    interpretation: str = "EXIFFI+",
+    scenario: int = 2,
+    feats_plot: tuple = (0, 1),
+    plot_path: str = os.getcwd(),
+    save_plot: bool = False,
+    show_plot: bool = False,
+) -> None:
+    """
+    Function to produce an LFI scatter plot showing the scores from multiple datasets
+
+    Args:
+        imp_mat_paths (List[str]): paths to the importances files of the two datasets
+        dataset_names (List[str]): names of the datasets
+        model_name (str): name of the model
+        feats_plot (Optional[tuple], optional): The features to be plotted. Defaults to (0,1).
+        interpretation (Optional[str], optional): Name of the interpretation model used. Defaults to "EXIFFI+".
+        scenario (Optional[int], optional): The scenario number. Defaults to 2.
+        plot_path (str): path where to save the plot
+        save_plot (Optional[bool], optional): A boolean indicating whether the plot should be saved. Defaults to True.
+        show_plot (Optional[bool], optional): A boolean indicating whether the plot should be displayed. Defaults to False.
+    """
+
+    imp_mats = []
+    for imp_mat_path in imp_mat_paths:
+        imp_mat = open_element(imp_mat_path, filetype="csv.gz")
+        if isinstance(imp_mat, pd.DataFrame):
+            imp_mat = imp_mat.values
+            imp_mats.append(imp_mat)
+        else:
+            print("Importance matrix must be a pd.DataFrame")
+            return
+
+    plt_data = dict(zip(dataset_names, imp_mats))
+
+    # TODO: Refine colors selecting them from a colormap by matplotlib
+    colors = ["blue", "orange", "red", "brown", "yellow"]
+    colors = colors[: len(dataset_names)]
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+
+    for (dataset_name, imp_mat), color in zip(plt_data.items(), colors):
+
+        print("-"*50)
+        print(f"Producing plot for dataset {dataset_name}")
+        print("-"*50)
+
+        imp_x = imp_mat[:, feats_plot[0]]
+        imp_y = imp_mat[:, feats_plot[1]]
+
+        ax.scatter(imp_x, imp_y, c=color, label=dataset_name)
+
+    ax.set_xlabel(f"Feature {feats_plot[0]}")
+    ax.set_ylabel(f"Feature {feats_plot[1]}")
+    plt.legend(loc="upper left")
+    ax.set_title(f"LFI Scatter Plot {model_name} {interpretation}")
+    ax.axis("equal")
+
+    if save_plot:
+        filename = f"{get_current_time()}_lfi_scatter_plot_{model_name}_{interpretation}_scenario_{scenario}.png"
         filepath = os.path.join(plot_path, filename)
         plt.savefig(filepath, bbox_inches="tight", dpi=300)
         print("-" * 50)
