@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+script_path="multi_lfi_scatter_plot_exp.py"
+
+dataset_names=("separated_anomalies" "moon_anomalies")
+model_name="EIF+"
+interpretation="EXIFFI+"
+f1=0
+f2=1
+scenario=2
+file_pos=0
+
+uv run $script_path \
+  --dataset_names "${dataset_names[@]}" \
+  --model "$model_name" \
+  --interpretation "$interpretation" \
+  --scenario $scenario \
+  --file_pos $file_pos \
+  --f1 "$f1" \
+  --f2 "$f2" \
+  --save_plot
+
