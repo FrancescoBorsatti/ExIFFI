@@ -1,39 +1,43 @@
 from __future__ import annotations
-import sys
-import os
-import json
-import ipdb
 
-# import ipdb; ipdb.set_trace()
+import json
+import os
+import sys
+
+import ipdb
 
 sys.path.append("..")
 
-from typing import Type, Optional, List
-import numpy.typing as npt
-from dataclasses import dataclass, field
-
-from scipy.io import loadmat
-import mat73
-
-import numpy as np
-import random
-import pandas as pd
-from glob import glob
-
-from sklearn.model_selection import StratifiedShuffleSplit as SSS
-from sklearn.preprocessing import StandardScaler
-import random
 import copy
+import random
+from dataclasses import dataclass, field
+from glob import glob
+from typing import List, Optional, Type
 
+import mat73
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+from scipy.io import loadmat
+from sklearn.model_selection import StratifiedShuffleSplit as SSS
 from sklearn.preprocessing import (
-    StandardScaler,
-    MinMaxScaler,
     MaxAbsScaler,
+    MinMaxScaler,
     RobustScaler,
+    StandardScaler,
 )
 
 
-def set_seed(seed):
+def set_seed(seed: int = 0) -> None:
+    """
+    This function sets the seed for the random and np.random classes
+
+    Args:
+        seed (int): integer seed to set
+
+    Returns:
+        None: this function simply sets the seed and does not return anything
+    """
     random.seed(seed)
     np.random.seed(seed)
 
@@ -81,7 +85,6 @@ class Dataset:
 
         if self.feature_names_filepath is not None:
             self.dataset_feature_names()
-            # import ipdb; ipdb.set_trace()
 
         if self.feature_names is None:
             self.feature_names = np.arange(self.shape[1])
@@ -111,36 +114,43 @@ class Dataset:
             The dataset is loaded in place.
         """
         try:
-            datapath = os.path.join(self.path, self.name + ".mat")
+            self.datapath = os.path.join(self.path, self.name + ".mat")
             try:
-                mat = loadmat(datapath)
+                mat = loadmat(self.datapath)
             except NotImplementedError:
-                mat = mat73.loadmat(datapath)
+                mat = mat73.loadmat(self.datapath)
 
             self.X = mat["X"].astype(float)
             self.y = mat["y"].reshape(-1, 1).astype(float)
 
         except FileNotFoundError:
             datapath = os.path.join(self.path, self.name + ".*")
-            datapath = glob(datapath)[0]
+            self.datapath = glob(datapath)[0]
             try:
-                T = pd.read_csv(datapath)
+                T = pd.read_csv(self.datapath)
                 if "Unnamed: 0" in T.columns:
-                    T = pd.read_csv(datapath, index_col=0)
+                    T = pd.read_csv(self.datapath, index_col=0)
                 self.X = T.loc[:, T.columns != "Target"].to_numpy(float)
                 self.y = T.loc[:, "Target"].to_numpy(float)
-            except Exception as e:
+            except Exception as _:
+                print("Column Target not found, trying with column Y")
                 try:
-                    T = pd.read_csv(datapath)
+                    T = pd.read_csv(self.datapath)
 
                     if "Unnamed: 0" in T.columns:
                         T = T.drop(columns=["Unnamed: 0"])
                     self.X = T["X"].to_numpy(dtype=float)
                     self.y = T["y"].to_numpy(dtype=float).reshape(-1, 1)
-                except:
+                except Exception as e:
                     raise Exception(
-                        f"The dataset name is not valid, dataset path: {datapath}"
+                        f"The dataset name is not valid, dataset path: {self.datapath}"
                     ) from e
+
+    def get_path(self) -> str:
+        """
+        Return the datapath from which the dataset is loaded
+        """
+        return self.datapath
 
     def __repr__(self) -> str:
         return f"[{self.name}][{self.shape}][{self.n_outliers}]"
@@ -275,7 +285,8 @@ class Dataset:
 
     def pre_process(self, scaler_type: int = 1) -> None:
         """
-        Normalize the data using `StansardScaler()` from `sklearn.preprocessing`.
+        Normalize the data using a scaler defined
+        by scaler_type
 
         Returns:
            The dataset is normalized in place.
@@ -367,19 +378,18 @@ class Dataset:
 
 
 def load_dataset(
-    dataset_name: str = "TEP_ACME",
+    dataset_name: str = "tep_acme",
     dataset_path: str = os.getcwd(),
     downsample: bool = False,
     downsample_size: int = 7500,
     scenario: int = 2,
     pre_process: bool = False,
     scaler_type: int = 1,
-) -> Type[Dataset]:
+) -> Dataset:
     """
     Function to load a dataset
 
     Args:
-
         dataset_name (str): dataset name, by default TEP_ACME
         dataset_path (str): path to the dataset file, by default current working directory
         downsample (bool): weather to downsample the dataset or not, by default False
@@ -387,6 +397,9 @@ def load_dataset(
         scenario (int): training scenario, by default 2
         pre_process (bool): weather to pre process the dataset or not
         scaler_type (int): type of scaler to use to scale the data, by default 1
+
+    Returns:
+        dataset (Dataset): an instance of the Dataset class
     """
 
     dataset = Dataset(
@@ -396,7 +409,6 @@ def load_dataset(
     )
     dataset.drop_duplicates()
 
-    # Downsample datasets with more than 7500 samples
     if dataset.shape[0] > downsample_size and downsample:
         dataset.downsample(max_samples=downsample_size)
 

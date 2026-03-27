@@ -1,46 +1,54 @@
-from typing import Type, Union
+"""
+Python module containing all the functions needed for the experiments
+"""
 
-import sys
+import copy
 import os
-import ipdb
+import pickle
 import random
+import sys
+import time
+import warnings
+from argparse import Namespace
+from typing import Tuple, Type, Union, Callable
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
-
-realpath = os.path.realpath(__file__)  # true path of this script
-realpath = os.path.dirname(realpath)  # go up one dir
-sys.path.append(realpath)  # appened to sys path
-
+import ipdb
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm, trange
-import copy
-
-from exiffi_core.model import ExtendedIsolationForest, IsolationForest
-from model_reboot.interpretability_module import *
-from utils_reboot.datasets import Dataset
-from utils_reboot.utils import save_element, open_element, initialize_perf_dict
-import sklearn
+import pandas as pd
 import shap
-from sklearn.ensemble import IsolationForest
-from sklearn.ensemble import RandomForestRegressor
+import sklearn
 from ACME.ACME import ACME
+from exiffi_core.model import ExtendedIsolationForest
+from model_reboot.interpretability_module import (
+    diffi_ib,
+    local_diffi,
+    local_diffi_batch,
+)
+from scipy.stats import pearsonr
+from sklearn.ensemble import IsolationForest, RandomForestRegressor
+from sklearn.feature_selection import mutual_info_regression
 from sklearn.metrics import (
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
     accuracy_score,
     average_precision_score,
     balanced_accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
-
-import pickle
-import time
-import pandas as pd
-
-import warnings
+from tqdm import tqdm, trange
+from utils_reboot.datasets import Dataset, load_dataset
+from utils_reboot.exp_config import check_arguments
+from utils_reboot.models import load_model
+from utils_reboot.smd_dataset import SMDataset, load_smd_dataset
+from utils_reboot.utils import (
+    generate_path,
+    get_most_recent_file,
+    initialize_perf_dict,
+    open_element,
+    save_element,
+)
 
 warnings.filterwarnings("ignore")
 
@@ -53,7 +61,7 @@ dict_time, dict_time_imp, dict_time_path, dict_time_imp_path = initialize_perf_d
 )
 
 
-def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) -> float:
+def set_contamination(dataset: Dataset, cli_contamination: float = 0.1) -> float:
     """
     Set the contamination factor to use for the model predictions
     and importance computation. In case the dataset has labels we use its
@@ -61,7 +69,7 @@ def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) ->
     command line
 
     Args:
-        dataset (Type[Dataset]): dataset object
+        dataset (Dataset): dataset object
         cli_contamination (float): contamination factor passed through the command line, by default 0.1
 
     Returns:
@@ -82,17 +90,17 @@ def set_contamination(dataset: Type[Dataset], cli_contamination: float = 0.1) ->
 
 def compute_global_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p=0.1,
     interpretation="EXIFFI+",
     fit_model=True,
-) -> np.array:
+) -> np.ndarray:
     """
     Compute the global feature importances for an interpration model on a specific dataset.
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
@@ -106,11 +114,7 @@ def compute_global_importances(
         I.fit(dataset.X_train)
     if interpretation == "DIFFI":
         fi, _ = diffi_ib(I, dataset.X_test)
-    elif (
-        interpretation == "EXIFFI"
-        or interpretation == "EXIFFI+"
-        or interpretation == "C_EXIFFI+"
-    ):
+    elif interpretation in ["EXIFFI", "EXIFFI+", "C_EXIFFI"]:
         fi = I.global_importances(dataset.X_test, p)
     elif interpretation == "RandomForest":
         rf = RandomForestRegressor()
@@ -123,7 +127,7 @@ def compute_global_importances(
 
 def compute_local_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p=0.1,
     interpretation="EXIFFI+",
     fit_model=True,
@@ -134,7 +138,7 @@ def compute_local_importances(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         interpretation (str): Name of the interpretation method to be used. Defaults to "EXIFFI+".
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
@@ -148,10 +152,11 @@ def compute_local_importances(
     if fit_model:
         I.fit(dataset.X_train)
 
-    y_pred = I._predict(dataset.X_test, p).astype(int)
+    if I.name == "sklearn_IF":
+        y_pred = I.predict_labels(dataset.X_test).astype(int)
+    else:
+        y_pred = I._predict(dataset.X_test, p).astype(int)
     anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-
-    # import ipdb;ipdb.set_trace()
 
     print("Computing Local Importances...")
     print("#" * 50)
@@ -184,27 +189,50 @@ def EIF_score_function(model, data):
 def sklearn_IF_score_function(model, data):
     return 0.5 * (-model.decision_function(data) + 1)
 
+# Score function for pyod based models
+# def pyod_score_function(model, data):
+#     return model.decision_function(data)
+
+def get_score_function(model_name: str = "EIF+") -> Callable:
+    """
+    This function returns the score function (i.e. function to compute the anomaly score)
+    based on the model name. Needed to compute ACME
+
+    Args:
+        model_name (str): model name
+
+    Returns:
+        score_function (Callable): the score function for the specified model
+    """
+
+    if model_name == "sklearn_IF":
+        return sklearn_IF_score_function
+    elif model_name in ["IF","EIF", "EIF+", "AE", "SVDD"]:
+        return EIF_score_function
+    else:
+        raise ValueError(f"Model {model_name} not supported")
+
 
 def compute_imp_time_ACME(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p=0.1,
     n_quantiles: int = 70,
     fit_model=True,
-) -> np.array:
+) -> np.ndarray:
     """
-    Compute the local feature importances using the ACME interpretation model on a specific dataset.
+    Compute the time for the computation of the LFI score with ACME
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
+        model (str): The name of the model to explain with ACME. Defaults to 'EIF+'.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70.
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
 
     Returns:
-        The local feature importances vector of all the points in the input dataset
-
+        acme_time (float): time for the LFI score computation
     """
 
     if fit_model:
@@ -216,10 +244,12 @@ def compute_imp_time_ACME(
     print("Computing ACME Local Importances (for a single anomaly)")
     print("#" * 50)
 
+    score_function = get_score_function(model_name=model.name)
+
     data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
     data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
-    data_acme["Score"] = EIF_score_function(I, dataset.X_test)
-    data_acme_anomalies["Score"] = EIF_score_function(I, anomalies)
+    data_acme["Score"] = score_function(I, dataset.X_test)
+    data_acme_anomalies["Score"] = score_function(I, anomalies)
 
     acme_exp = ACME(
         I,
@@ -227,7 +257,7 @@ def compute_imp_time_ACME(
         dataset.feature_names,
         K=n_quantiles,
         task="ad",
-        score_function=EIF_score_function,
+        score_function=score_function,
     )
     acme_exp = acme_exp.explain(data_acme, True)
 
@@ -240,26 +270,74 @@ def compute_imp_time_ACME(
 
     print("Local Importances computed")
 
-    # import ipdb;ipdb.set_trace()
-
     return acme_time
+
+def get_ACME_lfi(
+    X: np.ndarray,
+    X_to_explain: np.ndarray,
+    model: ExtendedIsolationForest,
+    dataset: Union[Dataset, SMDataset],
+    n_quantiles: int = 70,
+    score_function: Callable = EIF_score_function,
+) -> pd.DataFrame:
+    """
+    Function to compute the local importance scores on an arbitrary set of data
+
+    Args:
+        X (np.ndarray): training set
+        X_to_explain (np.ndarray): subset to explain (i.e. the anomalies)
+        model (ExtendedIsolationForest): model to explain
+        n_quantiles (int): number of quantiles to use for input perturbation
+        score_function (Callable): function to compute the anomaly score of a sample
+    """
+
+    data_acme = pd.DataFrame(X, columns=dataset.feature_names)
+    data_acme_to_explain = pd.DataFrame(X_to_explain, columns=dataset.feature_names)
+    data_acme["Score"] = score_function(model, X)
+    data_acme_to_explain["Score"] = score_function(model, X_to_explain)
+
+    acme_exp = ACME(
+        model,
+        "Score",
+        dataset.feature_names,
+        K=n_quantiles,
+        task="ad",
+        score_function=score_function,
+    )
+    acme_exp = acme_exp.explain(data_acme, True)
+
+    imp_mat = pd.DataFrame(columns=dataset.feature_names)
+
+    for i in tqdm(
+        data_acme_to_explain.index.tolist(),
+        desc="Computing ACME Local Importances on anomalies",
+    ):
+        acme_loc = acme_exp.explain_local(data_acme_to_explain.loc[i])
+        feature_table = acme_loc.feature_importance(
+            local=True,
+            weights={"delta": 0.3, "change": 0.3, "distance": 0.2, "ratio": 0.2},
+        )
+        local_imp = feature_table["importance"].reindex(dataset.feature_names)
+        local_imp_values = local_imp.values
+        imp_mat.loc[i] = local_imp_values
+
+    return imp_mat
 
 
 def compute_local_importances_ACME(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     model: str = "EIF+",
     p=0.1,
     n_quantiles: int = 70,
     fit_model=True,
-) -> np.array:
+) -> pd.DataFrame:
     """
     Compute the local feature importances using the ACME interpretation model on a specific dataset.
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
-        model (str): The name of the model to explain with ACME. Defaults to 'EIF+'.
+        dataset (Dataset): Input dataset.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         n_quantiles (int): Number of quantile to use for the ACME explanations. Defaults to 70.
         fit_model (bool): Whether to fit the model on the dataset. Defaults to True.
@@ -279,51 +357,28 @@ def compute_local_importances_ACME(
         y_pred = I.predict(dataset.X_test)
         y_pred = np.vectorize(lambda x: 1 if x == -1 else 0)(y_pred)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-        score_function = sklearn_IF_score_function
     else:
         y_pred = I._predict(dataset.X_test, p).astype(int)
         anomalies = dataset.X_test[np.where(y_pred == 1)[0]]
-        score_function = EIF_score_function
 
-    data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
-    data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
-    data_acme["Score"] = score_function(I, dataset.X_test)
-    data_acme_anomalies["Score"] = score_function(I, anomalies)
-    acme_exp = ACME(
-        I,
-        "Score",
-        dataset.feature_names,
-        K=n_quantiles,
-        task="ad",
-        score_function=score_function,
+    score_function = get_score_function(model_name=model.name)
+
+    imp_mat = get_ACME_lfi(
+        X = dataset.X_test,
+        X_to_explain = anomalies,
+        model = I,
+        dataset = dataset,
+        n_quantiles = n_quantiles,
+        score_function = score_function
     )
-    acme_exp = acme_exp.explain(data_acme, True)
-
-    imp_mat = pd.DataFrame(columns=dataset.feature_names)
-
-    for i in tqdm(
-        data_acme_anomalies.index.tolist(),
-        desc="Computing ACME Local Importances on anomalies",
-    ):
-        acme_loc = acme_exp.explain_local(data_acme_anomalies.loc[i])
-        feature_table = acme_loc.feature_importance(
-            local=True,
-            weights={"delta": 0.3, "change": 0.3, "distance": 0.2, "ratio": 0.2},
-        )
-        local_imp = feature_table["importance"].reindex(dataset.feature_names)
-        local_imp_values = local_imp.values
-        imp_mat.loc[i] = local_imp_values
 
     print("Local Importances computed")
 
-    # import ipdb;ipdb.set_trace()
-
     return imp_mat
-
 
 def compute_imp_time_kernelSHAP(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     p: float = 0.1,
     background: float = 0.1,
     pre_process: float = False,
@@ -335,7 +390,7 @@ def compute_imp_time_kernelSHAP(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         background (float): The percentage of the dataset to use as background. Defaults to 0.1.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
@@ -343,7 +398,7 @@ def compute_imp_time_kernelSHAP(
         seed (int): set seed for reproducibility
 
     Returns:
-        The time to compute the local feature importances for a single anomaly
+        shap_time (float): time to compute the local feature importances for a single anomaly
     """
 
     set_seed(seed=seed)
@@ -382,7 +437,7 @@ def compute_imp_time_kernelSHAP(
 
 def compute_local_importances_kernelSHAP(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     background: float = 0.1,
     pre_process: float = False,
     scenario: int = 2,
@@ -393,7 +448,7 @@ def compute_local_importances_kernelSHAP(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         background (float): The percentage of the dataset to use as background. Defaults to 0.1.
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
         pre_process (bool): Whether to pre process the dataset after computing the downsampled version according to the background. Defaults to False.
@@ -431,7 +486,7 @@ def compute_local_importances_kernelSHAP(
     elif scenario == 1 and not pre_process:
         dataset.initialize_train_test()
 
-    scores = EIF_score_function(I, dataset.X_test)
+    scores = EIF_score_function(model=I, data=dataset.X_test)
     # Find the n_anomalies most anomalous points
     anomalies_idx = np.argsort(scores)[:n_anomalies]
     anomalies = dataset.X_test[anomalies_idx]
@@ -453,7 +508,7 @@ def compute_local_importances_kernelSHAP(
 
 def compute_local_imp_time(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     anomalies: npt.NDArray,
     p: float = 0.1,
     n_quantiles: int = 70,
@@ -502,7 +557,7 @@ def compute_local_imp_time(
 
 
 def compute_bars(
-    dataset: Type[Dataset],
+    dataset: Dataset,
     importances_file: str,
     filetype: str = "npz",
     model: str = "EIF+",
@@ -513,7 +568,7 @@ def compute_bars(
     and that contains the percentage of runs in which that feature was placed in each one of the different possible ranking positions
 
     Args:
-        dataset (Type[Dataset]): input dataset object
+        dataset (Dataset): input dataset object
         importances_file (str): path to the GFI/LFI matrix
         filetype (str): filetype of the importance file
 
@@ -556,7 +611,7 @@ def compute_bars(
 
 def fit_predict_experiment(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 40,
     model="EIF+",
 ) -> tuple[float, float]:
@@ -565,7 +620,7 @@ def fit_predict_experiment(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 40.
         model (str): The name of the model. Defaults to 'EIF+'.
 
@@ -611,7 +666,7 @@ def set_seed(seed):
 
 def experiment_global_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 10,
     seed: int = 0,
     p: float = 0.1,
@@ -622,7 +677,7 @@ def experiment_global_importances(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         seed (int): Starting value for the seed, at each new run it will be incremented by 1. In this way we can get reproducible results
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
@@ -632,11 +687,11 @@ def experiment_global_importances(
         fi (pd.DataFrame): A dataframe containing the GFI scores across the different runs
     """
 
-    fi = np.zeros(shape=(n_runs, dataset.X.shape[1]))
+    fi = np.zeros(shape=(n_runs, dataset.shape[1]))
     for i in tqdm(trange(n_runs, desc="Global Importances runs")):
         set_seed(seed=seed + i)
         fi[i, :] = compute_global_importances(
-            I, dataset, p=p, interpretation=interpretation
+            I=I, dataset=dataset, p=p, interpretation=interpretation
         )
 
     fi = pd.DataFrame(fi, columns=dataset.feature_names)
@@ -646,7 +701,7 @@ def experiment_global_importances(
 
 def experiment_local_importances(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 10,
     seed: int = 0,
     p: float = 0.1,
@@ -657,7 +712,7 @@ def experiment_local_importances(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         seed (int): Starting value for the seed, at each new run it will be incremented by 1. In this way we can get reproducible results
         p (float): The percentage of outliers in the dataset (i.e. contamination factor). Defaults to 0.1.
@@ -689,7 +744,9 @@ def experiment_local_importances(
     return cumul_imp, labels.astype(int)
 
 
-def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz") -> tuple[dict,list[str]]:
+def compute_plt_data(
+    imp_path: str, dataset: Dataset, filetype: str = "npz"
+) -> tuple[dict, list[str]]:
     """
     Compute statistics on the global feature importances obtained from experiment_global_importances. These will then be used in the score_plot method.
 
@@ -707,15 +764,15 @@ def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz
     elif filetype == "csv.gz":
         fi = open_element(imp_path, filetype="csv.gz").values
 
-    #NOTE: Separate columns containing inf values from normal columns
+    # NOTE: Separate columns containing inf values from normal columns
     # and remove them from fi before computing the statistics.
 
-    normal_cols=0
-    normal_cols_idx=[]
-    inf_cols=0
-    inf_cols_idx=[]
+    normal_cols = 0
+    normal_cols_idx = []
+    inf_cols = 0
+    inf_cols_idx = []
     for i in range(fi.shape[1]):
-        col = fi[:,i]
+        col = fi[:, i]
         if np.isinf(col).any():
             inf_cols = inf_cols + 1
             inf_cols_idx.append(i)
@@ -723,10 +780,10 @@ def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz
             normal_cols = normal_cols + 1
             normal_cols_idx.append(i)
 
-    col_names=dataset.feature_names
+    col_names = dataset.feature_names
     normal_columns = [col_names[i] for i in normal_cols_idx]
     inf_columns = [col_names[i] for i in inf_cols_idx]
-    fi = fi[:,normal_cols_idx]
+    fi = fi[:, normal_cols_idx]
 
     # Handle the case in which there are some np.nan in the fi array
     if np.isnan(fi).any():
@@ -756,7 +813,7 @@ def compute_plt_data(imp_path: str, dataset: Type[Dataset], filetype: str = "npz
 
 def feature_selection(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     importances_indexes: npt.NDArray,
     n_runs: int = 10,
     seed: int = 0,
@@ -769,7 +826,7 @@ def feature_selection(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         importances_indexes (npt.NDArray): The indexes of the features in the dataset.
         n_runs (int): The number of runs. Defaults to 10.
         seed (int): Starting seed for reproducibility
@@ -792,25 +849,59 @@ def feature_selection(
                 importances_indexes = np.random.choice(
                     importances_indexes, len(importances_indexes), replace=False
                 )
-            dataset_shrinking.X = (
-                dataset.X_test[:, importances_indexes[: d - number_of_features_dropped]]
-                if not inverse
-                else dataset.X_test[:, importances_indexes[number_of_features_dropped:]]
-            )
-            dataset_shrinking.y = dataset.y
-            dataset_shrinking.drop_duplicates()
 
-            if scenario == 2:
-                dataset_shrinking.split_dataset(1 - dataset_shrinking.perc_outliers, 0)
-                dataset_shrinking.initialize_test()
+            if "machine" not in dataset.name:
+
+                dataset_shrinking.X = (
+                    dataset.X_test[
+                        :, importances_indexes[: d - number_of_features_dropped]
+                    ]
+                    if not inverse
+                    else dataset.X_test[
+                        :, importances_indexes[number_of_features_dropped:]
+                    ]
+                )
+
+                dataset_shrinking.y = dataset.y_test
+                dataset_shrinking.drop_duplicates()
+
+                if scenario == 2:
+                    dataset_shrinking.split_dataset(
+                        1 - dataset_shrinking.perc_outliers, 0
+                    )
+                    dataset_shrinking.initialize_test()
+                else:
+                    dataset_shrinking.initialize_train()
+                    dataset_shrinking.initialize_test()
+
             else:
-                dataset_shrinking.initialize_train()
-                dataset_shrinking.initialize_test()
 
-            # import ipdb; ipdb.set_trace()
+                dataset_shrinking.X_train = (
+                    dataset.X_train[
+                        :, importances_indexes[: d - number_of_features_dropped]
+                    ]
+                    if not inverse
+                    else dataset.X_train[
+                        :, importances_indexes[number_of_features_dropped:]
+                    ]
+                )
+                dataset_shrinking.X_test = (
+                    dataset.X_test[
+                        :, importances_indexes[: d - number_of_features_dropped]
+                    ]
+                    if not inverse
+                    else dataset.X_test[
+                        :, importances_indexes[number_of_features_dropped:]
+                    ]
+                )
 
             try:
-                if dataset.X.shape[1] == dataset_shrinking.X.shape[1]:
+                if dataset.shape[1] == dataset_shrinking.shape[1]:
+                    print("-" * 50)
+                    print(
+                        f"dataset and dataset_shrinking with same shape: {dataset.shape}"
+                    )
+                    print("-" * 50)
                     start_time = time.time()
                     I.fit(dataset_shrinking.X_train)
                     fit_time = time.time() - start_time
@@ -819,6 +910,7 @@ def feature_selection(
                         dict_time["fit"][I.name].setdefault(dataset.name, []).append(
                             fit_time
                         )
+
                     start_time = time.time()
                     score = I.predict(dataset_shrinking.X_test)
                     predict_time = time.time() - start_time
@@ -827,16 +919,29 @@ def feature_selection(
                         dict_time["predict"][I.name].setdefault(
                             dataset.name, []
                         ).append(predict_time)
+
                 else:
+                    print("-" * 50)
+                    print(
+                        f"dataset and dataset_shrinking with different shape: dataset has {dataset.shape} and dataset_shrinking has {dataset_shrinking.shape}"
+                    )
+                    print("-" * 50)
                     I.fit(dataset_shrinking.X_train)
                     score = I.predict(dataset_shrinking.X_test)
-                avg_prec = sklearn.metrics.average_precision_score(
-                    dataset_shrinking.y, score
+
+                y_test = (
+                    dataset_shrinking.y_test
+                    if "machine" in dataset.name
+                    else dataset_shrinking.y
                 )
-                # import ipdb;
-                # ipdb.set_trace()
+                avg_prec = sklearn.metrics.average_precision_score(y_test, score)
+                print(f"average precision: {avg_prec}")
                 runs[run] = avg_prec
-            except:
+            except Exception as _:
+                print("-" * 50)
+                print("Exception, setting average precision to NaN")
+                print("-" * 50)
+                ipdb.set_trace()
                 runs[run] = np.nan
 
         precisions[number_of_features_dropped] = runs
@@ -848,7 +953,7 @@ def feature_selection(
 
 def contamination_in_training_precision_evaluation(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     n_runs: int = 10,
     train_size=0.8,
     contamination_values: npt.NDArray = np.linspace(0.0, 0.1, 10),
@@ -862,7 +967,7 @@ def contamination_in_training_precision_evaluation(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         n_runs (int): The number of runs. Defaults to 10.
         train_size (float): The size of the training set. Defaults to 0.8.
         contamination_values (npt.NDArray): The contamination values. Defaults to `np.linspace(0.0,0.1,10)`.
@@ -957,7 +1062,7 @@ def performance(
     score: np.array,
     I: Type[ExtendedIsolationForest],
     model_name: str,
-    dataset: Type[Dataset],
+    dataset: Dataset,
     contamination: float = 0.1,
     train_size: float = 0.8,
     scenario: int = 2,
@@ -977,7 +1082,7 @@ def performance(
         score (np.array): The Anomaly Scores.
         I (Type[ExtendedIsolationForest]): The AD model.
         model_name (str): The name of the model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         contamination (float): The contamination factor. Defaults to 0.1.
         train_size (float): The size of the training set. Defaults to 0.8.
         scenario (int): The scenario of the experiment. Defaults to 2.
@@ -995,7 +1100,7 @@ def performance(
     y_pred = y_pred.astype(int)
     y_true = y_true.astype(int)
 
-    if dataset.X.shape[0] > 7500 and downsample:
+    if len(y_true) > 7500 and downsample:
         dataset.downsample(max_samples=7500)
 
     precisions = []
@@ -1040,7 +1145,7 @@ def performance(
 
 def ablation_EIF_plus(
     I: Type[ExtendedIsolationForest],
-    dataset: Type[Dataset],
+    dataset: Dataset,
     eta_list: list[float],
     nruns: int = 10,
 ) -> list[np.array]:
@@ -1049,7 +1154,7 @@ def ablation_EIF_plus(
 
     Args:
         I (Type[ExtendedIsolationForest]): The AD model.
-        dataset (Type[Dataset]): Input dataset.
+        dataset (Dataset): Input dataset.
         eta_list (list): The list of eta values.
         nruns (int): The number of runs. Defaults to 10.
 
@@ -1067,3 +1172,174 @@ def ablation_EIF_plus(
             precision.append(average_precision_score(dataset.y_test, score))
         precisions.append(precision)
     return precisions
+
+
+def setup_exp(
+    args: Namespace,
+) -> Tuple[Union[Dataset, SMDataset], ExtendedIsolationForest]:
+    """
+    Function to check the validity of the command line arguments,
+    load the dataset and the model
+
+    Args:
+        args (Namespace): experiment configuration
+
+    Returns:
+        dataset (Union[Dataset,SMDataset]): dataset to use for the experiment
+        model (ExtendedIsolationForest): dataset to use for the experiment
+    """
+
+    check_arguments(model_name=args.model_name, interpretation=args.interpretation)
+
+    if "machine" in args.dataset_name:
+
+        dataset = load_smd_dataset(
+            dataset_name=args.dataset_name,
+            dataset_path=args.dataset_path,
+            downsample=args.downsample,
+            pre_process=args.pre_process,
+            scaler_type=args.scaler_type,
+        )
+
+    else:
+
+        dataset = load_dataset(
+            dataset_name=args.dataset_name,
+            dataset_path=args.dataset_path,
+            downsample=args.downsample,
+            scenario=args.scenario,
+            pre_process=args.pre_process,
+            scaler_type=args.scaler_type,
+        )
+
+    args.contamination = set_contamination(
+        dataset=dataset, cli_contamination=args.contamination
+    )
+    n_features = dataset.X_train.shape[1]
+
+    model = load_model(args=args, n_features=n_features)
+
+    return dataset, model
+
+
+def get_precision_file(
+    dataset: Dataset, model_name: str = "EIF", scenario: int = 2, file_pos: int = 0
+) -> pd.DataFrame:
+    """
+    Function to retrieve the metrics dataframe obtained in the last experiment
+
+    Args:
+        dataset (Dataset): dataset object
+        model_name (str): name of the model
+        scenario (int): training scenario
+        file_pos (int): position of the metrics file to load
+    """
+    path = generate_path(
+        basepath=cwd,
+        folders=[
+            "experiments",
+            "results",
+            dataset.name,
+            "experiments",
+            "metrics",
+            model_name,
+            f"scenario_{scenario}",
+        ],
+    )
+    file_path = get_most_recent_file(path, file_pos=file_pos)
+    results = open_element(file_path)
+    print("#" * 50)
+    print(f"Performance metrics table loaded from: {file_path}")
+    print("#" * 50)
+    return results
+
+
+def compute_sensor_interactions(
+    data: Dataset, tol: float = 0.05
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Function to perform the sensor interactions experiment. For each pair of features
+    in the input dataframe it computes the Pearson correlation coefficient and the mutual
+    information coefficients and returns two matrices (in form of dataframes) containig the
+    values of the selected coefficients for each feature pair.
+
+    Args:
+        data (Dataset): dataset of sensor measurements on which to compute the sensor interactions
+        tol (float): tolerance value to consider the correlation between two variables as negligible
+
+    Returns:
+        corr_df, mi_df (Tuple[pd.DataFrame, pd.DataFrame]): dataframes with the correlation and mutual information
+        values for each feature pair
+    """
+
+    X = data.X if isinstance(data, Dataset) else np.concatenate([data.X_train,data.X_test])
+    M = X.shape[1]
+
+    corr_matrix = np.zeros((M, M))
+    mi_matrix = np.zeros((M, M))
+    corr_counter, mi_counter, corr_and_mi_counter = 0, 0, 0
+
+    for i in range(M):
+        for j in range(M):
+
+            x = X[:, i]
+            y = X[:, j]
+
+            print("-" * 50)
+            print(
+                f"Computing interactions between sensors {data.feature_names[i]} and {data.feature_names[j]}"
+            )
+            print("-" * 50)
+
+            # Pearson
+            corr = np.corrcoef(x, y)[0, 1]
+            corr_matrix[i, j] = corr
+
+            # Mutual Information
+            mi = mutual_info_regression(x.reshape(-1, 1), y)[0]
+            mi_matrix[i, j] = mi
+
+            if abs(corr) < tol:
+                print("-" * 50)
+                print(
+                    f"Correlation between {data.feature_names[i]} and {data.feature_names[j]} less than the tolerance → not correlated"
+                )
+                print("-" * 50)
+                corr_counter += 1
+
+            if mi > 0:
+                print("-" * 50)
+                print(
+                    f"Mutual information between {data.feature_names[i]} and {data.feature_names[j]} positive → not correlated"
+                )
+                print("-" * 50)
+                mi_counter += 1
+
+            if (abs(corr) < tol) and (mi > 0):
+                print("-" * 50)
+                print(
+                    f"Mutual information positive and correlation less than the tolerance between {data.feature_names[i]} and {data.feature_names[j]} → highly not correlated"
+                )
+                print("-" * 50)
+                corr_and_mi_counter += 1
+
+    print("-" * 50)
+    print("Sensor interaction experiment results")
+    print(
+        f"Number of small correlated feature pairs: {corr_counter}/{M*M} ({(corr_counter/(M*M))*100}%)"
+    )
+    print(
+        f"Number positive mutual information feature pairs: {mi_counter}/{M*M} ({(mi_counter/(M*M))*100}%)"
+    )
+    print(
+        f"Number of highly uncorrelated feature pairs: {corr_and_mi_counter}/{M*M} ({(corr_and_mi_counter/(M*M))*100}%)"
+    )
+    print("-" * 50)
+
+    corr_df, mi_df = pd.DataFrame(corr_matrix), pd.DataFrame(mi_matrix)
+    corr_df.columns = data.feature_names
+    corr_df.index = data.feature_names
+    mi_df.columns = data.feature_names
+    mi_df.index = data.feature_names
+
+    return corr_df, mi_df

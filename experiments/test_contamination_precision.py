@@ -103,7 +103,6 @@ elif model == "DIF":
     I = DIF(max_samples=max_samples)
 elif model == "AnomalyAutoencoder":
     I = AutoEncoder(hidden_neurons=[dataset.X.shape[1], 32, 32, dataset.X.shape[1]], contamination=0.1, epochs=50, random_state=42,verbose=0)
-    
 
 print('#'*50)
 print('Precision and Contamination Experiments')
@@ -127,7 +126,7 @@ if not os.path.exists(path_plots):
     os.makedirs(path_plots)
 
 #----------------- EVALUATE PRECISIONS OVER CONTAMINATION -----------------#
-# initialize contamiination paths
+# initialize contamination paths
 path_experiment_contamination = path_experiments + "/contamination"
 if not os.path.exists(path_experiment_contamination):
     os.makedirs(path_experiment_contamination)
@@ -142,7 +141,7 @@ if GFI:
 
     if interpretation == "NA":
         raise ValueError("Interpretation algorithm not specified")
-    
+
     path_experiment_global_importances = path_experiments + "/global_importances/contamination"
     if not os.path.exists(path_experiment_global_importances):
         os.makedirs(path_experiment_global_importances)

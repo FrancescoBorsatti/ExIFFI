@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+script_path="ablation_cont_fs.py"
+
+dataset_name="${1:-'TEP_ACME'}"
+
+source "./dataset_config"
+
+declare -A cfg
+get_datapath "$dataset_name" cfg
+
+dataset_path=${cfg[dataset_path]}
+tep_name=${cfg[tep_name]}
+coffe_name=${cfg[coffe_name]}
+piade_prefix=${cfg[piade_prefix]}
+piade_suffix=${cfg[piade_suffix]}
+
+model_name="EIF+"
+interpretation="EXIFFI+"
+scenario=2
+n_runs=10
+n_cont_values=11
+contamination=0.15
+cont_values=(0.2 0.4 0.6 0.8)
+
+echo "---------------------------------------------------"
+echo "Running ablation contamination feature selection experiment for $dataset_name"
+echo "---------------------------------------------------"
+
+uv run $script_path \
+    --dataset_name "$dataset_name" \
+    --dataset_path "$dataset_path" \
+    --model_name "$model_name" \
+    --interpretation "$interpretation" \
+    --contamination $contamination \
+    --contamination_values "${cont_values[@]}" \
+    --scenario "$scenario" \
+    --seed 0 \
+    --n_cont_values $n_cont_values \
+    --n_runs "$n_runs" \
+    --pre_process \
+    --scaler_type 4 \
+    --subset_cont_values \
+    --merge_dict \
+    --plot_ablation_cont \
+    --file_pos 0
+
+
+
+

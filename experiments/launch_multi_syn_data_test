@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+script_path="multi_syn_data_test.py"
+
+echo "------------------------------------------------"
+echo "Executing $script_path"
+echo "------------------------------------------------"
+
+syn_data_names=("separated_anomalies" "moon_anomalies")
+file_pos=0
+
+uv run $script_path \
+  --syn_data_names "${syn_data_names[@]}" \
+  --file_pos $file_pos \
+  --plot_syn_data \
+  --save_plot

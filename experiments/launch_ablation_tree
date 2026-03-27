@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+script_path="ablation_trees.py"
+
+dataset_name="${1:-'TEP_ACME'}"
+
+source "./dataset_config"
+
+declare -A cfg
+get_datapath "$dataset_name" cfg
+
+dataset_path=${cfg[dataset_path]}
+tep_name=${cfg[tep_name]}
+coffe_name=${cfg[coffe_name]}
+piade_prefix=${cfg[piade_prefix]}
+piade_suffix=${cfg[piade_suffix]}
+
+model_name="EIF+"
+interpretation="EXIFFI+"
+scenario=2
+n_runs=10
+# num_trees=(100 200 300 400 500)
+num_trees=(10 30 50 100 200 300)
+
+echo "---------------------------------------------------"
+echo "Running ablation tree experiment for $dataset_name"
+echo "---------------------------------------------------"
+
+uv run $script_path \
+    --dataset_name "$dataset_name" \
+    --dataset_path "$dataset_path" \
+    --model_name "$model_name" \
+    --interpretation "$interpretation" \
+    --scenario "$scenario" \
+    --seed 0 \
+    --num_trees "${num_trees[@]}"\
+    --n_runs "$n_runs" \
+    --pre_process \
+    --scaler_type 4 \
+    --run_ablation_trees \
+    --plot_ablation_trees \
+    --file_pos 0
+
+
+

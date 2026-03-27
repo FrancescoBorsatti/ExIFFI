@@ -1,0 +1,62 @@
+{
+  "TEP_ACME": [
+    "xmeas_11",
+    "xmeas_22"
+  ],
+  "piade_s1": [
+    "%idle",
+    "A_005"
+  ],
+  "piade_s1_alarms_no_zeros": [
+    "%idle",
+    "A_066"
+  ],
+  "piade_s2": [
+    "%scheduled_downtime",
+    "A_010"
+  ],
+  "piade_s2_alarms_no_zeros": [
+    "%scheduled_downtime",
+    "A_010"
+  ],
+  "piade_s3": [
+    "%idle",
+    "A_020"
+  ],
+  "piade_s3_alarms_no_zeros": [
+    "%idle",
+    "%downtime"
+  ],
+  "piade_s4": [
+    "A_010",
+    "%idle"
+  ],
+  "piade_s4_alarms_no_zeros": [
+    "idle/idle",
+    "%idle"
+  ],
+  "piade_s5": [
+    "%idle",
+    "idle/idle"
+  ],
+  "piade_s5_alarms_no_zeros": [
+    "%idle",
+    "idle/idle"
+  ],
+  "CoffeData": [
+    "Coffe1",
+    "Coffe2"
+  ],
+  "machine-1-1": [
+    33,
+    9
+  ],
+  "machine-2-1": [
+    8,
+    25
+  ],
+  "machine-3-1": [
+    9,
+    6
+  ]
+}

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+dataset_name="${1:-'TEP_ACME'}"
+
+model_name="${2:-EIF+}"
+interpretation="${3:-EXIFFI+}"
+n_estimators=300
+scenario=2
+n_runs=40
+file_pos=4
+
+score_plot=${4:-1}
+local_scoremaps=${5:-0}
+
+
+if [[ "$interpretation" = "ACME" || "$interpretation" = "KernelSHAP" ]]; then
+
+  ./launch_local_imp_exp \
+    "$dataset_name" \
+    "$model_name" \
+    "$interpretation" \
+    $n_estimators \
+    $scenario \
+    $n_runs \
+    $file_pos
+
+  if [[ "$local_scoremaps" = 1 ]]; then
+
+    ./launch_scoremaps_exp \
+        "$dataset_name" \
+        "$model_name" \
+        "$interpretation" \
+        $n_estimators \
+        $scenario
+  fi
+
+elif [[ "$interpretation" = "EXIFFI" || "$interpretation" = "EXIFFI+" || "$interpretation" = "DIFFI" ]]; then
+
+  if [[ "$score_plot" = 1 ]]; then
+
+    ./launch_exp_GFI \
+      "$dataset_name" \
+      "$model_name" \
+      "$interpretation" \
+      $n_estimators \
+      $scenario \
+      $n_runs \
+      $file_pos
+
+  fi
+
+  if [[ "$local_scoremaps" = 1 ]]; then
+
+    ./launch_scoremaps_exp \
+        "$dataset_name" \
+        "$model_name" \
+        "$interpretation" \
+        $n_estimators \
+        $scenario
+  fi
+
+else
+
+  echo "Interpretation algorithm $interpretation not supported"
+  exit 1
+fi
+

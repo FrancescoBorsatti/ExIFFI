@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+script_path="multi_datasets_fs_plot_exp.py"
+
+echo "------------------------------------------------"
+echo "Executing $script_path"
+echo "------------------------------------------------"
+
+dataset_names=("separated_anomalies" "moon_anomalies")
+eval_model="EIF+"
+model_name="EIF+"
+interpretation="EXIFFI+"
+scenario=2
+change_box_loc=0.6
+file_pos=0
+
+uv run $script_path \
+  --dataset_names "${dataset_names[@]}" \
+  --eval_model $eval_model \
+  --model_interpretation "$model_name" \
+  --interpretation "$interpretation" \
+  --scenario $scenario \
+  --downsample \
+  --pre_process \
+  --scaler_type 4 \
+  --change_box_loc $change_box_loc \
+  --file_pos $file_pos \
+  --change_ylim \
+  --save_plot

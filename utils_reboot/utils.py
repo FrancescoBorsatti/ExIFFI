@@ -1,21 +1,20 @@
-import time
-import random
-from typing import Type, Union, Optional, List
-import numpy.typing as npt
-import pickle
-import numpy as np
-import pandas as pd
-import os
+"""
+Python module with utility functions of various types
+"""
+
 import json
+import os
+import pickle
+import time
 from collections import namedtuple
+from typing import List, Optional, Type, Union
 
-# from append_to_path import append_dirname
-# append_dirname("ExIFFI_Industrial_Test")
-
-from utils_reboot.datasets import Dataset
+import ipdb
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
 from sklearn.ensemble import IsolationForest
-# from pyod.models.dif import DIF as oldDIF
-# from pyod.models.auto_encoder import AutoEncoder as oldAutoEncoder
+from utils_reboot.datasets import Dataset
 
 Precisions = namedtuple(
     "Precisions", ["direct", "inverse", "dataset", "model", "value"]
@@ -24,160 +23,6 @@ NewPrecisions = namedtuple(
     "NewPrecisions", ["direct", "inverse", "dataset", "model_name", "value", "aucfs"]
 )
 Precisions_random = namedtuple("Precisions_random", ["random", "dataset", "model_name"])
-
-
-class sklearn_IsolationForest(IsolationForest):
-    """
-    Wrapper of `sklearn.ensemble.IsolationForest`
-    """
-
-    def __init__(self, **kwargs):
-        """
-        Constructor of the class `sklearn_IsolationForest` which uses the constructor of the parent class `IsolationForest` from `sklearn.ensemble` module.
-
-        Attributes:
-            name (str): Add the name attribute to the class.
-        """
-        super().__init__(**kwargs)
-        self.name = "sklearn_IF"
-
-    def predict(self, X: np.array) -> np.array:
-        """
-        Overwrite the `predict` method of the parent class `IsolationForest` from `sklearn.ensemble` module to obtain the
-        Anomaly Scores instead of the class labels (i.e. inliers and outliers)
-
-        Args:
-            X: Input dataset
-
-        Returns:
-            Anomaly Scores
-        """
-
-        score = self.decision_function(X)
-        return -1 * score + 0.5
-
-    def _predict(self, X: np.array, p: float) -> np.array:
-        """
-        Method to predict the class labels based on the Anomaly Scores and the contamination factor `p`
-
-        Args:
-            X: Input dataset
-            p: Contamination factor
-
-        Returns:
-            Class labels (i.e. 0 for inliers and 1 for outliers)
-        """
-
-        An_score = self.predict(X)
-        y_hat = An_score > sorted(An_score, reverse=True)[int(p * len(An_score))]
-        return y_hat
-
-
-# class DIF(oldDIF):
-
-#     """
-#     Wrapper of `pyod.models.dif.DIF`
-#     """
-
-#     def __init__(self, **kwargs):
-
-#         """
-#         Constructor of the class `DIF` which uses the constructor of the parent class `DIF` from `pyod.models.dif` module.
-
-#         Attributes:
-#             name (str): Add the name attribute to the class.
-#         """
-#         super().__init__(**kwargs)
-#         self.name = "DIF"
-
-#     def predict(self, X:np.array) -> np.array:
-
-#         """
-#         Overwrite the `predict` method of the parent class `DIF` from `pyod.models.dif` module to obtain the
-#         Anomaly Scores instead of the class labels (i.e. inliers and outliers)
-
-#         Args:
-#             X: Input dataset
-
-#         Returns:
-#             Anomaly Scores
-
-#         """
-
-#         score=self.decision_function(X)
-#         return score
-
-#     def _predict(self,
-#                  X:np.array,
-#                  p:float)->np.array:
-
-#         """
-#         Method to predict the class labels based on the Anomaly Scores and the contamination factor `p`
-
-#         Args:
-#             X: Input dataset
-#             p: Contamination factor
-
-#         Returns:
-#             Class labels (i.e. 0 for inliers and 1 for outliers)
-#         """
-
-#         An_score = self.predict(X)
-#         y_hat = An_score > sorted(An_score,reverse=True)[int(p*len(An_score))]
-#         return y_hat
-
-
-# class AutoEncoder(oldAutoEncoder):
-
-#     """
-#     Wrapper of `pyod.models.auto_encoder.AutoEncoder`
-#     """
-
-#     def __init__(self, **kwargs):
-
-#         """
-#         Constructor of the class `AutoEncoder` which uses the constructor of the parent class `AutoEncoder` from `pyod.models.auto_encoder` module.
-
-#         Attributes:
-#             name (str): Add the name attribute to the class.
-#         """
-
-#         super().__init__(**kwargs)
-#         self.name = "AnomalyAutoencoder"
-
-#     def predict(self, X:np.array) -> np.array:
-
-#         """
-#         Overwrite the `predict` method of the parent class `AutoEncoder` from `pyod.models.auto_encoder` module to obtain the
-#         Anomaly Scores instead of the class labels (i.e. inliers and outliers)
-
-#         Args:
-#             X: Input dataset
-
-#         Returns:
-#             Anomaly Scores
-#         """
-#         score=self.decision_function(X)
-#         return score
-
-#     def _predict(self,
-#                  X:np.array,
-#                  p:float)-> np.array:
-
-#         """
-#         Method to predict the class labels based on the Anomaly Scores and the contamination factor `p`
-
-#         Args:
-#             X: Input dataset
-#             p: Contamination factor
-
-#         Returns:
-#             Class labels (i.e. 0 for inliers and 1 for outliers)
-#         """
-
-#         An_score = self.predict(X)
-#         y_hat = An_score > sorted(An_score,reverse=True)[int(p*len(An_score))]
-#         return y_hat
 
 
 def update_feature_names(
@@ -207,7 +52,11 @@ def update_feature_names(
         json.dump(data_feature_names, f)
 
 
-def get_feature_indexes(dataset: Type[Dataset], f1: str, f2: str) -> tuple[int, int]:
+def get_feature_indexes(
+    dataset: Dataset,
+    f1: Union[str, int],
+    f2: Union[str, int],
+) -> tuple[int, int]:
     """
     Function to get the indexes of two features in the dataset.
 
@@ -222,30 +71,50 @@ def get_feature_indexes(dataset: Type[Dataset], f1: str, f2: str) -> tuple[int, 
 
     feature_names = dataset.feature_names
 
-    try:
-        idx1 = feature_names.index(f1)
-    except ValueError:
-        raise ValueError("Feature name not valid")
-    try:
-        idx2 = feature_names.index(f2)
-    except ValueError:
-        raise ValueError("Feature name not valid")
+    if (isinstance(f1, int)) and (isinstance(f2, int)):
+        return f1, f2
+    else:
+        try:
+            idx1 = feature_names.index(f1)
+        except ValueError:
+            raise ValueError("Feature name not valid")
+        try:
+            idx2 = feature_names.index(f2)
+        except ValueError:
+            raise ValueError("Feature name not valid")
 
     return idx1, idx2
 
 
+def get_current_time() -> str:
+    """
+    This function returns the current time in the format 'dd-mm-YYYY_HH-MM-SS'.
+    It is used to produce the name of the files saved
+
+    Returns:
+        current_time: string representing the current time
+
+    """
+
+    t = time.localtime()
+    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
+    return current_time
+
+
 def save_element(
     element: Union[
-        np.array,
+        dict,
+        np.ndarray,
         list,
         pd.DataFrame,
-        Type[Precisions],
-        Type[NewPrecisions],
-        Type[Precisions_random],
+        Precisions,
+        NewPrecisions,
+        Precisions_random,
     ],
     directory_path: str,
     filename: str = "",
     filetype: str = "pickle",
+    add_time: bool = True,
 ) -> None:
     """
     Function to save an element produced by an experiment in a file (i.e. `npz` or `pickle` file) in the specified directory path.
@@ -255,21 +124,22 @@ def save_element(
         directory_path: Directory path where the file will be saved
         filename: Name of the file
         filetype: Type of the file (i.e. `npz` or `pickle`)
+        add_time: boolean flag to see weather to add the current time to the filename
 
     Returns:
         The method saves element and does not return any value
-
     """
 
-    assert filetype in [
-        "pickle",
-        "npz",
-        "csv.gz",
-    ], "filetype must be either 'pickle' or 'npz'"
-    t = time.localtime()
-    current_time = time.strftime("%d-%m-%Y_%H-%M-%S", t)
-    filename = current_time + "_" + filename
+    filetypes = ["pickle", "npz", "csv.gz", "json"]
+
+    assert filetype in filetypes, f"filetype must be one of {filetypes}"
+
+    if add_time:
+        current_time = get_current_time()
+        filename = current_time + "_" + filename
+
     path = directory_path + "/" + filename
+
     if filetype == "pickle":
         with open(path + ".pickle", "wb") as fl:
             pickle.dump(element, fl)
@@ -280,6 +150,9 @@ def save_element(
             # Convert numpy array to pandas DataFrame
             element = pd.DataFrame(element)
         element.to_csv(path + ".csv.gz", index=False, compression="gzip")
+    elif filetype == "json":
+        with open(path, "w") as fl:
+            json.dump(element, fl, indent=4)
 
 
 def generate_path(basepath: str = os.getcwd(), folders: List[str] = []) -> str:
@@ -321,18 +194,27 @@ def get_most_recent_file(directory_path: str, file_pos: int = 0) -> str:
 
     """
 
+    # NOTE: Insert here only the files contained in directory_path, do
+    # not consider subdirectories
+    files_list = [
+        x
+        for x in os.listdir(directory_path)
+        if os.path.isfile(os.path.join(directory_path, x))
+    ]
+
     files = sorted(
-        os.listdir(directory_path),
+        files_list,
         key=lambda x: os.path.getmtime(os.path.join(directory_path, x)),
         reverse=True,
     )
+
     return os.path.join(directory_path, files[file_pos])
 
 
 def open_element(
     file_path: str, filetype: str = "pickle"
 ) -> Union[
-    np.array,
+    np.ndarray,
     list,
     pd.DataFrame,
     Type[Precisions],
@@ -354,6 +236,7 @@ def open_element(
         "pickle",
         "npz",
         "csv.gz",
+        "json",
     ], "filetype must be either 'pickle' or 'npz'"
     if filetype == "pickle":
         with open(file_path, "rb") as fl:
@@ -365,6 +248,9 @@ def open_element(
             element = np.load(file_path, allow_pickle=True)["element"]
     elif filetype == "csv.gz":
         element = pd.read_csv(file_path)
+    elif filetype == "json":
+        with open(file_path, "r") as fl:
+            element = json.load(fl)
     else:
         raise ValueError("Filetype not recognized")
 
@@ -520,73 +406,6 @@ def select_pre_process_scenario(dataset: Type[Dataset]) -> int:
     return scenario
 
 
-def check_arguments(
-    model_name: str = "EIF",
-    interpretation: str = "EXIFFI",
-) -> None:
-    """
-    Thiss functions performs some assertions in order to stop immediately the code execution is the model name or the interpretation passed as command line argument are not correct.
-
-    Args:
-        model_name (str): model name
-        interpretation (str): interpretation name
-
-    Returns:
-        None: The function does not return any value but raises AssertionError
-    """
-
-    model_error = """
-        Model not recognized. Accepted values:
-            EIF → Extended Isolation Forest
-            EIF+ → Extended Isolation Forest Plus
-            IF → Isolation Forest
-            EIF+_centroid → EIF+ centroid importance
-            EIF+_distrib_split → EIF+ distribution aware splitting
-            EIF+_centroid_split → combination of EIF+_centroid and EIF+_distrib_split
-    """
-
-    interpretation_error = """
-    Interpretation method not recognized. Accepted values:
-        EXIFFI → Extended Isolation Forest Feature Importance
-        EXIFFI+ → EXIFFI based on EIF+
-        DIFFI → Depth Based Isolation Forest Feature Importance
-        ACME → AcME-AD
-        KernelSHAP → Kernel SHAP
-    """
-
-    assert model_name in [
-        "EIF",
-        "EIF+",
-        "IF",
-        "EIF+_centroid",
-        "EIF+_distrib_split",
-        "EIF+_centroid_split",
-    ], model_error
-
-    assert interpretation in [
-        "EXIFFI",
-        "EXIFFI+",
-        "DIFFI",
-        "ACME",
-        "KernelSHAP",
-    ], interpretation_error
-
-    if interpretation == "EXIFFI+":
-        assert model_name in [
-            "EIF+",
-            "EIF+_centroid",
-            "EIF+_distrib_split",
-            "EIF+_centroid_split",
-        ], "EXIFFI+ can only be used with the EIF+ model"
-    if interpretation == "EXIFFI":
-        assert model_name == "EIF", "EXIFFI can only be used with the EIF model"
-    if interpretation == "DIFFI":
-        assert model_name in [
-            "IF",
-            "sklearn_IF",
-        ], "DIFFI can only be used with IF based models"
-
-
 def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
     """
     This function initialized the performance dictionaries and creates them as
@@ -605,22 +424,28 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
     dict_time_imp_path = os.path.join(perf_dict_dirpath, "dict_time_imp.pickle")
 
     if not os.path.exists(dict_time_path):
+        print("-" * 50)
+        print("Creating new fit-predict time dictionary")
+        print("-" * 50)
+
         dict_time = {
             "fit": {
                 "EIF+": {},
                 "EIF": {},
-                "EIF+_centroid": {},
-                "EIF+_distrib_split": {},
-                "EIF+_centroid_split": {},
+                "IF": {},
             },
             "predict": {
                 "EIF+": {},
                 "EIF": {},
-                "EIF+_centroid": {},
-                "EIF+_distrib_split": {},
-                "EIF+_centroid_split": {},
+                "IF": {},
+            },
+            "predict_sample": {
+                "EIF+": {},
+                "EIF": {},
+                "IF": {},
             },
         }
+
         with open(dict_time_path, "wb") as file:
             pickle.dump(dict_time, file)
 
@@ -628,15 +453,19 @@ def initialize_perf_dict(basepath: str) -> tuple[dict, dict, str, str]:
         dict_time = pickle.load(file)
 
     if not os.path.exists(dict_time_imp_path):
+        print("-" * 50)
+        print("Creating new importances time dictionary")
+        print("-" * 50)
+
         dict_time_imp = {
             "importances": {
                 "EIF+_ACME": {},
                 "EIF+_KernelSHAP": {},
                 "EIF_EXIFFI": {},
                 "EIF+_EXIFFI+": {},
-                "EIF+_centroid_EXIFFI+": {},
-                "EIF+_distrib_split_EXIFFI+": {},
-                "EIF+_centroid_split_EXIFFI+": {},
+                "IF_DIFFI": {},
+                "IF_ACME": {},
+                "IF_KernelSHAP": {},
             },
         }
         with open(dict_time_imp_path, "wb") as file:

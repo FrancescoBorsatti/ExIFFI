@@ -5,6 +5,7 @@ data/data_DIFFI/
 data/syn/syn_feat
 exiffi_env.yml
 utils_reboot/time_dict_backup/
+tests/try_stuff.py
 
 # Python
 *.pickle
@@ -14,5 +15,15 @@ utils_reboot/time_dict_backup/
 
 # Mac OS files
 *.DS_Store
+
+# old notes
+coffedata_exp_tutorial.md
+
+# notebooks
+notebooks/
+
+# documentation
+mkdocs.yml
+docs/
 
 

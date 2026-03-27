@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+script_path="fs_std_exp.py"
+
+dataset_name="${1:-'TEP_ACME'}"
+
+source "./dataset_config"
+
+declare -A cfg
+get_datapath "$dataset_name" cfg
+
+dataset_path=${cfg[dataset_path]}
+tep_name=${cfg[tep_name]}
+coffe_name=${cfg[coffe_name]}
+piade_prefix=${cfg[piade_prefix]}
+
+model_name="${2:-EIF+}"
+interpretation="${3:-EXIFFI+}"
+n_estimators=300
+n_runs=10
+contamination=0.15
+scenario=2
+seed=0
+file_pos=0
+eval_model="EIF+"
+
+echo "#############################################"
+echo "Visualise statistical significance of feature selection experiments for model $model_name and interpretation $interpretation"
+echo "#############################################"
+
+if [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" ]]; then
+
+  uv run $script_path \
+      --dataset_name "$dataset_name" \
+      --dataset_path "$dataset_path" \
+      --eval_model "$eval_model" \
+      --model_interpretation "$model_name" \
+      --model_name "$model_name" \
+      --interpretation "$interpretation" \
+      --n_estimators $n_estimators \
+      --n_runs $n_runs \
+      --scenario $scenario \
+      --seed $seed \
+      --pre_process \
+      --scaler_type 4 \
+      --seed $seed
+
+elif [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
+
+  echo "#############################################"
+  echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
+  echo "#############################################"
+  exit 1
+
+else
+
+  echo "#############################################"
+  echo "Dataset $dataset_name not supported"
+  echo "#############################################"
+  exit 1
+
+fi
+

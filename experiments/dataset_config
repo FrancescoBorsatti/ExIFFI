@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+tep_name="TEP_ACME"
+coffe_name="CoffeData"
+piade_prefix="piade_s"
+piade_suffix="_alarms_no_zeros"
+smd_prefix="machine-"
+real_dataset_names=(
+  "$tep_name"
+  "$coffe_name"
+  "$smd_prefix"
+  "${piade_prefix}1"
+  "${piade_prefix}2"
+  "${piade_prefix}3"
+  "${piade_prefix}4"
+  "${piade_prefix}5"
+  "${piade_prefix}1${piade_suffix}"
+  "${piade_prefix}2${piade_suffix}"
+  "${piade_prefix}3${piade_suffix}"
+  "${piade_prefix}4${piade_suffix}"
+  "${piade_prefix}5${piade_suffix}"
+)
+
+contains() {
+  local target="$1"
+  shift
+  for element in "$@"; do
+    [[ "$element" == *"$target"* || "$target" == "$element"* ]] && return 0
+  done
+  return 1
+}
+
+get_datapath() {
+
+  local dataset_name=$1
+  local -n out=$2
+  out[tep_name]="$tep_name"
+  out[coffe_name]="$coffe_name"
+  out[piade_prefix]="$piade_prefix"
+  out[piade_suffix]="$piade_suffix"
+  out[smd_prefix]="$smd_prefix"
+
+  if contains "$dataset_name" "$smd_prefix"; then
+
+    out[dataset_path]="../../OmniAnomaly/ServerMachineDataset"
+
+  elif contains "$dataset_name" "$piade_prefix"; then
+
+    out[dataset_path]="../../datasets/data/PIADE/$dataset_name"
+
+  elif contains "$dataset_name" "$tep_name"; then
+
+    out[dataset_path]="../../datasets/data/$dataset_name"
+
+  else
+
+    out[dataset_path]="../../datasets/data/syn/$dataset_name"
+
+  fi
+
+  if [[ ! -e "${out[dataset_path]}" ]]; then
+    echo "No dataset at ${out[dataset_path]}"
+    exit 1
+  fi
+}

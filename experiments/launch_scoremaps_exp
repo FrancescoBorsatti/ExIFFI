@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+script_path="local_scoremaps_exp.py"
+
+dataset_name="${1:-'TEP_ACME'}"
+
+source "./dataset_config"
+
+declare -A cfg
+get_datapath "$dataset_name" cfg
+
+dataset_path=${cfg[dataset_path]}
+tep_name=${cfg[tep_name]}
+coffe_name=${cfg[coffe_name]}
+piade_prefix=${cfg[piade_prefix]}
+piade_suffix=${cfg[piade_suffix]}
+
+model_name="$2"
+interpretation="$3"
+n_estimators=${4:-300}
+scenario=${5:-2}
+contamination=0.15
+f1="33"
+f2="32"
+
+echo "#############################################"
+echo "Producing local scoremap for model ${model_name} and interpretation ${interpretation}"
+echo "#############################################"
+
+if [[ "$dataset_name" == ${piade_prefix}[1-5] || "$dataset_name" == ${piade_prefix}[1-5]${piade_suffix} ]]; then
+
+  echo "#############################################"
+  echo "Local scoremaps for unlabelled dataset"
+  echo "#############################################"
+
+  uv run $script_path \
+    --dataset_name "$dataset_name" \
+    --dataset_path "$dataset_path" \
+    --n_estimators "$n_estimators" \
+    --contamination "$contamination" \
+    --model "$model_name" \
+    --interpretation "$interpretation" \
+    --scenario "$scenario" \
+    --pre_process \
+    --scaler_type 1 \
+    --f1 "$f1" \
+    --f2 "$f2"
+
+elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
+
+  echo "#############################################"
+  echo "Local scoremaps for labelled dataset with pre processing"
+  echo "#############################################"
+
+  uv run $script_path \
+    --dataset_name "$dataset_name" \
+    --dataset_path "$dataset_path" \
+    --n_estimators "$n_estimators" \
+    --model "$model_name" \
+    --interpretation "$interpretation" \
+    --scenario $scenario \
+    --pre_process \
+    --scaler_type 4 \
+    --f1 "$f1" \
+    --f2 "$f2"
+
+else
+
+  echo "#############################################"
+  echo "Local scoremaps for labelled dataset without pre processing (synthetic dataset)"
+  echo "#############################################"
+
+  uv run $script_path \
+    --dataset_name "$dataset_name" \
+    --dataset_path "$dataset_path" \
+    --n_estimators "$n_estimators" \
+    --model "$model_name" \
+    --interpretation "$interpretation" \
+    --scenario $scenario \
+    --f1 "$f1" \
+    --f2 "$f2"
+
+fi

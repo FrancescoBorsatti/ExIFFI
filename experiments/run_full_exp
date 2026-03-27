@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+
+#NOTE: Functions
+
+check-code() {
+
+    code=$(echo ?)
+
+    if [[ "$code" != 0 ]]; then
+      echo "Exit code different from 0, stopping execution"
+      exit 1
+    fi
+
+}
+
+full-exp() {
+
+  for dataset_name in "${dataset_names[@]}"; do
+
+    ./launch_imp_plots "$dataset_name"
+
+    echo "---------------------------------------------------"
+    echo "Score plot produced, go and check out the most important features"
+    echo "and use them to update the scoremap_feats.json file. Press y when you are ready to continue"
+    echo "---------------------------------------------------"
+    read answer
+
+    if [[ "$answer" == "y" ]]; then
+
+      ./launch_imp_plots "$dataset_name" 0 1
+
+    else
+
+      echo "You were not ready! Going on with the other experiments"
+
+    fi
+
+    ./launch_metrics_exp "$dataset_name" 1
+
+  done
+
+}
+
+time-exp() {
+
+  for dataset_name in "${dataset_names[@]}"; do
+
+    echo "---------------------------------------------------"
+    echo "Time experiment for $dataset_name"
+    echo "---------------------------------------------------"
+
+    ./launch_metrics_exp "$dataset_name" 1
+
+  done
+}
+
+#NOTE: Script
+
+mode="${1:-'full'}"
+
+if [[ "$mode" != "full" && "$mode" != "time" ]]; then
+  echo "mode $mode is unsupported, stopping execution"
+  echo "supported modes are: 'full' and 'time'"
+  exit 1
+fi
+
+shift
+dataset_names=("$@")
+
+case "$mode" in
+
+  "full")
+
+    echo "---------------------------------------------------"
+    echo "Full experiment"
+    echo "---------------------------------------------------"
+
+    full-exp
+    ;;
+
+  "time")
+
+    echo "---------------------------------------------------"
+    echo "Time experiments"
+    echo "---------------------------------------------------"
+
+    time-exp
+    ;;
+
+  *)
+
+    echo "mode $mode not supported"
+    exit 1
+    ;;
+
+esac

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+script_path="extract_piade_data.py"
+
+echo "------------------------------------------"
+echo "Executing $script_path"
+echo "------------------------------------------"
+
+uv run $script_path \
+  --update_feat_names

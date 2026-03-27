@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# Path to the Python script to execute 
+# Path to the Python script to execute
 SCRIPT_PATH="test_contamination_precision.py"
 
 # Dataset 

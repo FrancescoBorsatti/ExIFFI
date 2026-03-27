@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+script_path="fs_exp.py"
+
+dataset_name="${1:-'TEP_ACME'}"
+
+source "./dataset_config"
+
+declare -A cfg
+get_datapath "$dataset_name" cfg
+
+dataset_path=${cfg[dataset_path]}
+tep_name=${cfg[tep_name]}
+coffe_name=${cfg[coffe_name]}
+piade_prefix=${cfg[piade_prefix]}
+smd_prefix=${cfg[smd_prefix]}
+
+model_name="${2:-EIF+}"
+interpretation="${3:-EXIFFI+}"
+n_estimators=300
+n_runs=10
+contamination=0.15
+scenario=2
+seed=0
+file_pos=0
+eval_model="EIF+"
+
+echo "#############################################"
+echo "Feature selection experiment for model $model_name and interpretation $interpretation"
+echo "#############################################"
+
+if [[ "$dataset_name" = ${piade_prefix}[1-5] ]]; then
+
+  echo "#############################################"
+  echo "Remember that $dataset_name has no labels so we cannot perform the feature selection experiment"
+  echo "#############################################"
+  exit 1
+
+elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$dataset_name" == "${smd_prefix}"* ]]; then
+
+  echo "#############################################"
+  echo "Starting feature selection for $dataset_name, with pre processing"
+  echo "#############################################"
+
+  uv run $script_path \
+      --dataset_name "$dataset_name" \
+      --dataset_path "$dataset_path" \
+      --eval_model "$eval_model" \
+      --model_interpretation "$model_name" \
+      --model_name "$model_name" \
+      --interpretation "$interpretation" \
+      --n_estimators $n_estimators \
+      --contamination $contamination \
+      --n_runs $n_runs \
+      --scenario $scenario \
+      --seed $seed \
+      --pre_process \
+      --scaler_type 4 \
+      --seed $seed \
+      --file_pos $file_pos \
+      --feature_selection \
+      --plot_feature_selection \
+      --change_ylim \
+      --rotation
+else
+
+  echo "#############################################"
+  echo "Starting feature selection for $dataset_name, no pre processing because synthetic dataset"
+  echo "#############################################"
+
+  uv run $script_path \
+      --dataset_name "$dataset_name" \
+      --dataset_path "$dataset_path" \
+      --eval_model "$eval_model" \
+      --model_interpretation "$model_name" \
+      --model_name "$model_name" \
+      --interpretation "$interpretation" \
+      --n_estimators $n_estimators \
+      --contamination $contamination \
+      --n_runs $n_runs \
+      --scenario $scenario \
+      --seed $seed \
+      --file_pos $file_pos \
+      --feature_selection \
+      --random_feature_selection \
+      --plot_feature_selection \
+      --change_ylim \
+      --rotation
+
+fi
+
