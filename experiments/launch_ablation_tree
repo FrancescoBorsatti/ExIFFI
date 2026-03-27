@@ -37,7 +37,6 @@ uv run $script_path \
     --n_runs "$n_runs" \
     --pre_process \
     --scaler_type 4 \
-    --run_ablation_trees \
     --plot_ablation_trees \
     --file_pos 0
 

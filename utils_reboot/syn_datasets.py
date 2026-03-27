@@ -584,8 +584,8 @@ def multi_plot_syn_data(
     """
 
     n_datasets = len(datasets)
-    colors = ["blue", "orange"]
-    fig, axes = plt.subplots(1, n_datasets, figsize=(10 * n_datasets, 10))
+    colors = ["blue", "red"]
+    fig, axes = plt.subplots(1, n_datasets, figsize=(5 * n_datasets, 5))
 
     if n_datasets == 1:
         axes = [axes]

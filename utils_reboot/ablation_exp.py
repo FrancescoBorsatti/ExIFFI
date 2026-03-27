@@ -169,7 +169,7 @@ def plot_ablation_trees(
         print(f"Producing plot {key} vs number of trees")
         print("-" * 50)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(6, 2.2))
 
         ax.plot(
             args.num_trees,
@@ -189,9 +189,10 @@ def plot_ablation_trees(
         if key == "avg_precs":
             ax.set_ylim((0, 1))
 
-        ax.set_xlabel("Number of trees", fontsize=20)
+        ax.set_xlabel("Number of trees")
         ax.set_xticks(args.num_trees)
-        ax.set_ylabel(label, fontsize=20)
+        ax.set_ylabel(label)
+        ax.set_ylim(bottom=0.7)
         ax.grid(alpha=0.7)
 
         if save_image:

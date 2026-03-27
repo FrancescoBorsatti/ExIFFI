@@ -1517,7 +1517,8 @@ def multi_lfi_scatter_plot(
         imp_mat = open_element(imp_mat_path, filetype="csv.gz")
         if isinstance(imp_mat, pd.DataFrame):
             imp_mat = imp_mat.values
-            imp_mats.append(imp_mat)
+            imp_mat_norm = (imp_mat - imp_mat.min()) / (imp_mat.max() - imp_mat.min())
+            imp_mats.append(imp_mat_norm)
         else:
             print("Importance matrix must be a pd.DataFrame")
             return
@@ -1525,10 +1526,10 @@ def multi_lfi_scatter_plot(
     plt_data = dict(zip(dataset_names, imp_mats))
 
     # TODO: Refine colors selecting them from a colormap by matplotlib
-    colors = ["blue", "orange", "red", "brown", "yellow"]
+    colors = ["blue", "red", "orange", "brown", "yellow"]
     colors = colors[: len(dataset_names)]
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    fig, ax = plt.subplots(1, 1, figsize=(4, 4))
 
     for (dataset_name, imp_mat), color in zip(plt_data.items(), colors):
         print("-" * 50)
@@ -1550,7 +1551,7 @@ def multi_lfi_scatter_plot(
 
     ax.set_xlabel(f"Feature {feats_plot[0]}")
     ax.set_ylabel(f"Feature {feats_plot[1]}")
-    plt.legend(loc="upper left")
+    plt.legend(loc="lower right")
     ax.set_title(f"LFI Scatter Plot {model_name} {interpretation}")
     ax.axis("equal")
 
