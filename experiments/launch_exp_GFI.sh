@@ -16,6 +16,8 @@ n_runs=${6:-40}
 file_pos=${7:-0}
 contamination=0.15
 
+# bash launch_exp_GFI.sh CoffeData 
+
 echo "#############################################"
 echo "GFI experiment for model $model_name and interpretation $interpretation"
 echo "#############################################"

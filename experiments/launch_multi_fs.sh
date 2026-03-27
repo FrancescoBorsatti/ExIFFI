@@ -13,7 +13,7 @@ file_pos=0
 change_box_loc=0.6
 eval_model="EIF+"
 
-python $script_path \
+uv run $script_path \
     --dataset_name $dataset_name \
     --dataset_path $dataset_path \
     --eval_model $eval_model \

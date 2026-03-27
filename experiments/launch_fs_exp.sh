@@ -6,8 +6,12 @@ dataset_name="${1:-'TEP_ACME'}"
 
 source "./dataset_config.sh"
 
-model_names=("IF")
-interpretations=("ACME")
+model_names=("EIF+" "IF" "EIF+" "EIF+")
+interpretations=("EXIFFI+" "DIFFI" "ACME" "KernelSHAP")
+# model_names=("IF" "EIF+" "EIF+")
+# interpretations=("DIFFI" "ACME" "KernelSHAP")
+# model_names=("EIF+")
+# interpretations=("KernelSHAP")
 n_estimators=300
 n_runs=10
 contamination=0.15
@@ -40,10 +44,10 @@ for (( i=0; i<n_models; i++ )); do
         --scaler_type 4 \
         --seed $seed \
         --file_pos $file_pos \
-        --feature_selection \
-        --compute_random \
         --plot_feature_selection \
         --rotation
+        # --feature_selection \
+        # --compute_random \
 
   elif [[ "$dataset_name" = "$piade_name" ]]; then
 

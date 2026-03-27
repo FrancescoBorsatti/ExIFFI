@@ -431,7 +431,7 @@ def compute_local_importances_kernelSHAP(
     elif scenario == 1 and not pre_process:
         dataset.initialize_train_test()
 
-    scores = EIF_score_function(dataset.X_test)
+    scores = EIF_score_function(I, dataset.X_test)
     # Find the n_anomalies most anomalous points
     anomalies_idx = np.argsort(scores)[:n_anomalies]
     anomalies = dataset.X_test[anomalies_idx]

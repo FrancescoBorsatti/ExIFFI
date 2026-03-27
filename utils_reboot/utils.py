@@ -276,6 +276,9 @@ def save_element(
     elif filetype == "npz":
         np.savez(path, element=element)
     elif filetype == "csv.gz":
+        if isinstance(element, np.ndarray):
+            # Convert numpy array to pandas DataFrame
+            element = pd.DataFrame(element)
         element.to_csv(path + ".csv.gz", index=False, compression="gzip")
 
 
