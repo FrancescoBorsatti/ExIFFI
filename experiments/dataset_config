@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 tep_name="TEP_ACME"
-coffe_name="CoffeData"
+coffe_name=("CoffeData" "CoffeDataD2")
 piade_prefix="piade_s"
 piade_suffix="_alarms_no_zeros"
 smd_prefix="machine-"
@@ -49,6 +49,10 @@ get_datapath() {
     out[dataset_path]="../../datasets/data/PIADE/$dataset_name"
 
   elif contains "$dataset_name" "$tep_name"; then
+
+    out[dataset_path]="../../datasets/data/$dataset_name"
+
+  elif contains "$dataset_name" "$coffe_name"; then
 
     out[dataset_path]="../../datasets/data/$dataset_name"
 

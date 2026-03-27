@@ -244,7 +244,7 @@ def compute_imp_time_ACME(
     print("Computing ACME Local Importances (for a single anomaly)")
     print("#" * 50)
 
-    score_function = get_score_function(model_name=model.name)
+    score_function = get_score_function(model_name=I.name)
 
     data_acme = pd.DataFrame(dataset.X_test, columns=dataset.feature_names)
     data_acme_anomalies = pd.DataFrame(anomalies, columns=dataset.feature_names)
