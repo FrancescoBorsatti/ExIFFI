@@ -2,7 +2,7 @@
 
 script_path="multi_fs_exp.py"
 
-dataset_name="${1:-'TEP_ACME'}"
+dataset_name="${1:-TEP_ACME}"
 
 source "./dataset_config"
 

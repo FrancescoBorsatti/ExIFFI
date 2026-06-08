@@ -1014,17 +1014,21 @@ def multi_plot_feature_selection_dataset(
         )
 
         if dataset_name == "separated_anomalies":
-            dataset_name="xy_axis"
+            dataset_name = "xy_axis"
         elif dataset_name == "moon_anomalies":
-            dataset_name="half_moon"
+            dataset_name = "half_moon"
 
         dim = len(plt_data["median_direct"])
+
+        lw = 2.5  # line width
 
         ax[i].plot(
             plt_data["median_random"],
             label="random",
             c=colors[3],
-            alpha=0.5,
+            linestyle=":",
+            linewidth=lw,
+            alpha=1.0,
             marker="o",
         )
 
@@ -1032,14 +1036,18 @@ def multi_plot_feature_selection_dataset(
             plt_data["median_direct"],
             label="direct",
             c=colors[4],
-            alpha=0.5,
+            linestyle="--",
+            linewidth=lw,
+            alpha=1.0,
             marker="o",
         )
         ax[i].plot(
             plt_data["median_inverse"],
             label="inverse",
             c=colors[1],
-            alpha=0.5,
+            linestyle="-.",
+            linewidth=lw,
+            alpha=1.0,
             marker="o",
         )
 
@@ -1085,22 +1093,25 @@ def multi_plot_feature_selection_dataset(
             np.arange(dim),
             plt_data["five_direct"],
             plt_data["ninetyfive_direct"],
-            alpha=0.1,
+            hatch="\\",
             color="k",
+            alpha=0.1,
         )
         ax[i].fill_between(
             np.arange(dim),
             plt_data["five_inverse"],
             plt_data["ninetyfive_inverse"],
-            alpha=0.1,
+            hatch="/",
             color="k",
+            alpha=0.1,
         )
         ax[i].fill_between(
             np.arange(dim),
             plt_data["median_direct"],
             plt_data["median_inverse"],
-            alpha=0.7,
+            hatch="|||",
             color="coral",
+            alpha=0.7,
         )
 
         ax[i].grid(visible=True, alpha=0.5, which="major", color="gray", linestyle="-")
@@ -1525,13 +1536,18 @@ def multi_lfi_scatter_plot(
 
     plt_data = dict(zip(dataset_names, imp_mats))
 
-    # TODO: Refine colors selecting them from a colormap by matplotlib
+    # NOTE: Swapped different colors with different line styles
+    # for greyscale compatibility
+
     colors = ["blue", "red", "orange", "brown", "yellow"]
     colors = colors[: len(dataset_names)]
 
+    markers = ["o", "v", "-.", "-", "--"]
+    markers = markers[: len(dataset_names)]
+
     fig, ax = plt.subplots(1, 1, figsize=(4, 4))
 
-    for (dataset_name, imp_mat), color in zip(plt_data.items(), colors):
+    for (dataset_name, imp_mat), marker, color in zip(plt_data.items(), markers, colors):
         print("-" * 50)
         print(f"Producing plot for dataset {dataset_name}")
         print("-" * 50)
@@ -1547,7 +1563,7 @@ def multi_lfi_scatter_plot(
         imp_x = imp_mat[:, feats_plot[0]]
         imp_y = imp_mat[:, feats_plot[1]]
 
-        ax.scatter(imp_x, imp_y, c=color, label=label)
+        ax.scatter(imp_x, imp_y, c=color, marker=marker, label=label)
 
     ax.set_xlabel(f"Feature {feats_plot[0]}")
     ax.set_ylabel(f"Feature {feats_plot[1]}")

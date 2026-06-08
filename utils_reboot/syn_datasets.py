@@ -525,7 +525,11 @@ def plot_syn_data(
         None: the function produces the plot and does not return anything
     """
 
-    colors = ["blue", "orange"]
+    #NOTE: Update colors into markers for greyscale compatibility
+
+    # colors = ["blue", "orange"]
+    markers = ["o", "v"]
+
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
     target = dataset[:, -1].astype(int)
@@ -535,13 +539,15 @@ def plot_syn_data(
     ax.scatter(
         dataset[inliers_mask, args.axes[0]],
         dataset[inliers_mask, args.axes[1]],
-        c=colors[0],
+        c="blue",
+        marker=markers[0],
         label="Inliers",
     )
     ax.scatter(
         dataset[outliers_mask, args.axes[0]],
         dataset[outliers_mask, args.axes[1]],
-        c=colors[1],
+        c="blue",
+        marker=markers[1],
         label="Outliers",
     )
 
@@ -584,7 +590,12 @@ def multi_plot_syn_data(
     """
 
     n_datasets = len(datasets)
-    colors = ["blue", "red"]
+
+    #NOTE: Update colors into markers for greyscale compatibility
+
+    # colors = ["blue", "orange"]
+    markers = ["o", "v"]
+
     fig, axes = plt.subplots(1, n_datasets, figsize=(5 * n_datasets, 5))
 
     if n_datasets == 1:
@@ -600,13 +611,15 @@ def multi_plot_syn_data(
         ax.scatter(
             dataset[inliers_mask, args.axes[0]],
             dataset[inliers_mask, args.axes[1]],
-            c=colors[0],
+            c="blue",
+            marker=markers[0],
             label="Inliers",
         )
         ax.scatter(
             dataset[outliers_mask, args.axes[0]],
             dataset[outliers_mask, args.axes[1]],
-            c=colors[1],
+            c="red",
+            marker=markers[1],
             label="Outliers",
         )
 

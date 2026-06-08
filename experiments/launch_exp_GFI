@@ -68,7 +68,6 @@ elif [[ "$dataset_name" == "$tep_name" || "$dataset_name" == "$coffe_name" || "$
     --pre_process \
     --scaler_type 4 \
     --file_pos "$file_pos" \
-    --compute_gfi \
     --score_plot
 
 else
