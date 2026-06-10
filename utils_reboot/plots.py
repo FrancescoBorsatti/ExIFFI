@@ -829,23 +829,29 @@ def multi_plot_feature_selection(
             plt_data["median_random"],
             label="random",
             c=colors[3],
-            alpha=0.5,
+            alpha=1.0,
             marker="o",
+            linestyle=":",
+            linewidth=2.5
         )
 
         (line2,) = ax[i].plot(
             plt_data["median_direct"],
             label="direct",
             c=colors[4],
-            alpha=0.5,
+            alpha=1.0,
             marker="o",
+            linestyle="--",
+            linewidth=2.5
         )
         (line3,) = ax[i].plot(
             plt_data["median_inverse"],
             label="inverse",
             c=colors[1],
-            alpha=0.5,
+            alpha=1.0,
             marker="o",
+            linestyle="-.",
+            linewidth=2.5
         )
 
         ax[i].set_title(f"{model_name} Int. {interpretation}", fontsize=22)
@@ -896,6 +902,7 @@ def multi_plot_feature_selection(
             plt_data["ninetyfive_direct"],
             alpha=0.1,
             color="k",
+            hatch="\\",
         )
         ax[i].fill_between(
             np.arange(dim),
@@ -903,6 +910,7 @@ def multi_plot_feature_selection(
             plt_data["ninetyfive_inverse"],
             alpha=0.1,
             color="k",
+            hatch="/",
         )
         ax[i].fill_between(
             np.arange(dim),
@@ -910,6 +918,7 @@ def multi_plot_feature_selection(
             plt_data["median_inverse"],
             alpha=0.7,
             color="coral",
+            hatch="|||",
         )
 
         # NOTE: Insert the legend just on the first plot
