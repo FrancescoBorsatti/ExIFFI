@@ -12,6 +12,7 @@ tests/try_stuff.py
 *.csv.gz
 *.pdf
 *.png
+*.zip
 
 # Mac OS files
 *.DS_Store
